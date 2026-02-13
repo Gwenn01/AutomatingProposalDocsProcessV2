@@ -17,7 +17,8 @@ class ProposalReviewer(models.Model):
         null=True,
         related_name="assigned_reviewers"
     )
-
+    is_review = models.BooleanField(default=False)
+    
     assigned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
