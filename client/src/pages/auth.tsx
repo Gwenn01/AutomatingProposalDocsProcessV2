@@ -5,6 +5,7 @@ import { CustomButton, FormInput } from "../components";
 import { useNavigate } from "react-router-dom";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/context/toast";
+import { loginUser, storeTokens, getUserProfile } from "@/utils/auth-api";
 
 // ================= TYPE DEFINITIONS =================
 
@@ -115,33 +116,39 @@ const Auth: React.FC = () => {
     setLoginError("");
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Step 1: Login and get tokens + basic info (user_id, email)
+      const loginResponse = await loginUser(loginData.identifier, loginData.password);
 
-      // TODO: Replace with actual API call
-      // Find user in static data
-      const user = STATIC_USERS.find(
-        (u) => u.email === loginData.identifier
-      );
+      // Step 2: Store JWT tokens
+      storeTokens(loginResponse.access, loginResponse.refresh);
 
-      // Check if user exists and password is correct (for demo: "password123")
-      if (!user || loginData.password !== "password123") {
-        setLoginError("Invalid email or password");
-        return;
-      }
+      // Step 3: Fetch full user profile using the user_id
+      const userProfile = await getUserProfile(loginResponse.user_id);
 
-      // ✅ SUCCESS
+      // Step 4: Create complete user object
+      const user = {
+        user_id: userProfile.user_id,
+        email: userProfile.email,
+        fullname: userProfile.fullname,
+        role: userProfile.role,
+        campus: userProfile.campus,
+        department: userProfile.department,
+        position: userProfile.position,
+      };
+
+      // Step 5: Store user data
       localStorage.setItem("user", JSON.stringify(user));
 
-      // ✅ REDIRECT TO HOME
+      // Success!
       showToast(
         `Login successful! Welcome back, ${user.fullname}!`,
         "success"
       );
+      
       setTimeout(() => navigate("/home"), 800);
-    } catch (error) {
+    } catch (error: any) {
       console.error("LOGIN ERROR:", error);
-      setLoginError("Server error. Please try again.");
+      setLoginError(error.message || "Login failed. Please try again.");
     } finally {
       setLoginLoading(false);
     }
@@ -268,12 +275,11 @@ const Auth: React.FC = () => {
               className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl"
             >
               <p className="text-xs font-bold text-emerald-800 mb-2">
-                Demo Accounts (Password: password123):
+                Demo Account:
               </p>
               <ul className="space-y-1 text-xs text-emerald-700">
-                <li>• <strong>Admin:</strong> admin@prmsu.edu</li>
-                <li>• <strong>Instructor:</strong> instructor@prmsu.edu</li>
-                <li>• <strong>Reviewer:</strong> reviewer@prmsu.edu</li>
+                <li>• <strong>Email:</strong> arnel@university.edu</li>
+                <li>• <strong>Password:</strong> arnel123</li>
               </ul>
             </Motion.div>
           )}
