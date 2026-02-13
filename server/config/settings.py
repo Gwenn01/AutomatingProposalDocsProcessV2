@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'users',
     'reviewer',
     'implementor',
+    'proposals_node',
+    'proposal_cover',
     'program_proposal',
     'project_proposal',
     'activity_proposal'
