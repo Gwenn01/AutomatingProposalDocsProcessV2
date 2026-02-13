@@ -13,7 +13,7 @@ class UserProfile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-
+    name = models.CharField(max_length=100, blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
     campus = models.CharField(max_length=100)
