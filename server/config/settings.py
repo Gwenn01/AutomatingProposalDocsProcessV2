@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'proposal_cover',
     'program_proposal',
     'project_proposal',
-    'activity_proposal'
+    'activity_proposal',
+    'proposal_reviews'
 ]
 
 MIDDLEWARE = [
