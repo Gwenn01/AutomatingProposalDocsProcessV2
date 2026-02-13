@@ -24,10 +24,11 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             "refresh": str(data),
             "access": str(data.access_token),
             "user_id": user.id,
+            "username": user.username,
             "email": user.email
         }
-
-class UserProfileSerializer(serializers.ModelSerializer):
+# REGISTRATION SERIALIZER
+class RegistrationSerializer(serializers.ModelSerializer):
      # USER fields
     username = serializers.CharField()
     email = serializers.EmailField()
@@ -81,6 +82,68 @@ class UserProfileSerializer(serializers.ModelSerializer):
             position=position,
         )
 
-        return user
-    
-    
+        return user  
+ 
+ 
+ # GET PROFILE 
+ # return the profile serializer to get profile   
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = [
+            "role",
+            "name",
+            "campus",
+            "department",
+            "position",
+            "created_at"
+        ]
+      
+# return the user serializer to get user and connect to profile
+class UserSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(read_only=True)  # related_name="profile"
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "profile",
+        ]
+        
+# UPDATE PROFILE SERIALIZER
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    # fields from User model
+    username = serializers.CharField(source="user.username", required=False)
+    email = serializers.EmailField(source="user.email", required=False)
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            "username",
+            "email",
+            "role",
+            "name",
+            "campus",
+            "department",
+            "position",
+        ]
+
+    def update(self, instance, validated_data):
+        # --- Update USER ---
+        user_data = validated_data.pop("user", {})
+
+        user = instance.user
+        if "username" in user_data:
+            user.username = user_data["username"]
+        if "email" in user_data:
+            user.email = user_data["email"]
+        user.save()
+
+        # --- Update PROFILE ---
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
