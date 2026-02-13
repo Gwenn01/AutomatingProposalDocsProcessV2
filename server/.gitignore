@@ -1,28 +1,27 @@
-# Virtual env
+# Virtual Environment
 venv/
 env/
-ENV/
 
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 
 # Django
-*.log
 db.sqlite3
 media/
 staticfiles/
+*.log
 
-# Environment
+# Environment variables
 .env
-
-# VSCode
-.vscode/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Migrations cache
+# Compiled migrations
 **/migrations/*.pyc
+
+# VSCode
+.vscode/
