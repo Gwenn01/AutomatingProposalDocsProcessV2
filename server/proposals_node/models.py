@@ -19,6 +19,7 @@ class Proposal(models.Model):
     file_path = models.CharField(max_length=255, null=True, blank=True)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="under_review")
+    version_no = models.IntegerField(default=1)
 
     reviewer_count = models.IntegerField(default=0)
     reviewed_count = models.IntegerField(default=0)
