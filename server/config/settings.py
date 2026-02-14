@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'program_proposal',
     'project_proposal',
     'activity_proposal',
-    'proposal_reviews',
+    'reviews',
     'notifications'
 ]
 

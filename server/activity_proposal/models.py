@@ -5,49 +5,56 @@ from project_proposal.models import ProjectProposal
 # Create your models here.
 class ActivityProposal(models.Model):
    ...
-   proposal = models.OneToOneField(Proposal, on_delete=models.CASCADE, related_name="activity_proposal")
+   proposal = models.OneToOneField(Proposal, on_delete=models.CASCADE, related_name="activity_details")
    project_proposal = models.ForeignKey(
         ProjectProposal,
         on_delete=models.CASCADE,
-        related_name="activity_proposal"
+        related_name="activities"
     )
-   program_title = models.CharField(max_length=255, null=True, blank=True)
-   project_title = models.CharField(max_length=255, null=True, blank=True)
-   activity_title = models.CharField(max_length=255, null=True, blank=True)
-
-   sdg_alignment = models.TextField(null=True, blank=True)
-   extension_agenda = models.TextField(null=True, blank=True)
+   #profile
+   activity_title = models.CharField(max_length=255)
 
    project_leader = models.CharField(max_length=255, null=True, blank=True)
-   members = models.TextField(null=True, blank=True)
 
-   college_campus_program = models.CharField(max_length=255, null=True, blank=True)
-   collaborating_agencies = models.CharField(max_length=255, null=True, blank=True)
-   community_location = models.CharField(max_length=255, null=True, blank=True)
+   members = models.JSONField(default=list, blank=True)
 
-   target_sector = models.CharField(max_length=255, null=True, blank=True)
-   number_of_beneficiaries = models.IntegerField(null=True, blank=True)
+   activity_duration_hours = models.IntegerField(null=True, blank=True)
 
-   implementation_period = models.CharField(max_length=100, null=True, blank=True)
-   total_budget_requested = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+   activity_date = models.DateField(null=True, blank=True)
+   
+   # agencies
+   implementing_agency = models.JSONField(null=True, blank=True)
 
+   cooperating_agencies = models.JSONField(null=True, blank=True)
+
+   extension_sites = models.JSONField(null=True, blank=True)
+   
+   tags = models.JSONField(null=True, blank=True)
+   clusters = models.JSONField(null=True, blank=True)
+   agendas = models.JSONField(null=True, blank=True)
+   
+   sdg_addressed = models.CharField(max_length=255, blank=True, null=True)
+   mandated_academic_program = models.CharField(max_length=255, blank=True, null=True)
+   
    rationale = models.TextField(null=True, blank=True)
+   
    significance = models.TextField(null=True, blank=True)
-   general_objectives = models.TextField(null=True, blank=True)
-   specific_objectives = models.TextField(null=True, blank=True)
+   
+   objectives_of_activity = models.TextField(null=True, blank=True)
 
-   methodology = models.JSONField(null=True, blank=True)
+   methodology = models.CharField(max_length=255, null=True, blank=True)
+   
    expected_output_6ps = models.JSONField(null=True, blank=True)
 
    sustainability_plan = models.TextField(null=True, blank=True)
-   org_and_staffing_json = models.JSONField(null=True, blank=True)
+   
+   org_and_staffing = models.JSONField(null=True, blank=True)
 
-   activity_schedule_json = models.JSONField(null=True, blank=True)
-   budget_breakdown_json = models.JSONField(null=True, blank=True)
-
-   prmsu_participants_count = models.IntegerField(null=True, blank=True)
-   partner_agency_participants_count = models.IntegerField(null=True, blank=True)
-   trainees_count = models.IntegerField(null=True, blank=True)
+   plan_of_activity = models.JSONField(null=True, blank=True)
+   
+   budget_requirements = models.JSONField(null=True, blank=True)
+   
+   created_at = models.DateTimeField(auto_now_add=True)
    
    def __str__(self):
-      return self.program_title
+      return self.activity_title

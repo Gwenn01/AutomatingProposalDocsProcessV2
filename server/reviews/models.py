@@ -9,12 +9,6 @@ class ProposalReview(models.Model):
         ('approved', 'Approved'),
     ]
 
-    REVIEW_ROUND_CHOICES = [
-        ('1st', '1st Review'),
-        ('2nd', '2nd Review'),
-        ('3rd', '3rd Review'),
-    ]
-
     PROPOSAL_TYPE_CHOICES = [
         ('Program', 'Program'),
         ('Project', 'Project'),
@@ -38,8 +32,8 @@ class ProposalReview(models.Model):
     # ---------- Review Info ----------
     review_round = models.CharField(
         max_length=10,
-        choices=REVIEW_ROUND_CHOICES,
-        default='1st'
+        null=True,
+        blank=True
     )
 
     proposal_type = models.CharField(
@@ -52,18 +46,31 @@ class ProposalReview(models.Model):
     source_of_fund = models.TextField(null=True, blank=True)
 
     # ---------- Section Feedback ----------
-    project_profile_feedback = models.TextField(null=True, blank=True)
+    profile_feedback = models.TextField(null=True, blank=True)
+    
     rationale_feedback = models.TextField(null=True, blank=True)
+    
     significance_feedback = models.TextField(null=True, blank=True)
+    
+    objectives_feedback = models.TextField(null=True, blank=True)
+    
     general_objectives_feedback = models.TextField(null=True, blank=True)
+    
     specific_objectives_feedback = models.TextField(null=True, blank=True)
+    
     methodology_feedback = models.TextField(null=True, blank=True)
+    
     expected_output_feedback = models.TextField(null=True, blank=True)
-    potential_impact_feedback = models.TextField(null=True, blank=True)
+    
     sustainability_plan_feedback = models.TextField(null=True, blank=True)
+    
     org_staffing_feedback = models.TextField(null=True, blank=True)
-    work_financial_plan_feedback = models.TextField(null=True, blank=True)
-    budget_summary_feedback = models.TextField(null=True, blank=True)
+    
+    work_plan_feedback = models.TextField(null=True, blank=True)
+    
+    budget_requirements_feedback = models.TextField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Review {self.id} - {self.proposal} - {self.user}"
+        return f"Review {self.review_round}"
