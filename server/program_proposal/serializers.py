@@ -1,11 +1,14 @@
 from rest_framework import serializers
 from .models import ProgramProposal
 from proposals_node.models import Proposal
+from proposals_node.serializers import ProposalSerializer
 
 class ProgramProposalSerializer(serializers.ModelSerializer):
      # fields that belong to Proposal
     title = serializers.CharField(write_only=True)
     proposal = serializers.PrimaryKeyRelatedField(read_only=True)
+    
+    proposal_node = ProposalSerializer(source='proposal', read_only=True)
     class Meta:
         model = ProgramProposal
         fields = '__all__'
