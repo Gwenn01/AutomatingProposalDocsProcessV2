@@ -10,17 +10,17 @@ from django.contrib.auth.models import User
 # Create your views here.
 
 class ProgramProposalList(APIView):
-    def get(self, request):
-        program_proposals = ProgramProposal.objects.filter(
-            proposal__user=request.user
-        )
+    # def get(self, request):
+    #     program_proposals = ProgramProposal.objects.filter(
+    #         proposal__user=request.user
+    #     )
 
-        serializer = ProgramProposalSerializer(
-            program_proposals,
-            many=True
-        )
+    #     serializer = ProgramProposalSerializer(
+    #         program_proposals,
+    #         many=True
+    #     )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
         serializer = ProgramProposalSerializer(

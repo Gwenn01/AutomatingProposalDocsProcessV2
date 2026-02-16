@@ -8,16 +8,16 @@ from .serializers import ProjectProposalSerializer
 # Create your views here.
 
 class ProjectProposalList(APIView):
-    def get(self, request):
-        project_proposals = ProjectProposal.objects.filter(
-            proposal__user=request.user
-        )
+    # def get(self, request):
+    #     project_proposals = ProjectProposal.objects.filter(
+    #         proposal__user=request.user
+    #     )
 
-        serializer = ProjectProposalSerializer(
-            project_proposals,
-            many=True
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    #     serializer = ProjectProposalSerializer(
+    #         project_proposals,
+    #         many=True
+    #     )
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
         serializer = ProjectProposalSerializer(
