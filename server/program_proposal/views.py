@@ -33,3 +33,9 @@ class ProgramProposalList(APIView):
                              "data": serializer.data}, status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ProgramProposalDetail(APIView):
+    def get(self, request, pk):
+        program_proposal = ProgramProposal.objects.get(id=pk)
+        serializer = ProgramProposalSerializer(program_proposal)
+        return Response(serializer.data, status=status.HTTP_200_OK)

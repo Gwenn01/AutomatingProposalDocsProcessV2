@@ -8,7 +8,7 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
     title = serializers.CharField(write_only=True)
     proposal = serializers.PrimaryKeyRelatedField(read_only=True)
     
-    proposal_node = ProposalSerializer(source='proposal', read_only=True)
+    # proposal_node = ProposalSerializer(source='proposal', read_only=True)
     class Meta:
         model = ProgramProposal
         fields = '__all__'
