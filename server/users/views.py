@@ -9,6 +9,7 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth.models import User  # ✅ ADD THIS IMPORT
 #app
 from .models import UserProfile
 from .serializers import (
@@ -62,3 +63,31 @@ class UpdateMyProfileView(APIView):
             return Response(serializer.data)
 
         return Response(serializer.errors, status=400)
+
+
+# ✅ ADD THIS NEW VIEW
+class UserProfileDetail(APIView):
+    """
+    Get user profile by user ID
+    """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise Http404
+    
+    def get(self, request, pk, format=None):
+        user = self.get_object(pk)
+        
+        # Optional: Check if user is requesting their own profile or is admin
+        # if request.user.id != pk and not request.user.is_staff:
+        #     return Response(
+        #         {"detail": "You do not have permission to view this profile."},
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
+        
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

@@ -5,7 +5,8 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     UserProfileList,
     CurrentUser,
-    UpdateMyProfileView
+    UpdateMyProfileView,
+    UserProfileDetail  # ✅ ADD THIS IMPORT
 )
 
 urlpatterns = [
@@ -13,10 +14,14 @@ urlpatterns = [
     path("login/", EmailTokenObtainPairView.as_view(), name="login"),
     # refresh token
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    # login
+    # registration
     path("profile/", UserProfileList.as_view(), name="profile"),
+    # current user
     path("profile/me/", CurrentUser.as_view(), name="my-profile"),
-    path("profile/update/", UpdateMyProfileView.as_view(), name="update-profile")
+    # update profile
+    path("profile/update/", UpdateMyProfileView.as_view(), name="update-profile"),
+    # ✅ ADD THIS NEW ENDPOINT - Get user by ID
+    path("<int:pk>/", UserProfileDetail.as_view(), name="user-detail"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
