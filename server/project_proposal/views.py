@@ -1,13 +1,16 @@
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny 
 from .models import ProjectProposal
 from .serializers import ProjectProposalSerializer
 # Create your views here.
 
 class ProjectProposalList(APIView):
+    permission_classes = [IsAuthenticated]
     # def get(self, request):
     #     project_proposals = ProjectProposal.objects.filter(
     #         proposal__user=request.user
@@ -32,11 +35,21 @@ class ProjectProposalList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class ProjectProposalDetail(APIView):
-    def get(self, request, pk):
-        project_proposal = ProjectProposal.objects.get(
-            pk=pk,
-            proposal__user=request.user
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, pk, user):
+        project_proposal = get_object_or_404(
+            ProjectProposal,
+            id=pk,
+            proposal__user=user
         )
+        return project_proposal
+    
+    def get(self, request, pk):
+        try:
+            project_proposal = self.get_object(pk, request.user)
+        except ProjectProposal.DoesNotExist:
+            return Response({"message": "Project proposal not found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ProjectProposalSerializer(
             project_proposal,

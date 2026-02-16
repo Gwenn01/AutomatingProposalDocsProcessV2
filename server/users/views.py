@@ -91,3 +91,5 @@ class UserProfileDetail(APIView):
         
         serializer = UserSerializer(user)
         return Response(serializer.data)
+    
+# ADMIN VIEWS
