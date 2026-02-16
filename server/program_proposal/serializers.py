@@ -13,8 +13,23 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         model = ProgramProposal
         fields = '__all__'
     
+    def validate(self, data):
+        title = data.get("title")
+        program_title = data.get("program_title")
+
+        if not title:
+            raise serializers.ValidationError({"title": "This field is required."})
+
+        if ProgramProposal.objects.filter(
+            program_title=program_title,
+        ).exists():
+            raise serializers.ValidationError({
+                "duplicate": "This program already exists on this date"
+            })
+
+        return data
+    
     def create(self, validated_data):
-       
         # extract proposal fields
         title = validated_data.pop("title")
         request = self.context["request"]

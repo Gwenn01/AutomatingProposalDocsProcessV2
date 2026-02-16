@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from .models import ActivityProposal
 from proposals_node.models import Proposal
 from project_proposal.models import ProjectProposal
+from activity_proposal.models import ActivityProposal
 
 class ActivityProposalSerializer(serializers.ModelSerializer):
     
@@ -14,6 +16,34 @@ class ActivityProposalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityProposal
         fields = "__all__"
+        
+    def validate(self, data):
+        title = data.get("title")
+        project_proposal_id = data.get("project_proposal_id")
+        activity_title = data.get("activity_title")
+        
+        if not title:
+            raise serializers.ValidationError({"title": "This field is required."})
+
+        if not project_proposal_id:
+            raise ValidationError({"project_proposal_id": "This field is required"})
+
+        try:
+            project = ProjectProposal.objects.get(id=project_proposal_id)
+        except ProjectProposal.DoesNotExist:
+            raise ValidationError({"project_proposal_id": "Project does not exist"})
+
+        # duplicate check
+        if ActivityProposal.objects.filter(
+            project_proposal=project,
+            activity_title=activity_title,
+        ).exists():
+            raise ValidationError({
+                "duplicate": "This activity already exists for this project on this date"
+            })
+
+        return data
+        
         
     def create(self, validated_data):
         request = self.context.get("request")

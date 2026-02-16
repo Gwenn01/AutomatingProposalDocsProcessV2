@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from .models import ProjectProposal
 from proposals_node.models import Proposal
 from program_proposal.models import ProgramProposal
@@ -14,7 +15,33 @@ class ProjectProposalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectProposal
         fields = '__all__'
-
+    
+    def validate(self, data):
+        title = data.get("title")
+        program_proposal_id = data.get("program_proposal_id")
+        project_title = data.get("project_title")
+        
+        if not title:
+            raise serializers.ValidationError({"title": "This field is required."})
+        
+        if not program_proposal_id:
+            raise serializers.ValidationError({"program_proposal_id": "This field is required."})
+        
+        try:
+            program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
+        except ProgramProposal.DoesNotExist:
+            raise ValidationError({"program_proposal_id": "Program Proposal does not exist"})
+        
+        if ProjectProposal.objects.filter(
+            program_proposal=program_proposal,
+            project_title=project_title,
+        ).exists():
+            raise ValidationError({
+                "duplicate": "This project already exists for this program on this date"
+            })
+        return data
+        
+        
     def create(self, validated_data):
         # extract proposal fields
         title = validated_data.pop("title")
@@ -27,7 +54,10 @@ class ProjectProposalSerializer(serializers.ModelSerializer):
         proposal = Proposal.objects.create(title=title, user=user, proposal_type="Project")
 
         # create program proposal
-        program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
+        try:
+            program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
+        except ProgramProposal.DoesNotExist:
+            raise serializers.ValidationError("Program Proposal does not exist.")
         
         project = ProjectProposal.objects.create(proposal=proposal, program_proposal=program_proposal, **validated_data)
         
