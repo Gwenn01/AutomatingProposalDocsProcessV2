@@ -5,7 +5,7 @@ import { CustomButton, FormInput } from "../components";
 import { useNavigate } from "react-router-dom";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/context/toast";
-import { loginUser, storeTokens, getUserProfile } from "@/utils/auth-api";
+import { loginUser, registerUser, storeTokens, getUserProfile } from "@/utils/auth-api";
 
 // ================= TYPE DEFINITIONS =================
 
@@ -27,6 +27,7 @@ interface RegisterData {
 interface User {
   user_id: number;
   email: string;
+  username: string;
   fullname: string;
   role: "admin" | "implementor" | "reviewer";
   campus: string;
@@ -46,40 +47,6 @@ interface SelectOption {
 
 type AuthMode = "login" | "register";
 
-// ================= STATIC USER DATA =================
-
-const STATIC_USERS: User[] = [
-  {
-    user_id: 1,
-    email: "admin@prmsu.edu",
-    fullname: "Admin User",
-    role: "admin",
-    campus: "iba",
-    department: "CCIT",
-    position: "System Administrator",
-  },
-  {
-    user_id: 2,
-    email: "implementor@prmsu.edu",
-    fullname: "John Instructor",
-    role: "implementor",
-    campus: "iba",
-    department: "CCIT",
-    position: "Instructor III",
-  },
-  {
-    user_id: 3,
-    email: "reviewer@prmsu.edu",
-    fullname: "Maria Reviewer",
-    role: "reviewer",
-    campus: "botolan",
-    department: "CTHM",
-    position: "Associate Professor",
-  },
-];
-
-// Password for all test accounts: "password123"
-
 // ================= COMPONENT =================
 
 const Auth: React.FC = () => {
@@ -89,6 +56,7 @@ const Auth: React.FC = () => {
   const [loginLoading, setLoginLoading] = useState<boolean>(false);
   const [registerLoading, setRegisterLoading] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string>("");
+  const [registerError, setRegisterError] = useState<string>("");
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -116,24 +84,25 @@ const Auth: React.FC = () => {
     setLoginError("");
 
     try {
-      // Step 1: Login and get tokens + basic info (user_id, email)
+      // Step 1: Login and get tokens + basic user info
       const loginResponse = await loginUser(loginData.identifier, loginData.password);
 
       // Step 2: Store JWT tokens
       storeTokens(loginResponse.access, loginResponse.refresh);
 
-      // Step 3: Fetch full user profile using the user_id
+      // Step 3: Fetch full user profile (includes UserProfile data)
       const userProfile = await getUserProfile(loginResponse.user_id);
 
-      // Step 4: Create complete user object
+      // Step 4: Create complete user object merging login response + profile
       const user = {
-        user_id: userProfile.user_id,
+        user_id: userProfile.id,
         email: userProfile.email,
-        fullname: userProfile.fullname,
-        role: userProfile.role,
-        campus: userProfile.campus,
-        department: userProfile.department,
-        position: userProfile.position,
+        username: userProfile.username,
+        fullname: userProfile.profile.name || userProfile.username,
+        role: userProfile.profile.role,
+        campus: userProfile.profile.campus,
+        department: userProfile.profile.department,
+        position: userProfile.profile.position,
       };
 
       // Step 5: Store user data
@@ -158,33 +127,44 @@ const Auth: React.FC = () => {
     if (registerLoading) return;
 
     setRegisterLoading(true);
-    console.log("REGISTER DATA:", registerData);
+    setRegisterError("");
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // TODO: Replace with actual API call
       // Basic validation
       if (!registerData.name || !registerData.email || !registerData.password) {
-        showToast("Please fill in all required fields", "error");
+        setRegisterError("Please fill in all required fields");
         return;
       }
 
       if (registerData.password !== registerData.confirmPassword) {
-        showToast("Passwords do not match", "error");
+        setRegisterError("Passwords do not match");
         return;
       }
 
-      // Check if email already exists
-      const emailExists = STATIC_USERS.some(
-        (u) => u.email === registerData.email
-      );
-      if (emailExists) {
-        showToast("Email already registered", "error");
+      if (registerData.password.length < 6) {
+        setRegisterError("Password must be at least 6 characters");
         return;
       }
 
+      // Generate username from email (before @ symbol)
+      const username = registerData.email.split('@')[0];
+
+      // Prepare data for API
+      const registrationData = {
+        username: username,
+        email: registerData.email,
+        password: registerData.password,
+        role: "implementor", // Default role
+        name: registerData.name,
+        campus: registerData.campus,
+        department: registerData.department,
+        position: registerData.position || "",
+      };
+
+      // Call register API
+      const response = await registerUser(registrationData);
+
+      // Success!
       showToast("Registration successful! Please login.", "success");
 
       // Reset form and switch to login
@@ -199,9 +179,9 @@ const Auth: React.FC = () => {
       });
 
       setMode("login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("REGISTER ERROR:", error);
-      showToast("Server error. Please try again.", "error");
+      setRegisterError(error.message || "Registration failed. Please try again.");
     } finally {
       setRegisterLoading(false);
     }
@@ -385,8 +365,9 @@ const Auth: React.FC = () => {
                       <FormInput
                         type="select"
                         options={[
-                          { label: "Iba", value: "iba" },
-                          { label: "Botolan", value: "botolan" },
+                          { label: "Select Campus", value: "" },
+                          { label: "Iba", value: "Iba Campus" },
+                          { label: "Botolan", value: "Botolan Campus" },
                         ]}
                         value={registerData.campus}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -404,6 +385,7 @@ const Auth: React.FC = () => {
                       <FormInput
                         type="select"
                         options={[
+                          { label: "Select Dept.", value: "" },
                           { label: "CCIT", value: "CCIT" },
                           { label: "CTHM", value: "CTHM" },
                         ]}
@@ -422,7 +404,7 @@ const Auth: React.FC = () => {
                         Position
                       </label>
                       <FormInput
-                        placeholder="Instructor"
+                        placeholder="Instructor I"
                         value={registerData.position}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setRegisterData({
@@ -439,7 +421,7 @@ const Auth: React.FC = () => {
                       </label>
                       <FormInput
                         type="password"
-                        placeholder="••••"
+                        placeholder="••••••"
                         value={registerData.password}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setRegisterData({
@@ -455,7 +437,7 @@ const Auth: React.FC = () => {
                       </label>
                       <FormInput
                         type="password"
-                        placeholder="••••"
+                        placeholder="••••••"
                         value={registerData.confirmPassword}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setRegisterData({
@@ -469,13 +451,14 @@ const Auth: React.FC = () => {
                 )}
               </AnimatePresence>
 
-              {loginError && (
+              {/* Error Messages */}
+              {(loginError || registerError) && (
                 <Motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   className="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-xl text-[11px] font-medium"
                 >
-                  {loginError}
+                  {mode === "login" ? loginError : registerError}
                 </Motion.div>
               )}
 
@@ -498,6 +481,7 @@ const Auth: React.FC = () => {
                   onClick={() => {
                     setMode(mode === "login" ? "register" : "login");
                     setLoginError("");
+                    setRegisterError("");
                   }}
                   className="ml-2 text-emerald-600 font-bold hover:text-emerald-700 underline-offset-2 hover:underline transition-all"
                 >

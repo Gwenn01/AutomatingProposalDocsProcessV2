@@ -12,17 +12,42 @@ interface LoginResponse {
   refresh: string;
   access: string;
   user_id: number;
+  username: string;
   email: string;
 }
 
-interface UserProfile {
-  user_id: number;
+interface RegisterRequest {
+  username: string;
   email: string;
-  fullname: string;
-  role: "admin" | "implementor" | "reviewer";
+  password: string;
+  role: string;
+  name: string;
   campus: string;
   department: string;
   position: string;
+}
+
+interface RegisterResponse {
+  message: string;
+  user_id: number;
+  username: string;
+  email: string;
+}
+
+interface ProfileData {
+  role: "admin" | "implementor" | "reviewer";
+  name: string;
+  campus: string;
+  department: string;
+  position: string;
+  created_at: string;
+}
+
+interface UserProfileResponse {
+  id: number;
+  username: string;
+  email: string;
+  profile: ProfileData;
 }
 
 interface ApiError {
@@ -64,6 +89,67 @@ export const loginUser = async (
     }
 
     const data: LoginResponse = await response.json();
+    return data;
+  } catch (error) {
+    // Network errors or parsing errors
+    if (error instanceof TypeError) {
+      throw {
+        message: "Network error. Please check your connection.",
+        status: 0,
+      } as ApiError;
+    }
+    // Re-throw API errors
+    throw error;
+  }
+};
+
+/**
+ * Register a new user
+ * @param userData - User registration data
+ * @returns Promise with registration response
+ */
+export const registerUser = async (
+  userData: RegisterRequest
+): Promise<RegisterResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/profile/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+
+    // Handle non-200 responses
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      // Handle validation errors
+      if (errorData.email) {
+        throw {
+          message: Array.isArray(errorData.email) 
+            ? errorData.email[0] 
+            : "Email is already registered",
+          status: response.status,
+        } as ApiError;
+      }
+      
+      if (errorData.username) {
+        throw {
+          message: Array.isArray(errorData.username) 
+            ? errorData.username[0] 
+            : "Username is already taken",
+          status: response.status,
+        } as ApiError;
+      }
+      
+      throw {
+        message: errorData.detail || errorData.message || "Registration failed",
+        status: response.status,
+      } as ApiError;
+    }
+
+    const data: RegisterResponse = await response.json();
     return data;
   } catch (error) {
     // Network errors or parsing errors
@@ -126,7 +212,7 @@ export const isAuthenticated = (): boolean => {
  * @param userId - User ID
  * @returns Promise with user profile data
  */
-export const getUserProfile = async (userId: number): Promise<UserProfile> => {
+export const getUserProfile = async (userId: number): Promise<UserProfileResponse> => {
   const token = getAccessToken();
   
   try {
@@ -139,13 +225,14 @@ export const getUserProfile = async (userId: number): Promise<UserProfile> => {
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       throw {
-        message: "Failed to fetch user profile",
+        message: errorData.detail || "Failed to fetch user profile",
         status: response.status,
       } as ApiError;
     }
 
-    const data = await response.json();
+    const data: UserProfileResponse = await response.json();
     return data;
   } catch (error) {
     if (error instanceof TypeError) {
