@@ -7,8 +7,6 @@ import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/context/toast";
 import { loginUser, registerUser, storeTokens, getUserProfile } from "@/utils/auth-api";
 
-// ================= TYPE DEFINITIONS =================
-
 interface LoginData {
   identifier: string;
   password: string;
@@ -23,7 +21,6 @@ interface RegisterData {
   password: string;
   confirmPassword?: string;
 }
-
 interface User {
   user_id: number;
   email: string;
@@ -34,20 +31,16 @@ interface User {
   department: string;
   position: string;
 }
-
 interface FeatureCardProps {
   icon: React.ReactElement;
   text: string;
 }
-
 interface SelectOption {
   label: string;
   value: string;
 }
 
 type AuthMode = "login" | "register";
-
-// ================= COMPONENT =================
 
 const Auth: React.FC = () => {
   const { showToast } = useToast();
@@ -113,8 +106,7 @@ const Auth: React.FC = () => {
         `Login successful! Welcome back, ${user.fullname}!`,
         "success"
       );
-      
-      setTimeout(() => navigate("/home"), 800);
+      navigate("/home");
     } catch (error: any) {
       console.error("LOGIN ERROR:", error);
       setLoginError(error.message || "Login failed. Please try again.");
@@ -370,7 +362,7 @@ const Auth: React.FC = () => {
                           { label: "Botolan", value: "Botolan Campus" },
                         ]}
                         value={registerData.campus}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        onChange={(e: any) =>
                           setRegisterData({
                             ...registerData,
                             campus: e.target.value,
@@ -390,7 +382,7 @@ const Auth: React.FC = () => {
                           { label: "CTHM", value: "CTHM" },
                         ]}
                         value={registerData.department}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        onChange={(e: any) =>
                           setRegisterData({
                             ...registerData,
                             department: e.target.value,
