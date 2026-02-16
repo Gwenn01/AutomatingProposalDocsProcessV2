@@ -8,8 +8,12 @@ from .serializers import ProposalSerializer
 # Create your views here.
 
 class ProposalList(APIView):
-    def get(self, request, format=None):
-        proposals = Proposal.objects.filter(user=request.user)
+    def get(self, request, proposal_type, format=None):
+        proposals = Proposal.objects.filter(
+            user=request.user,
+            proposal_type=proposal_type
+        )
+
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
 
