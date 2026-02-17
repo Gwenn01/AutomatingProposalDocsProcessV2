@@ -59,7 +59,7 @@ class ProjectProposal(models.Model):
       return self.project_title
    
 
-class ProjectProposal(models.Model):
+class ProjectProposalHistory(models.Model):
    ...
    proposal = models.ForeignKey(Proposal, on_delete=models.CASCADE, related_name="project_history")
    program_proposal_history = models.ForeignKey(
