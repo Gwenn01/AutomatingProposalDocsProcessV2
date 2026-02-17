@@ -10,7 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { prmsuLogo } from "../assets";
+import { prmsuLogo, extensionLogo } from "../assets";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth";
 import { useToast } from "@/context/toast";
@@ -107,17 +107,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Content */}
           <div className="relative z-10 flex items-center gap-4">
-            <div className="bg-white p-1 rounded-full w-16 h-16 shadow-lg ring-2 ring-white/40">
+            <div className="bg-white p-1 rounded-full w-20 h-16 shadow-lg ring-2 ring-white/40">
               <img
-                src={prmsuLogo}
+                src={extensionLogo}
                 alt="logo"
                 className="w-full h-full object-contain rounded-full"
               />
             </div>
 
             <div>
-              <h1 className="text-white font-bold text-sm tracking-wide">
-                Extension Office
+              <h1 className="text-white font-bold text-base texce tracking-wide">
+                Extension Services Office
               </h1>
               <p className="text-white/80 text-xs capitalize">{role} Panel</p>
             </div>
