@@ -15,14 +15,17 @@ class ProposalReviewer(models.Model):
         User,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="assigned_by"
+        related_name="reviewers_assigned"
     )
     is_review = models.BooleanField(default=False)
 
     assigned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('proposal', 'reviewer')
+        constraints = [
+            models.UniqueConstraint(fields=['proposal', 'reviewer'], name='unique_proposal_reviewer')
+        ]
+
         
     def __str__(self):
         return f"{self.proposal} - {self.reviewer}"
