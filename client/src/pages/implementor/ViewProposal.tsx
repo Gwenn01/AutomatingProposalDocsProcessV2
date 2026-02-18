@@ -19,6 +19,7 @@ import {
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
+import { fetchProposalsNode } from '@/utils/implementor-api';
 
 // ================= TYPE DEFINITIONS =================
 
@@ -151,16 +152,32 @@ const ViewProposal: React.FC = () => {
     }
   };
 
-  // ================= FETCH PROPOSALS + REVIEWS =================
-  // TODO: Implement API call to fetch proposals
-  useEffect(() => {
-    if (!user?.user_id) return;
+// ================= FETCH PROPOSALS + REVIEWS =================
+useEffect(() => {
+  if (!user?.user_id) return;
 
-    // Placeholder for future API implementation
-    // Mock data for demonstration
-    setDocuments([]);
-    setPageLoading(false);
-  }, [user]);
+  const loadProposals = async () => {
+    setPageLoading(true);
+    try {
+      const data: any[] = await fetchProposalsNode('Program');
+      const mapped: Document[] = data.map((p) => ({
+        proposal_id: p.id,           // node wrapper ID (for UI key / ReviewerListStatus)
+        title: p.title,
+        file_path: p.file_path ?? '',
+        status: p.status ?? 'unknown',
+        submitted_at: p.created_at ?? null,
+        reviews: p.reviews ?? 0,     // adjust if your API returns an array
+      }));
+      setDocuments(mapped);
+    } catch (err) {
+      console.error('[ViewProposal] Failed to fetch proposals:', err);
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  loadProposals();
+}, [user]);
 
   // ================= STATUS LABEL STYLE =================
   const getStatusStyle = (status: string): StatusStyle => {
