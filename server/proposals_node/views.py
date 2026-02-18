@@ -22,17 +22,6 @@ class ProposalList(APIView):
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
 
-# REVIEWER VIEWS
-class ReviewerProposalList(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, proposal_type, format=None):
-        proposals = Proposal.objects.filter(
-            proposal_type=proposal_type
-        )
-        serializer = ProposalSerializer(proposals, many=True)
-        return Response(serializer.data)
-
 # ADMIN VIEWS get all proposal 
 class AdminProposalList(APIView):
     permission_classes = [IsAdminUser]

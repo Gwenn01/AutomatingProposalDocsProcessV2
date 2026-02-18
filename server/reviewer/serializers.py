@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import ProposalReviewer
 from django.contrib.auth.models import User
 from proposals_node.models import Proposal
+from proposals_node.serializers import ProposalSerializer
 
 class ReviewerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,3 +15,10 @@ class ReviewerSerializer(serializers.ModelSerializer):
         validated_data['assigned_by'] = request.user
         return ProposalReviewer.objects.create(**validated_data)
 
+class ReviewerProposalSerializer(serializers.ModelSerializer):
+    proposal = ProposalSerializer(read_only=True)
+
+    class Meta:
+        model = ProposalReviewer
+        fields = ['id', 'proposal', 'is_review', 'assigned_at']
+        read_only_fields = ['assigned_by', 'assigned_at']
