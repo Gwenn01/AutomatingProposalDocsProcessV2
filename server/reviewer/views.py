@@ -46,7 +46,7 @@ class ReviewerListView(APIView):
     
     
 # REVIEWER VIEWS get the assigned proposal for the reviewer
-class ReviewerProposalList(APIView):
+class MyAssignedProposalsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
@@ -55,11 +55,26 @@ class ReviewerProposalList(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 #GENERAL VIEWS get the assigned reviewers for a proposal
-class AssignedReviewerProposalDetails(APIView):
+class AssignedReviewerProposalView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, proposal_id, format=None):
         proposals = ProposalReviewer.objects.filter(
             proposal_id=proposal_id,
         )
+         # allow admin
+        if request.user.is_staff:
+            pass
+
+        # allow proposal owner
+        elif proposal.user == request.user:
+            pass
+
+        # allow assigned reviewer
+        elif not ProposalReviewer.objects.filter(
+            proposal=proposal,
+            reviewer=request.user
+        ).exists():
+            raise PermissionDenied("You cannot view this proposal reviewers.")
+        
         serializer = ReviewerAssignedProposalSerializer(proposals, many=True)
         return Response(serializer.data)

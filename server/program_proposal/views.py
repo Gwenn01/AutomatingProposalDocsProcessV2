@@ -5,12 +5,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny 
-from .serializers import ProgramProposalSerializer
+# app
 from .models import ProgramProposal
 from django.contrib.auth.models import User
+from .serializers import (
+    ProgramProposalSerializer,
+    ProgramProposalProjectListSerializer
+)
 
 # Create your views here.
 
+# IMPLEMENTOR VIEWS CREATE proposal
 class ProgramProposalList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -42,7 +47,7 @@ class ProgramProposalList(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
+# get the program proposal details
 class ProgramProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -66,3 +71,19 @@ class ProgramProposalDetail(APIView):
         
         serializer = ProgramProposalSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+# list of project proposal under a program proposal
+class ProgramProjectsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, program_proposal_id):
+        try:
+            program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
+        except ProgramProposal.DoesNotExist:
+            return Response(
+                {"detail": "Program proposal not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = ProgramProposalProjectListSerializer(program_proposal)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import ProgramProposal
 from proposals_node.models import Proposal
 from proposals_node.serializers import ProposalSerializer
+from project_proposal.serializers import (
+    ProjectProposalSerializer,
+    ProjectsListSerializer
+)
 
 class ProgramProposalSerializer(serializers.ModelSerializer):
      # fields that belong to Proposal
@@ -46,4 +50,16 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return program_proposal  
+
+# get the list of project 
+class ProgramProposalProjectListSerializer(serializers.ModelSerializer):
     
+    projects = ProjectsListSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = ProgramProposal
+        fields = ["id", "program_title", "projects"]
+
+    
+
+        

@@ -63,3 +63,7 @@ class ProjectProposalSerializer(serializers.ModelSerializer):
         
         return project
 
+class ProjectsListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectProposal
+        fields = ['id', 'project_title', 'project_leader']

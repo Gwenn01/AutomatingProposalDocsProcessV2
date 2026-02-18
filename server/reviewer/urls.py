@@ -3,8 +3,8 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     AssignReviewerView, 
     ReviewerListView,
-    ReviewerProposalList,
-    AssignedReviewerProposalDetails
+    MyAssignedProposalsView,
+    AssignedReviewerProposalView
 )
 
 urlpatterns = [
@@ -13,10 +13,10 @@ urlpatterns = [
     path('reviewers/', ReviewerListView.as_view(), name='reviewer-list'),
     
     # reviewer get the proposal 
-    path('reviewer-proposals/', ReviewerProposalList.as_view(), name='reviewer-proposal-list'),
+    path('reviewer-proposals/', MyAssignedProposalsView.as_view(), name='reviewer-proposal-list'),
     
     # general get the list of assigned reviewers for a proposal
-    path('reviewer-proposal-list/<int:proposal_id>/', AssignedReviewerProposalDetails.as_view(), name='assigned-reviewer-proposal-list'),
+    path('reviewer-proposal-list/<int:proposal_id>/', AssignedReviewerProposalView.as_view(), name='assigned-reviewer-proposal-list'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
