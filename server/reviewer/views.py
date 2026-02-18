@@ -1,12 +1,20 @@
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .models import ProposalReviewer
-from .serializers import ReviewerSerializer
+# app
 from django.contrib.auth.models import User
 from users.serializers import UserSerializer
+from .models import ProposalReviewer
+from .serializers import (
+    ReviewerSerializer,
+    ReviewerProposalSerializer   
+)
 
+
+
+# ADMIN VIEWS assign reviewer and get the assigned 
 class AssignReviewerView(APIView):
     permission_classes = [IsAdminUser]
     
@@ -27,6 +35,7 @@ class AssignReviewerView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+# get all reviewers  
 class ReviewerListView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -34,4 +43,13 @@ class ReviewerListView(APIView):
         reviewers = User.objects.all()
         reviewers = reviewers.filter(profile__role='reviewer')
         serializer = UserSerializer(reviewers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+# REVIEWER VIEWS get the assigned proposal to the reviewer
+class ReviewerProposalList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        proposal_reviewers = ProposalReviewer.objects.filter(reviewer=request.user)
+        serializer = ReviewerProposalSerializer(proposal_reviewers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
