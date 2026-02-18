@@ -73,9 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleLogout = (): void => {
     logout();
     showToast("Logging Out Successfully!", "success");
-    setTimeout(() => {
-      navigate("/auth", { replace: true });
-    }, 1000);
+    navigate("/auth", { replace: true });
   };
 
   return (

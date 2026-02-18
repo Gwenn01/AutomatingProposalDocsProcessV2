@@ -14,6 +14,7 @@ import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
 import { fetchProposalsNode, fetchProgramProposalDetail } from "@/utils/implementor-api";
+import { useAuth } from "@/context/auth-context";
 
 // ================= TYPE DEFINITIONS =================
 
@@ -62,7 +63,7 @@ const ViewProposal: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
+  //const [user, setUser] = useState<User | null>(null);
   const [showReviewerModal, setShowReviewerModal] = useState<boolean>(false);
   const [showViewerModal, setShowViewerModal] = useState<boolean>(false);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
@@ -79,6 +80,9 @@ const ViewProposal: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const rowsPerPage: number = 10;
 
+  const { user } = useAuth();
+
+
   // ================= PROGRESS BAR =================
   useEffect(() => {
     if (!actionLoading) return;
@@ -92,16 +96,16 @@ const ViewProposal: React.FC = () => {
   }, [actionLoading]);
 
   // ================= FETCH USER =================
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-  }, []);
+  // useEffect(() => {
+  //   const storedUser = localStorage.getItem("user");
+  //   if (storedUser) {
+  //     try {
+  //       setUser(JSON.parse(storedUser));
+  //     } catch (error) {
+  //       console.error("Error parsing user data:", error);
+  //     }
+  //   }
+  // }, []);
 
   // ================= NOTIFICATIONS =================
   useEffect(() => {

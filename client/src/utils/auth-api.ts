@@ -213,9 +213,10 @@ export const isAuthenticated = (): boolean => {
  * @returns Promise with user profile data
  */
 export const getUserProfile = async (
-  userId: number
+  userId: number,
+  token?: string  // 👈 add optional token param
 ): Promise<UserProfileResponse> => {
-  const token = getAccessToken();
+  const authToken = token ?? getAccessToken(); // use passed token, fallback to localStorage
 
   try {
     const response = await fetch(
@@ -224,7 +225,7 @@ export const getUserProfile = async (
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${authToken}`,
         },
       }
     );
