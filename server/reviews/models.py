@@ -1,5 +1,6 @@
 from django.db import models
 from reviewer.models import ProposalReviewer
+
 class ProposalReview(models.Model):
 
     # ---------- Decision ----------
@@ -43,10 +44,16 @@ class ProposalReview(models.Model):
         blank=True
     )
 
-    source_of_fund = models.TextField(null=True, blank=True)
-
     # ---------- Section Feedback ----------
     profile_feedback = models.TextField(null=True, blank=True)
+    
+    implementing_agency_feedback = models.TextField(null=True, blank=True)
+    
+    extension_site_feedback = models.TextField(null=True, blank=True)
+    
+    tagging_cluster_extension_feedback = models.TextField(null=True, blank=True)
+    
+    sdg_academic_program_feedback = models.TextField(null=True, blank=True)
     
     rationale_feedback = models.TextField(null=True, blank=True)
     
