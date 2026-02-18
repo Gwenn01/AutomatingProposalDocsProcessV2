@@ -14,7 +14,7 @@ from .serializers import (
     ReviewerProposalSerializer,
     ReviewerAssignedProposalSerializer   
 )
-
+from .selectors import ReviewerProposalSelector
 # ADMIN VIEWS assign reviewer and get the assigned 
 class AssignReviewerView(APIView):
     permission_classes = [IsAdminUser]

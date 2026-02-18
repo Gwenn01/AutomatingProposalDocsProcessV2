@@ -63,9 +63,9 @@ export const getAllAccounts = async (): Promise<ApiUser[]> => {
 
 //Admin Create Account
 export const createAdminAccount = async (payload: CreateAdminUserPayload): Promise<CreateAdminUserResponse> => {
-    const response = await fetch(`${API_URL}/api/users/admin/`, {
+    const response = await fetch(`${API_URL}/users/admin/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
     });
 
@@ -81,7 +81,7 @@ export const createAdminAccount = async (payload: CreateAdminUserPayload): Promi
 export const updateAdminAccount = async (userId: number,  payload: UpdateAdminUserPayload): Promise<ApiUser> => {
     const response = await fetch(`${API_URL}/users/admin/${userId}/`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
     });
 
@@ -90,4 +90,17 @@ export const updateAdminAccount = async (userId: number,  payload: UpdateAdminUs
         throw new Error(data.detail || "Failed to update user");
     }
     return response.json();
+}
+
+// Admin Delete Account
+export const deleteAdminAccount = async (userId: number): Promise<void> => {
+  const response = await fetch(`${API_URL}/users/admin/${userId}/`, {
+    method: "DELETE",
+    headers: getAuthHeaders()
+  });
+
+  if (response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to delete account");
+  }
 }
