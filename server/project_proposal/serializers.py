@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from .models import ProjectProposal
 from proposals_node.models import Proposal
 from program_proposal.models import ProgramProposal
+from activity_proposal.serializers import ActivityListDataSerializer
 
 class ProjectProposalSerializer(serializers.ModelSerializer):
     
@@ -63,7 +64,15 @@ class ProjectProposalSerializer(serializers.ModelSerializer):
         
         return project
 
-class ProjectsListSerializer(serializers.ModelSerializer):
+
+class ProjectsListDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectProposal
         fields = ['id', 'project_title', 'project_leader']
+   
+        
+class ProjectActivitiesSerializer(serializers.ModelSerializer):
+    activities = ActivityListDataSerializer(many=True, read_only=True)
+    class Meta:
+        model = ProjectProposal
+        fields = ['id', 'project_title', 'activities']

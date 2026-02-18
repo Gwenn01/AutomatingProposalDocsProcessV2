@@ -3,8 +3,7 @@ from .models import ProgramProposal
 from proposals_node.models import Proposal
 from proposals_node.serializers import ProposalSerializer
 from project_proposal.serializers import (
-    ProjectProposalSerializer,
-    ProjectsListSerializer
+    ProjectsListDataSerializer
 )
 
 class ProgramProposalSerializer(serializers.ModelSerializer):
@@ -52,10 +51,8 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         return program_proposal  
 
 # get the list of project 
-class ProgramProposalProjectListSerializer(serializers.ModelSerializer):
-    
-    projects = ProjectsListSerializer(many=True, read_only=True)
-    
+class ProgramProjectsSerializer(serializers.ModelSerializer):
+    projects = ProjectsListDataSerializer(many=True, read_only=True)
     class Meta:
         model = ProgramProposal
         fields = ["id", "program_title", "projects"]

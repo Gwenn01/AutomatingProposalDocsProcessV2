@@ -6,7 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny 
 from .models import ProjectProposal
-from .serializers import ProjectProposalSerializer
+from .serializers import (
+    ProjectProposalSerializer,
+    ProjectActivitiesSerializer,
+)
 # Create your views here.
 
 class ProjectProposalList(APIView):
@@ -57,3 +60,17 @@ class ProjectProposalDetail(APIView):
         )
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# list of activities for a project proposal
+class ProjectActivitiesView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, project_proposal_id):
+        try:
+            project_proposal = ProjectProposal.objects.get(id=project_proposal_id)
+        except ProjectProposal.DoesNotExist:
+            return Response("Project proposal not found", status=status.HTTP_404_NOT_FOUND)
+        serializer = ProjectActivitiesSerializer(project_proposal)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        

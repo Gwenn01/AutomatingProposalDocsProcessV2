@@ -62,3 +62,7 @@ class ActivityProposalSerializer(serializers.ModelSerializer):
         )
         return activity_proposal
         
+class ActivityListDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivityProposal
+        fields = ['id', 'activity_title', 'project_leader']

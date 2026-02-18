@@ -10,7 +10,7 @@ from .models import ProgramProposal
 from django.contrib.auth.models import User
 from .serializers import (
     ProgramProposalSerializer,
-    ProgramProposalProjectListSerializer
+    ProgramProjectsSerializer
 )
 
 # Create your views here.
@@ -84,6 +84,6 @@ class ProgramProjectsView(APIView):
                 {"detail": "Program proposal not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        serializer = ProgramProposalProjectListSerializer(program_proposal)
+        serializer = ProgramProjectsSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
