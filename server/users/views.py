@@ -18,11 +18,15 @@ from .serializers import (
     UserSerializer,
     UserProfileUpdateSerializer
 )
+# proposal 
+from proposals_node.models import Proposal
+from proposals_node.serializers import ProposalSerializer
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
 
+# USER REGISTRATION, PROFILE, 
 class UserProfileList(APIView):
     permission_classes = [AllowAny]
     # def get(self, request, format=None):
@@ -37,7 +41,7 @@ class UserProfileList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
   
-    
+# USER GET CURRENT PROFILE BY LOGIN 
 class CurrentUser(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -46,7 +50,26 @@ class CurrentUser(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
     
+# USER GET CURRENT PROFILE BY ID
+class UserProfileDetail(APIView):
+    """
+    Get user profile by user ID
+    """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise Http404
+    
+    def get(self, request, pk, format=None):
+        user = self.get_object(pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+    
+# USER UPDATE PROFILE
 class UpdateMyProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -65,35 +88,8 @@ class UpdateMyProfileView(APIView):
 
         return Response(serializer.errors, status=400)
 
-
-#  ADD THIS NEW VIEW
-class UserProfileDetail(APIView):
-    """
-    Get user profile by user ID
-    """
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
     
-    def get_object(self, pk):
-        try:
-            return User.objects.get(pk=pk)
-        except User.DoesNotExist:
-            raise Http404
-    
-    def get(self, request, pk, format=None):
-        user = self.get_object(pk)
-        
-        # Optional: Check if user is requesting their own profile or is admin
-        # if request.user.id != pk and not request.user.is_staff:
-        #     return Response(
-        #         {"detail": "You do not have permission to view this profile."},
-        #         status=status.HTTP_403_FORBIDDEN
-        #     )
-        
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
-    
-# ADMIN VIEWS
+# ADMIN VIEWS get all users, get user by ID, update user, delete user
 class AdminUserList(APIView):
     permission_classes = [IsAdminUser]
     

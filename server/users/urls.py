@@ -20,10 +20,10 @@ urlpatterns = [
     path("profile/", UserProfileList.as_view(), name="profile"),
     # current user
     path("profile/me/", CurrentUser.as_view(), name="my-profile"),
+    #  Get user by ID
+    path("profile/<int:pk>/", UserProfileDetail.as_view(), name="user-detail"),
     # update profile
     path("profile/update/", UpdateMyProfileView.as_view(), name="update-profile"),
-    #  ADD THIS NEW ENDPOINT - Get user by ID
-    path("profile/<int:pk>/", UserProfileDetail.as_view(), name="user-detail"),
     # admin user list endpoint
     path("admin/", AdminUserList.as_view(), name="admin-user-list"),
     path("admin/<int:pk>/", AdminUserDetail.as_view(), name="admin-user-detail"),

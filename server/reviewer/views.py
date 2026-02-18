@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import ProposalReviewer
 from .serializers import ReviewerSerializer
+from django.contrib.auth.models import User
+from users.serializers import UserSerializer
 
 class AssignReviewerView(APIView):
     permission_classes = [IsAdminUser]
@@ -24,3 +26,12 @@ class AssignReviewerView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ReviewerListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        reviewers = User.objects.all()
+        reviewers = reviewers.filter(profile__role='reviewer')
+        serializer = UserSerializer(reviewers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
