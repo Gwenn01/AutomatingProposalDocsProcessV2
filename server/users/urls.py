@@ -9,6 +9,7 @@ from .views import (
     UserProfileDetail ,
     AdminUserList,
     AdminUserDetail,
+    AdminOverviewView
 )
 
 urlpatterns = [
@@ -27,6 +28,8 @@ urlpatterns = [
     # admin user list endpoint
     path("admin/", AdminUserList.as_view(), name="admin-user-list"),
     path("admin/<int:pk>/", AdminUserDetail.as_view(), name="admin-user-detail"),
+    # admin overview endpoint
+    path("admin/overview-users/", AdminOverviewView.as_view(), name="admin-overview"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

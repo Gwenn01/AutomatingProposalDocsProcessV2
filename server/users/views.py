@@ -18,6 +18,7 @@ from .serializers import (
     UserSerializer,
     UserProfileUpdateSerializer
 )
+from .services import OverviewUserService
 # proposal 
 from proposals_node.models import Proposal
 from proposals_node.serializers import ProposalSerializer
@@ -137,3 +138,11 @@ class AdminUserDetail(APIView):
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+# ADMIN USER OVERVIEW get total user, total implementor, total reviewer, total admin
+class AdminOverviewView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, format=None):
+        service = OverviewUserService()
+        data = service.get_user_overview()
+        return Response(data, status=status.HTTP_200_OK)
