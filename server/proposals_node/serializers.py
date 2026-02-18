@@ -28,4 +28,5 @@ class ProposalSerializer(serializers.ModelSerializer):
     def get_reviewer_count(self, obj):
         return obj.assigned_reviewers.count()
     
+# admin overview serializer
 

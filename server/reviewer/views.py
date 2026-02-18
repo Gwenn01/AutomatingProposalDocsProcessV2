@@ -3,6 +3,8 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status, permissions
+from rest_framework.exceptions import PermissionDenied
+
 # app
 from django.contrib.auth.models import User
 from users.serializers import UserSerializer
@@ -66,12 +68,12 @@ class AssignedReviewerProposalView(APIView):
             pass
 
         # allow proposal owner
-        elif proposal.user == request.user:
+        elif proposals.user == request.user:
             pass
 
         # allow assigned reviewer
         elif not ProposalReviewer.objects.filter(
-            proposal=proposal,
+            proposal=proposals,
             reviewer=request.user
         ).exists():
             raise PermissionDenied("You cannot view this proposal reviewers.")
