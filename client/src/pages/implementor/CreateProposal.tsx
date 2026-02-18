@@ -1,28 +1,33 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import InlineInput from '@/components/implementor/InlineInput';
 import { useToast } from '@/context/toast';
 import { SectionCard, SectionHeader, TextAreaField } from '@/components/implementor/create-proposal';
+import {
+  fetchProgramProposals,
+  fetchProjectProposals,
+  fetchActivityProposals,
+  fetchProposalsNode,
+  submitProgramProposal,
+  submitProjectProposal,
+  submitActivityProposal,
+  buildProgramPayload,
+  buildProjectPayload,
+  buildActivityPayload,
+} from '@/utils/implementor-api';
+import type { ParentProposalOption } from '@/utils/implementor-api';
 
 // ─────────────────────────────────────────────
-// TYPE DEFINITIONS
+// TYPE DEFINITIONS (exported so api utils can import them)
 // ─────────────────────────────────────────────
 
-type ProposalType = 'program' | 'project' | 'activity';
+export type ProposalType = 'program' | 'project' | 'activity';
 
-interface User {
+export interface User {
   user_id: string | number;
   [key: string]: any;
 }
 
-interface ParentProposalOption {
-  id: string | number;
-  title: string;
-  leader: string;
-  created_at?: string;
-}
-
-interface ExpectedOutput6Ps {
+export interface ExpectedOutput6Ps {
   publications: string;
   patents: string;
   products: string;
@@ -33,26 +38,26 @@ interface ExpectedOutput6Ps {
   economic_impact: string;
 }
 
-interface OrgStaffingItem {
+export interface OrgStaffingItem {
   activity: string;
   designation: string;
   terms: string;
 }
 
-interface BudgetRow {
+export interface BudgetRow {
   item: string;
   cost: string | number;
   qty: string | number;
   amount: string | number;
 }
 
-interface BudgetRows {
+export interface BudgetRows {
   meals: BudgetRow[];
   transport: BudgetRow[];
   supplies: BudgetRow[];
 }
 
-interface CoverPageData {
+export interface CoverPageData {
   submission_date: string;
   board_resolution_title: string;
   board_resolution_no: string;
@@ -75,7 +80,7 @@ interface CoverPageData {
   trainees_num: string;
 }
 
-interface SiteRow {
+export interface SiteRow {
   country: string;
   region: string;
   province: string;
@@ -84,7 +89,7 @@ interface SiteRow {
   barangay: string;
 }
 
-interface ProfileData {
+export interface ProfileData {
   program_title: string;
   program_leader: string;
   project_title: string;
@@ -124,7 +129,7 @@ interface ProfileData {
   college_mandated_program: string;
 }
 
-interface WorkplanRow {
+export interface WorkplanRow {
   objective: string;
   activity: string;
   expected_output: string;
@@ -133,7 +138,7 @@ interface WorkplanRow {
   year3_q1: boolean; year3_q2: boolean; year3_q3: boolean; year3_q4: boolean;
 }
 
-interface ProgramBudgetRow {
+export interface ProgramBudgetRow {
   label: string;
   qty: string;
   unit: string;
@@ -143,13 +148,13 @@ interface ProgramBudgetRow {
   total: string;
 }
 
-interface ScheduleItem {
+export interface ScheduleItem {
   time: string;
   activity: string;
   speaker: string;
 }
 
-interface ActivityScheduleData {
+export interface ActivityScheduleData {
   activity_title: string;
   activity_date: string;
   schedule: ScheduleItem[];
@@ -161,7 +166,7 @@ interface ActivityScheduleData {
 
 const defaultProfile = (): ProfileData => ({
   program_title: '', program_leader: '', project_title: '', project_leader: '',
-  activity_title: '', members: '', activity_duration: '8 hours', activity_date: '',
+  activity_title: '', members: '', activity_duration: '8', activity_date: '',
   project_start_date: '', project_end_date: '', project_duration_months: '',
   implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
   sites: [
@@ -267,7 +272,6 @@ const PROPOSAL_TYPES = [
   },
 ];
 
-
 // ─────────────────────────────────────────────
 // PARENT PROPOSAL SELECTOR
 // ─────────────────────────────────────────────
@@ -284,11 +288,13 @@ const ParentProposalSelector: React.FC<{
   const ref = useRef<HTMLDivElement>(null);
   const config = PROPOSAL_TYPES.find((t) => t.type === proposalType)!;
 
-  const filtered = parentOptions.filter(
-    (p) =>
-      p.title.toLowerCase().includes(query.toLowerCase()) ||
-      p.leader.toLowerCase().includes(query.toLowerCase()),
-  );
+  const filtered = query.trim()
+    ? parentOptions.filter(
+        (p) =>
+          p.title.toLowerCase().includes(query.toLowerCase()) ||
+          p.leader.toLowerCase().includes(query.toLowerCase()),
+      )
+    : parentOptions;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -308,11 +314,31 @@ const ParentProposalSelector: React.FC<{
     e.stopPropagation();
     onSelect(null);
     setQuery('');
+    setIsOpen(false);
   };
 
+  const breadcrumb =
+    proposalType === 'project' ? (
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 font-semibold text-xs">Program</span>
+        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        <span className="px-2.5 py-1 rounded-lg bg-green-200 text-green-800 font-semibold text-xs ring-2 ring-green-400">Project ← You are here</span>
+        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 font-semibold text-xs">Activity</span>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 font-semibold text-xs">Program</span>
+        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 font-semibold text-xs">Project</span>
+        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        <span className="px-2.5 py-1 rounded-lg bg-orange-200 text-orange-800 font-semibold text-xs ring-2 ring-orange-400">Activity ← You are here</span>
+      </div>
+    );
+
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      {/* Purple header */}
+    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-auto">
+      {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 md:px-8 py-5">
         <div className="flex items-center gap-3">
           <svg className="w-6 h-6 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -328,151 +354,211 @@ const ParentProposalSelector: React.FC<{
         </div>
       </div>
 
-      <div className="p-6 md:p-8">
+      <div className="p-6 md:p-8 space-y-5">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-5 text-xs bg-gray-50 rounded-xl px-4 py-3 border border-gray-100 flex-wrap">
-          {proposalType === 'project' ? (
-            <>
-              <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-semibold">Program</span>
-              <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              <span className="px-2 py-0.5 rounded-md bg-green-200 text-green-800 font-semibold ring-2 ring-green-400">Project ← You are here</span>
-              <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              <span className="px-2 py-0.5 rounded-md bg-gray-200 text-gray-500 font-semibold">Activity</span>
-            </>
-          ) : (
-            <>
-              <span className="px-2 py-0.5 rounded-md bg-gray-200 text-gray-500 font-semibold">Program</span>
-              <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              <span className="px-2 py-0.5 rounded-md bg-gray-200 text-gray-500 font-semibold">Project</span>
-              <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              <span className="px-2 py-0.5 rounded-md bg-orange-200 text-orange-800 font-semibold ring-2 ring-orange-400">Activity ← You are here</span>
-            </>
-          )}
+        <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+          {breadcrumb}
         </div>
 
-        {/* Selected parent card */}
-        {selectedParent ? (
-          <div className="flex items-start justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-2xl mb-4">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 mt-0.5 shadow">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-0.5">
-                  {config.parentLabel} Selected
-                </p>
-                <p className="font-bold text-gray-900 text-base leading-tight">{selectedParent.title}</p>
-                <p className="text-sm text-gray-500 mt-0.5">Leader: {selectedParent.leader}</p>
-              </div>
-            </div>
-            <button onClick={handleClear}
-              className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-              title="Remove selection">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-sm text-amber-800">
-            <svg className="w-5 h-5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            No {config.parentLabel} selected — search below to link this proposal.
-          </div>
-        )}
-
-        {/* Search input + dropdown */}
+        {/* Dropdown */}
         <div ref={ref} className="relative">
-          <div
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
+            {config.parentLabel}
+          </label>
+
+          {/* Trigger button — shows selected value or placeholder */}
+          <button
+            type="button"
+            disabled={isLoading}
             onClick={() => !isLoading && setIsOpen((o) => !o)}
-            className={`flex items-center gap-3 px-4 py-3.5 border-2 rounded-xl cursor-pointer transition-all
-              ${isOpen ? 'border-indigo-400 ring-2 ring-indigo-200 bg-white' : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all duration-150
+              ${isOpen
+                ? 'border-indigo-400 ring-2 ring-indigo-200 bg-white'
+                : selectedParent
+                  ? 'border-indigo-300 bg-indigo-50 hover:border-indigo-400'
+                  : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
+              }
+              ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
           >
-            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input type="text" value={query}
-              onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
-              onClick={(e) => { e.stopPropagation(); setIsOpen(true); }}
-              placeholder={isLoading ? 'Loading proposals…' : `Search ${config.parentLabel}s by title or leader…`}
-              disabled={isLoading}
-              className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400" />
-            {isLoading ? (
-              <svg className="animate-spin w-4 h-4 text-indigo-500 shrink-0" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            ) : (
-              <svg className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* Icon */}
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-black transition-colors
+              ${selectedParent ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              {isLoading ? (
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : selectedParent ? (
+                selectedParent.title.charAt(0).toUpperCase()
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              {isLoading ? (
+                <p className="text-sm text-gray-400">Loading {config.parentLabel}s…</p>
+              ) : selectedParent ? (
+                <>
+                  <p className="text-sm font-bold text-gray-900 truncate">{selectedParent.title}</p>
+                  <p className="text-xs text-indigo-500 font-medium mt-0.5">Leader: {selectedParent.leader}</p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-400">
+                  {parentOptions.length === 0
+                    ? `No ${config.parentLabel}s available`
+                    : `Choose a ${config.parentLabel}…`}
+                </p>
+              )}
+            </div>
+
+            {/* Right side: clear or chevron */}
+            <div className="shrink-0 flex items-center gap-1.5">
+              {selectedParent && (
+                <span
+                  role="button"
+                  onClick={handleClear}
+                  className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Clear selection"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </span>
+              )}
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            )}
-          </div>
+            </div>
+          </button>
 
-          {isOpen && !isLoading && (
-            <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden max-h-72 overflow-y-auto">
-              {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                  <svg className="w-10 h-10 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          {/* Dropdown panel */}
+          {isOpen && (
+            <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
+              {/* Search box inside dropdown */}
+              <div className="p-3 border-b border-gray-100">
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <p className="text-sm font-medium">No {config.parentLabel}s found</p>
-                  <p className="text-xs mt-1">Try a different search term</p>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={`Search ${config.parentLabel}s…`}
+                    className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
+                  />
+                  {query && (
+                    <button onClick={() => setQuery('')} className="text-gray-400 hover:text-gray-600">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <>
-                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                    <p className="text-xs text-gray-500 font-medium">
-                      {filtered.length} {config.parentLabel}{filtered.length !== 1 ? 's' : ''} available
-                    </p>
+              </div>
+
+              {/* Count badge */}
+              <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                <p className="text-xs text-gray-500 font-medium">
+                  {filtered.length} {config.parentLabel}{filtered.length !== 1 ? 's' : ''}
+                  {query ? ' found' : ' available'}
+                </p>
+                {selectedParent && (
+                  <span className="text-xs text-indigo-500 font-semibold flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                    1 selected
+                  </span>
+                )}
+              </div>
+
+              {/* Options list */}
+              <div className="max-h-64 overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                    <svg className="w-10 h-10 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-sm font-semibold text-gray-500">No results found</p>
+                    <p className="text-xs mt-1 text-gray-400">Try a different search term</p>
                   </div>
-                  {filtered.map((option) => {
+                ) : (
+                  filtered.map((option) => {
                     const isSelected = selectedParent?.id === option.id;
                     return (
-                      <button key={option.id} onClick={() => handleSelect(option)}
-                        className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-colors border-b border-gray-50 last:border-0
-                          ${isSelected ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-gray-50'}`}>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold
-                          ${isSelected ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => handleSelect(option)}
+                        className={`w-full text-left px-4 py-3.5 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0
+                          ${isSelected
+                            ? 'bg-indigo-50 hover:bg-indigo-100'
+                            : 'hover:bg-gray-50 active:bg-gray-100'}`}
+                      >
+                        {/* Avatar letter */}
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black transition-colors
+                          ${isSelected ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-gray-100 text-gray-600'}`}>
                           {option.title.charAt(0).toUpperCase()}
                         </div>
+
+                        {/* Text */}
                         <div className="flex-1 min-w-0">
-                          <p className={`font-semibold text-sm truncate ${isSelected ? 'text-indigo-700' : 'text-gray-900'}`}>
+                          <p className={`font-semibold text-sm truncate leading-tight ${isSelected ? 'text-indigo-700' : 'text-gray-900'}`}>
                             {option.title}
                           </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Leader: {option.leader}
+                          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span>Leader: <span className="font-medium text-gray-700">{option.leader}</span></span>
                             {option.created_at && (
-                              <span className="ml-2 text-gray-400">
-                                · {new Date(option.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                              </span>
+                              <>
+                                <span className="text-gray-300">·</span>
+                                <span className="text-gray-400">
+                                  {new Date(option.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                </span>
+                              </>
                             )}
                           </p>
                         </div>
-                        {isSelected && (
-                          <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+
+                        {/* Check mark */}
+                        <div className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all
+                          ${isSelected ? 'bg-indigo-500 scale-100' : 'scale-0 opacity-0'}`}>
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
-                        )}
+                        </div>
                       </button>
                     );
-                  })}
-                </>
-              )}
+                  })
+                )}
+              </div>
             </div>
           )}
         </div>
+
+        {/* Warning if nothing selected */}
+        {!selectedParent && (
+          <div className="flex items-center gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+            <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>No {config.parentLabel} selected — click the dropdown above to link this proposal.</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
 // ─────────────────────────────────────────────
 // PROPOSAL TYPE SELECTOR
 // ─────────────────────────────────────────────
@@ -570,7 +656,7 @@ const ProfileSection: React.FC<{
         {type === 'activity' && (
           <>
             {field('Activity Title', 'activity_title')}
-            {field('Activity Duration', 'activity_duration')}
+            {field('Activity Duration (hours)', 'activity_duration')}
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <span className="md:w-72 text-sm font-semibold text-gray-900 shrink-0">Date:</span>
               <input type="date"
@@ -1018,8 +1104,6 @@ const WorkplanSection: React.FC<{
   );
 };
 
-
-
 // ─────────────────────────────────────────────
 // ACTIVITY SCHEDULE
 // ─────────────────────────────────────────────
@@ -1131,47 +1215,39 @@ const CreateProposal: React.FC = () => {
     catch { navigate('/', { replace: true }); }
   }, [navigate]);
 
-  // ── Fetch parent proposals from API ──────────────────────────────────────
-  // Replace the mock block below with your real API calls:
-  //   type === 'project'  → fetch all PROGRAM proposals
-  //   type === 'activity' → fetch all PROJECT proposals
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Debug: fetch all proposal node types on mount to inspect raw API shape ──
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    (async () => {
+      try {
+        console.group('[proposals-node] Fetching all types on mount...');
+        await fetchProposalsNode('Program');
+        await fetchProposalsNode('Project');
+        await fetchProposalsNode('Activity');
+        console.groupEnd();
+      } catch (err) {
+        console.error('[proposals-node] Error:', err);
+      }
+    })();
+  }, []);
+
+  // ── Fetch parent proposals from the real API ──────────────────────────────
   const fetchParentProposals = useCallback(async (type: ProposalType) => {
     const config = PROPOSAL_TYPES.find((t) => t.type === type);
     if (!config?.parentType) return;
+
     setIsLoadingParents(true);
     try {
-      // ── REPLACE with your real API call ──────────────────────────────────
-      // const res = await fetch(`/api/proposals?type=${config.parentType}`, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      // });
-      // const data = await res.json();
-      // setParentOptions(data.map((p: any) => ({
-      //   id: p.id,
-      //   title: p.title,
-      //   leader: p.project_leader ?? p.program_leader ?? '—',
-      //   created_at: p.created_at,
-      // })));
-      // ── Mock data (remove when API is connected) ─────────────────────────
-      await new Promise((r) => setTimeout(r, 600));
-      const mock: Record<string, ParentProposalOption[]> = {
-        program: [
-          { id: 1, title: 'Community ICT Empowerment Program', leader: 'Dr. Lorna L. Acuavera', created_at: '2024-01-15' },
-          { id: 2, title: 'Agricultural Extension and Livelihood Program', leader: 'Dr. Jose M. Santos', created_at: '2024-02-20' },
-          { id: 3, title: 'Environmental Stewardship and Climate Resilience Program', leader: 'Prof. Maria C. Reyes', created_at: '2024-03-10' },
-          { id: 4, title: 'Health and Wellness Community Outreach Program', leader: 'Dr. Ana P. Cruz', created_at: '2024-04-05' },
-        ],
-        project: [
-          { id: 101, title: 'Basic Computer Skills Training for Out-of-School Youth', leader: 'Mr. Walter G. Lara', created_at: '2024-02-01' },
-          { id: 102, title: 'Organic Farming Techniques Dissemination Project', leader: 'Ms. Nichole Baluyot', created_at: '2024-03-15' },
-          { id: 103, title: 'Coastal Cleanup and Marine Biodiversity Education Project', leader: 'Engr. Mea M. Amuyot', created_at: '2024-04-20' },
-          { id: 104, title: 'Maternal and Child Health Literacy Project', leader: 'Dr. Edward Banes', created_at: '2024-05-10' },
-        ],
-      };
-      setParentOptions(mock[config.parentType] ?? []);
-      // ─────────────────────────────────────────────────────────────────────
-    } catch {
-      showToast('Failed to load parent proposals.', 'error');
+      const options =
+        type === 'project'
+          ? await fetchProgramProposals()
+          : await fetchProjectProposals();
+      setParentOptions(options);
+    } catch (err) {
+      showToast(
+        `Failed to load ${config.parentLabel}s: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        'error',
+      );
     } finally {
       setIsLoadingParents(false);
     }
@@ -1201,7 +1277,7 @@ const CreateProposal: React.FC = () => {
     resetForm(type);
   };
 
-  // When a parent is selected, auto-fill related profile fields
+  // Auto-fill profile when a parent is selected
   const handleSelectParent = (parent: ParentProposalOption | null) => {
     setSelectedParent(parent);
     if (!parent) return;
@@ -1212,33 +1288,55 @@ const CreateProposal: React.FC = () => {
     }
   };
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!proposalType) { showToast('Please select a proposal type.', 'info'); return; }
     if (!title.trim()) { showToast('Please enter a proposal title.', 'info'); return; }
+
     const config = PROPOSAL_TYPES.find((t) => t.type === proposalType)!;
     if (config.parentType && !selectedParent) {
       showToast(`Please select a ${config.parentLabel} to link this proposal to.`, 'info');
       return;
     }
-    if (proposalType === 'activity') {
-      if (!cover.activity_date) { showToast('Please fill in the Activity Date in the Cover Page.', 'info'); return; }
-      if (!cover.activity_title) { showToast('Please fill in the Activity Title in the Cover Page.', 'info'); return; }
-    }
+
     setIsSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      console.log({ proposalType, title, parentId: selectedParent?.id, userId: user?.user_id, profile, cover, rationale, significance, generalObjectives, specificObjectives, methodology, expectedOutput, sustainabilityPlan, orgStaffing, workplan, budgetRows, programBudget, activitySchedule });
+      if (proposalType === 'program') {
+        const payload = buildProgramPayload(
+          title, profile, rationale, significance,
+          generalObjectives, specificObjectives, methodology,
+          expectedOutput, sustainabilityPlan, orgStaffing, workplan, programBudget,
+        );
+        await submitProgramProposal(payload);
+
+      } else if (proposalType === 'project') {
+        const payload = buildProjectPayload(
+          title, Number(selectedParent!.id), profile, rationale, significance,
+          generalObjectives, specificObjectives, methodology,
+          expectedOutput, sustainabilityPlan, orgStaffing, workplan, budgetRows,
+        );
+        await submitProjectProposal(payload);
+
+      } else {
+        const payload = buildActivityPayload(
+          title, Number(selectedParent!.id), profile, rationale, significance,
+          generalObjectives, methodology, expectedOutput,
+          sustainabilityPlan, orgStaffing, activitySchedule, budgetRows,
+        );
+        await submitActivityProposal(payload);
+      }
+
       showToast('Proposal submitted successfully!', 'success');
       resetForm(proposalType);
     } catch (err) {
-      showToast(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
+      showToast(`Submission failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const typeConfig = PROPOSAL_TYPES.find((t) => t.type === proposalType);
-  const stepOffset = typeConfig?.parentType ? 1 : 0; // steps shift by 1 when there's a parent selector
+  const stepOffset = typeConfig?.parentType ? 1 : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4 md:p-8 animate-overlay-enter">
@@ -1259,7 +1357,6 @@ const CreateProposal: React.FC = () => {
               <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm font-bold flex items-center justify-center shrink-0">1</div>
               <h3 className="text-xl font-bold text-gray-900">Select Proposal Type</h3>
             </div>
-            {/* Hierarchy hint */}
             <div className="flex items-center gap-2 mb-5 text-xs bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-100 w-fit flex-wrap">
               <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
               <span className="font-semibold text-blue-700">Program</span>
@@ -1296,7 +1393,7 @@ const CreateProposal: React.FC = () => {
                 </div>
               )}
 
-              {/* ── Step 2/3: Proposal Title ── */}
+              {/* ── Proposal Title ── */}
               <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 md:p-8">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm font-bold flex items-center justify-center shrink-0">
@@ -1304,7 +1401,6 @@ const CreateProposal: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">{typeConfig?.label} Title</h3>
                 </div>
-                {/* Selected parent context chip */}
                 {selectedParent && (
                   <div className="flex items-center gap-2 mb-4">
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 text-xs font-medium">
@@ -1366,7 +1462,16 @@ const CreateProposal: React.FC = () => {
 
               {/* V. Methodology */}
               <SectionCard title="V. Methodology">
-                <TextAreaField placeholder={proposalType === 'activity' ? 'Short narrative of the methodology...' : 'Describe the methodology...'} value={methodology} onChange={(e) => setMethodology(e.target.value)} rows={8} />
+                <TextAreaField
+                  placeholder={
+                    proposalType === 'activity'
+                      ? 'Short narrative of the methodology...'
+                      : 'Describe the methodology (separate phases with new lines)...'
+                  }
+                  value={methodology}
+                  onChange={(e) => setMethodology(e.target.value)}
+                  rows={8}
+                />
               </SectionCard>
 
               {/* VI. Expected Output */}
