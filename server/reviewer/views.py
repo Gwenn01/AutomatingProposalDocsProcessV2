@@ -9,10 +9,9 @@ from users.serializers import UserSerializer
 from .models import ProposalReviewer
 from .serializers import (
     ReviewerSerializer,
-    ReviewerProposalSerializer   
+    ReviewerProposalSerializer,
+    ReviewerAssignedProposalSerializer   
 )
-
-
 
 # ADMIN VIEWS assign reviewer and get the assigned 
 class AssignReviewerView(APIView):
@@ -45,7 +44,8 @@ class ReviewerListView(APIView):
         serializer = UserSerializer(reviewers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-# REVIEWER VIEWS get the assigned proposal to the reviewer
+    
+# REVIEWER VIEWS get the assigned proposal for the reviewer
 class ReviewerProposalList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -53,3 +53,13 @@ class ReviewerProposalList(APIView):
         proposal_reviewers = ProposalReviewer.objects.filter(reviewer=request.user)
         serializer = ReviewerProposalSerializer(proposal_reviewers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+#GENERAL VIEWS get the assigned reviewers for a proposal
+class AssignedReviewerProposalDetails(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, proposal_id, format=None):
+        proposals = ProposalReviewer.objects.filter(
+            proposal_id=proposal_id,
+        )
+        serializer = ReviewerAssignedProposalSerializer(proposals, many=True)
+        return Response(serializer.data)

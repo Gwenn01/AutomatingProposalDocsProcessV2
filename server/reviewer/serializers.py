@@ -22,3 +22,10 @@ class ReviewerProposalSerializer(serializers.ModelSerializer):
         model = ProposalReviewer
         fields = ['id', 'proposal', 'is_review', 'assigned_at']
         read_only_fields = ['assigned_by', 'assigned_at']
+        
+# get the list of assigned reviewers for a proposal
+class ReviewerAssignedProposalSerializer(serializers.ModelSerializer):
+    reviewer_name = serializers.CharField(source='reviewer.username', read_only=True)
+    class Meta:
+        model = ProposalReviewer
+        fields = ['id', 'reviewer_name', 'is_review', 'decision', 'assigned_at']

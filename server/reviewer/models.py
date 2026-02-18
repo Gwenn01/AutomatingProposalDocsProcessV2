@@ -3,6 +3,14 @@ from proposals_node.models import Proposal
 from django.contrib.auth.models import User
 # Create your models here.
 class ProposalReviewer(models.Model):
+    DECISION_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('revision', 'Revision Required'),
+    ]
+    
+    
     proposal = models.ForeignKey(
         Proposal,
         on_delete=models.CASCADE,
@@ -18,7 +26,9 @@ class ProposalReviewer(models.Model):
         related_name="reviewers_assigned"
     )
     is_review = models.BooleanField(default=False)
-
+    
+    decision = models.CharField(null=True, blank=True, choices=DECISION_CHOICES, default='pending', max_length=20)
+    
     assigned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

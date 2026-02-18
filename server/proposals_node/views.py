@@ -6,10 +6,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
 from .models import Proposal
-from .serializers import ProposalSerializer
+from .serializers import (
+    ProposalSerializer
+)
 # Create your views here.
 
-# IMPLEMENTOR VIEWS
+# IMPLEMENTOR VIEWS get list of proposal
 class ProposalList(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -21,7 +23,7 @@ class ProposalList(APIView):
 
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
-
+    
 # ADMIN VIEWS get all proposal 
 class AdminProposalList(APIView):
     permission_classes = [IsAdminUser]
