@@ -1,14 +1,16 @@
 from rest_framework import serializers
 from .models import Proposal
+from reviewer.models import ProposalReviewer
 
 class ProposalSerializer(serializers.ModelSerializer):
     
     child_id = serializers.SerializerMethodField()
+    reviewer_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Proposal
         fields = '__all__'
-        extra_fields = ['child_id']
+        extra_fields = ['child_id', 'reviewer_count']
         
     def get_child_id(self, obj):
 
@@ -22,3 +24,6 @@ class ProposalSerializer(serializers.ModelSerializer):
             return obj.activity_details.id
 
         return None
+
+    def get_reviewer_count(self, obj):
+        return obj.assigned_reviewers.count()

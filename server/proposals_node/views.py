@@ -30,3 +30,4 @@ class AdminProposalList(APIView):
         proposals = Proposal.objects.filter(proposal_type=proposal_type)
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
+    

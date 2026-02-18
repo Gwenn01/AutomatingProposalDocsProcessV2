@@ -47,20 +47,22 @@ class ProgramProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
     def get_object(self, pk, user):
-        program_proposal = get_object_or_404(ProgramProposal, id=pk)
+        program_proposal = get_object_or_404(
+            ProgramProposal,
+            id=pk,
+            proposal__user=user
+        )
+        return program_proposal
 
-        # Allow if admin
-        if user.is_staff:
-            return program_proposal
-
-        # Allow if owner
-        if program_proposal.proposal.user == user:
-            return program_proposal
-
-        # Otherwise deny
-        raise PermissionDenied("You do not have permission to view this proposal.")
     
     def get(self, request, pk):
-        program_proposal = self.get_object(pk, request.user)
+        try:
+            program_proposal = self.get_object(pk, request.user)
+        except ProgramProposal.DoesNotExist:
+            return Response(
+                {"detail": "Program proposal not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
         serializer = ProgramProposalSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
