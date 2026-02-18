@@ -9,6 +9,7 @@ from .models import Proposal
 from .serializers import ProposalSerializer
 # Create your views here.
 
+# IMPLEMENTOR VIEWS
 class ProposalList(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -18,6 +19,17 @@ class ProposalList(APIView):
             proposal_type=proposal_type
         )
 
+        serializer = ProposalSerializer(proposals, many=True)
+        return Response(serializer.data)
+
+# REVIEWER VIEWS
+class ReviewerProposalList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, proposal_type, format=None):
+        proposals = Proposal.objects.filter(
+            proposal_type=proposal_type
+        )
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
 
