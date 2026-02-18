@@ -2,6 +2,7 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import EmailTokenObtainPairSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny
 #drf
@@ -50,7 +51,7 @@ class UpdateMyProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
-        profile = request.user.profile   # from OneToOneField related_name="profile"
+        profile = request.user.profile 
 
         serializer = UserProfileUpdateSerializer(
             profile,
@@ -65,7 +66,7 @@ class UpdateMyProfileView(APIView):
         return Response(serializer.errors, status=400)
 
 
-# ✅ ADD THIS NEW VIEW
+#  ADD THIS NEW VIEW
 class UserProfileDetail(APIView):
     """
     Get user profile by user ID
@@ -93,3 +94,50 @@ class UserProfileDetail(APIView):
         return Response(serializer.data)
     
 # ADMIN VIEWS
+class AdminUserList(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request, format=None):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request, format=None):
+        serializer = RegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AdminUserDetail(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise Http404
+    
+    def get(self, request, pk, format=None):
+        user = self.get_object(pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        user = self.get_object(pk)
+        profile = user.profile
+        serializer = UserProfileUpdateSerializer(
+            profile,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        user = self.get_object(pk)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
