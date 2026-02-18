@@ -176,7 +176,7 @@ const ProfileOverview: React.FC = () => {
               <div className="rounded-[2.5rem] bg-slate-50/50 border border-slate-100 p-2 space-y-1">
                 <AppleItem icon={<GraduationCap />} label="Department" value={user.profile.department} color="green" />
                 <AppleItem icon={<MapPin />} label="Campus Node" value={user.profile.campus} color="green" />
-                <AppleItem icon={<Calendar />} label="Joined System" value={new Date(user.profile.created_at).toLocaleDateString()} color="green" />
+                <AppleItem icon={<Calendar />} label="Joined System" value={new Date(user.profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} color="green" />
               </div>
             </div>
 
