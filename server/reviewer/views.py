@@ -1,10 +1,17 @@
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status, permissions
+from .models import ProposalReviewer
 from .serializers import ReviewerSerializer
 
 class AssignReviewerView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        proposal_reviewers = ProposalReviewer.objects.filter(assigned_by=request.user)
+        serializer = ReviewerSerializer(proposal_reviewers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = ReviewerSerializer(data=request.data, context={'request': request})

@@ -55,6 +55,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "position",
         ]
     
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email is already in use")
+        return value
+    
     def create(self, validated_data):
          # remove profile fields
         role = validated_data.pop("role")
