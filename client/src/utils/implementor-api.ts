@@ -722,3 +722,8 @@ export function buildActivityPayload(
     budget_requirements: mapBudgetRows(budgetRows),
   };
 }
+
+export async function fetchProgramProposalDetail(childId: number | string): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/`);
+  return handleResponse<any>(res);
+}
