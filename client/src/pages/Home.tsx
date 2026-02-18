@@ -12,6 +12,7 @@ import {
 
 import ReviewProposal from "./reviewer/ReviewProposal";
 import { CreateProposal, ViewProposal } from "@/pages/implementor";
+import ProfileOverview from "@/pages/ProfileOverview";
 
 // Define a type for the user object
 interface User {
@@ -91,10 +92,10 @@ const Home: React.FC = () => {
       />
 
       <main className="flex-1 flex flex-col overflow-y-auto relative">
+        {active === "Profile Overview" && <ProfileOverview />}
         {/* IMPLEMENTOR / INSTRUCTOR */}
         {active === "Create Proposal" && <CreateProposal />}
         {active === "View Proposal" && <ViewProposal />}
-        {/* {active === "Profile Overview" && <ProfileOverview />} */}
 
         {/* ADMIN */}
         {active === "Overview" && <Overview />}
@@ -104,7 +105,6 @@ const Home: React.FC = () => {
 
         {/* REVIEWER */}
         {active === "Review Proposal" && <ReviewProposal />}
-        {/* {active === "Profile Overview" && <ProfileOverview />} */}
       </main>
     </div>
   );

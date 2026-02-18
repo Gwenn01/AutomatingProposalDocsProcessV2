@@ -212,17 +212,22 @@ export const isAuthenticated = (): boolean => {
  * @param userId - User ID
  * @returns Promise with user profile data
  */
-export const getUserProfile = async (userId: number): Promise<UserProfileResponse> => {
+export const getUserProfile = async (
+  userId: number
+): Promise<UserProfileResponse> => {
   const token = getAccessToken();
-  
+
   try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/users/profile/${userId}/`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
