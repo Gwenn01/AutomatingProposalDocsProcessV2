@@ -1,198 +1,35 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/context/toast';
-import { SectionCard, SectionHeader, TextAreaField } from '@/components/implementor/create-proposal';
-import {
-  fetchProgramProposals,
-  fetchProjectProposals,
-  fetchActivityProposals,
-  fetchProposalsNode,
-  submitProgramProposal,
-  submitProjectProposal,
-  submitActivityProposal,
-  buildProgramPayload,
-  buildProjectPayload,
-  buildActivityPayload,
-} from '@/utils/implementor-api';
-import type { ParentProposalOption } from '@/utils/implementor-api';
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // ─────────────────────────────────────────────
-// TYPE DEFINITIONS (exported so api utils can import them)
+// SCROLL TO TOP UTILITY
 // ─────────────────────────────────────────────
-
-export type ProposalType = 'program' | 'project' | 'activity';
-
-export interface User {
-  user_id: string | number;
-  [key: string]: any;
-}
-
-export interface ExpectedOutput6Ps {
-  publications: string;
-  patents: string;
-  products: string;
-  people_services: string;
-  places_partnerships: string;
-  policy: string;
-  social_impact: string;
-  economic_impact: string;
-}
-
-export interface OrgStaffingItem {
-  activity: string;
-  designation: string;
-  terms: string;
-}
-
-export interface BudgetRow {
-  item: string;
-  cost: string | number;
-  qty: string | number;
-  amount: string | number;
-}
-
-export interface BudgetRows {
-  meals: BudgetRow[];
-  transport: BudgetRow[];
-  supplies: BudgetRow[];
-}
-
-export interface CoverPageData {
-  submission_date: string;
-  board_resolution_title: string;
-  board_resolution_no: string;
-  approved_budget_words: string;
-  approved_budget_amount: string;
-  duration_words: string;
-  duration_years: string;
-  date_from_to: string;
-  activity_title: string;
-  activity_date: string;
-  activity_venue: string;
-  activity_value_statement: string;
-  requested_activity_budget: string;
-  prmsu_participants_words: string;
-  prmsu_participants_num: string;
-  partner_agency_participants_words: string;
-  partner_agency_participants_num: string;
-  partner_agency_name: string;
-  trainees_words: string;
-  trainees_num: string;
-}
-
-export interface SiteRow {
-  country: string;
-  region: string;
-  province: string;
-  district: string;
-  municipality: string;
-  barangay: string;
-}
-
-export interface ProfileData {
-  program_title: string;
-  program_leader: string;
-  project_title: string;
-  project_leader: string;
-  activity_title: string;
-  members: string;
-  activity_duration: string;
-  activity_date: string;
-  project_start_date: string;
-  project_end_date: string;
-  project_duration_months: string;
-  implementing_agency: string;
-  address_tel_email: string;
-  cooperating_agencies: string;
-  sites: SiteRow[];
-  tagging_general: boolean;
-  tagging_env_climate: boolean;
-  tagging_gad: boolean;
-  tagging_mango: boolean;
-  cluster_health_edu: boolean;
-  cluster_engineering: boolean;
-  cluster_environment: boolean;
-  cluster_tourism: boolean;
-  cluster_graduate: boolean;
-  cluster_fisheries: boolean;
-  cluster_agriculture: boolean;
-  ext_agenda_business: boolean;
-  ext_agenda_governance: boolean;
-  ext_agenda_youth: boolean;
-  ext_agenda_accessibility: boolean;
-  ext_agenda_nutrition: boolean;
-  ext_agenda_indigenous: boolean;
-  ext_agenda_human_capital: boolean;
-  ext_agenda_technology: boolean;
-  ext_agenda_natural_resources: boolean;
-  sdg_addressed: string;
-  college_mandated_program: string;
-}
-
-export interface WorkplanRow {
-  objective: string;
-  activity: string;
-  expected_output: string;
-  year1_q1: boolean; year1_q2: boolean; year1_q3: boolean; year1_q4: boolean;
-  year2_q1: boolean; year2_q2: boolean; year2_q3: boolean; year2_q4: boolean;
-  year3_q1: boolean; year3_q2: boolean; year3_q3: boolean; year3_q4: boolean;
-}
-
-export interface ProgramBudgetRow {
-  label: string;
-  qty: string;
-  unit: string;
-  unit_cost: string;
-  prmsu: string;
-  agency: string;
-  total: string;
-}
-
-export interface ScheduleItem {
-  time: string;
-  activity: string;
-  speaker: string;
-}
-
-export interface ActivityScheduleData {
-  activity_title: string;
-  activity_date: string;
-  schedule: ScheduleItem[];
-}
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
 // ─────────────────────────────────────────────
-// DEFAULTS
+// TYPES & DEFAULTS
 // ─────────────────────────────────────────────
 
-const defaultProfile = (): ProfileData => ({
-  program_title: '', program_leader: '', project_title: '', project_leader: '',
-  activity_title: '', members: '', activity_duration: '8', activity_date: '',
-  project_start_date: '', project_end_date: '', project_duration_months: '',
-  implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
-  sites: [
-    { country: '', region: '', province: '', district: '', municipality: '', barangay: '' },
-    { country: '', region: '', province: '', district: '', municipality: '', barangay: '' },
-  ],
-  tagging_general: false, tagging_env_climate: false, tagging_gad: false, tagging_mango: false,
-  cluster_health_edu: false, cluster_engineering: false, cluster_environment: false,
-  cluster_tourism: false, cluster_graduate: false, cluster_fisheries: false, cluster_agriculture: false,
-  ext_agenda_business: false, ext_agenda_governance: false, ext_agenda_youth: false,
-  ext_agenda_accessibility: false, ext_agenda_nutrition: false, ext_agenda_indigenous: false,
-  ext_agenda_human_capital: false, ext_agenda_technology: false, ext_agenda_natural_resources: false,
-  sdg_addressed: '', college_mandated_program: '',
+const defaultProjectRow = (index) => ({
+  id: Date.now() + index,
+  project_title: '',
+  project_leader: '',
+  project_members: '',
+  project_duration_months: '',
+  project_start_date: '',
+  project_end_date: '',
 });
 
-const defaultCover = (): CoverPageData => ({
-  submission_date: '', board_resolution_title: '', board_resolution_no: '',
-  approved_budget_words: '', approved_budget_amount: '', duration_words: '',
-  duration_years: '', date_from_to: '', activity_title: '', activity_date: '',
-  activity_venue: '', activity_value_statement: '', requested_activity_budget: '',
-  prmsu_participants_words: '', prmsu_participants_num: '',
-  partner_agency_participants_words: '', partner_agency_participants_num: '',
-  partner_agency_name: '', trainees_words: '', trainees_num: '',
+const defaultActivityRow = (index) => ({
+  id: Date.now() + index,
+  activity_title: '',
 });
 
-const defaultOrgStaffing = (): OrgStaffingItem[] => [
+const defaultExpectedOutput = () => ({
+  publications: '', patents: '', products: '', people_services: '',
+  places_partnerships: '', policy: '', social_impact: '', economic_impact: '',
+});
+
+const defaultOrgStaffing = () => ([
   { activity: 'Proposal Preparation', designation: '', terms: '' },
   { activity: 'Program/Certificates', designation: '', terms: '' },
   { activity: 'Food Preparation', designation: '', terms: '' },
@@ -200,669 +37,354 @@ const defaultOrgStaffing = (): OrgStaffingItem[] => [
   { activity: 'Masters of Ceremony', designation: '', terms: '' },
   { activity: 'Secretariat for Attendance', designation: '', terms: '' },
   { activity: 'Documentation/Technical', designation: '', terms: '' },
-];
+]);
 
-const defaultBudgetRows = (): BudgetRows => ({ meals: [], transport: [], supplies: [] });
-
-const defaultSchedule = (): ActivityScheduleData => ({
-  activity_title: '',
-  activity_date: '',
-  schedule: [
-    { time: '7:30–8:00 AM', activity: 'Registration', speaker: '' },
-    { time: '8:00–8:05 AM', activity: 'Invocation–AV Presentation', speaker: '' },
-    { time: '8:20–8:45 AM', activity: 'Opening Remarks', speaker: 'Dr. Roy N. Villalobos, University President' },
-    { time: '8:45–9:00 AM', activity: 'Welcome Remarks', speaker: '' },
-    { time: '9:00 AM–12:00 NOON', activity: '', speaker: '' },
-    { time: '12:00–1:00 PM', activity: 'LUNCH BREAK', speaker: '' },
-    { time: '1:00–3:00 PM', activity: '', speaker: '' },
-    { time: '3:00–4:30 PM', activity: 'Open Forum / Evaluation', speaker: '' },
-    { time: '4:30–4:45 PM', activity: 'Awarding of Certificates', speaker: '' },
-    { time: '4:45–4:55 PM', activity: 'Closing Remarks', speaker: '' },
-    { time: '4:55–5:00 PM', activity: 'Photo Opportunity', speaker: '' },
-  ],
-});
-
-const defaultExpectedOutput = (): ExpectedOutput6Ps => ({
-  publications: '', patents: '', products: '', people_services: '',
-  places_partnerships: '', policy: '', social_impact: '', economic_impact: '',
-});
-
-const defaultWorkplan = (): WorkplanRow[] => [{
+const defaultWorkplanRow = () => ({
   objective: '', activity: '', expected_output: '',
   year1_q1: false, year1_q2: false, year1_q3: false, year1_q4: false,
   year2_q1: false, year2_q2: false, year2_q3: false, year2_q4: false,
   year3_q1: false, year3_q2: false, year3_q3: false, year3_q4: false,
-}];
+});
 
-const defaultProgramBudget = (): ProgramBudgetRow[] => [
-  { label: 'Project 1', qty: '', unit: '', unit_cost: '', prmsu: '', agency: '', total: '' },
-];
+const defaultBudget = () => ({ meals: [], transport: [], supplies: [] });
 
-// ─────────────────────────────────────────────
-// PROPOSAL HIERARCHY CONFIG
-// ─────────────────────────────────────────────
+const TAGGING_OPTIONS = ['General', 'Environment and Climate Change (for CECC)', 'Gender and Development (for GAD)', 'Mango-Related (for RMC)'];
+const CLUSTER_OPTIONS = ['Health, Education, and Social Sciences', 'Engineering, Industry, Information Technology', 'Environment and Natural Resources', 'Tourism, Hospitality Management, Entrepreneurship, Criminal Justice', 'Graduate Studies', 'Fisheries', 'Agriculture, Forestry'];
+const AGENDA_OPTIONS = ['Business Management and Livelihood Skills Development', 'Accountability, Good Governance, and Peace and Order', 'Youth and Adult Functional Literacy and Education', 'Accessibility, Inclusivity, and Gender and Development', 'Nutrition, Health, and Wellness', 'Indigenous People\'s Rights and Cultural Heritage Preservation', 'Human Capital Development', 'Adoption and Commercialization of Appropriate Technologies', 'Natural Resources, Climate Change, and Disaster Risk Reduction Management'];
 
-const PROPOSAL_TYPES = [
-  {
-    type: 'program' as ProposalType,
-    label: 'Program Proposal',
-    description: 'Top-level multi-project extension program spanning multiple years',
-    color: 'from-blue-600 to-indigo-600',
-    dotColor: 'bg-blue-500',
-    parentType: null as ProposalType | null,
-    parentLabel: null as string | null,
+const defaultProgramFormData = () => ({
+  program_title: '',
+  program_leader: '',
+  members: '',
+  implementing_agency: '',
+  address_tel_email: '',
+  cooperating_agencies: '',
+  extension_site: '',
+  tagging: [],
+  cluster: [],
+  extension_agenda: [],
+  sdg_addressed: '',
+  college_mandated_program: '',
+  rationale: '',
+  significance: '',
+  general_objectives: '',
+  specific_objectives: '',
+  methodology: '',
+  sustainability_plan: '',
+  expected_output: defaultExpectedOutput(),
+  org_staffing: defaultOrgStaffing(),
+  workplan: [defaultWorkplanRow()],
+  program_budget: [{ label: 'Project 1', qty: '', unit: '', unit_cost: '', prmsu: '', agency: '', total: '' }],
+  projects: [defaultProjectRow(0)],
+});
+
+const defaultProjectFormData = () => ({
+  implementing_agency: '',
+  address_tel_email: '',
+  cooperating_agencies: '',
+  extension_site: '',
+  tagging: [],
+  cluster: [],
+  extension_agenda: [],
+  sdg_addressed: '',
+  college_mandated_program: '',
+  rationale: '',
+  significance: '',
+  general_objectives: '',
+  specific_objectives: '',
+  methodology: '',
+  sustainability_plan: '',
+  expected_output: defaultExpectedOutput(),
+  org_staffing: defaultOrgStaffing(),
+  workplan: [defaultWorkplanRow()],
+  budget: defaultBudget(),
+  activities: [defaultActivityRow(0)],
+});
+
+const defaultActivityFormData = () => ({
+  implementing_agency: '',
+  address_tel_email: '',
+  cooperating_agencies: '',
+  extension_site: '',
+  tagging: [],
+  cluster: [],
+  extension_agenda: [],
+  sdg_addressed: '',
+  college_mandated_program: '',
+  activity_duration: '',
+  rationale: '',
+  significance: '',
+  objectives: '',
+  methodology: '',
+  expected_output: defaultExpectedOutput(),
+  org_staffing: defaultOrgStaffing(),
+  schedule: {
+    activity_title: '',
+    activity_date: '',
+    rows: [
+      { time: '8:00 - 8:05 AM', activity: 'AVP National Anthem', speaker: '' },
+      { time: '8:05 - 8:10 AM', activity: 'AVP Invocation', speaker: '' },
+      { time: '8:10 - 8:20 AM', activity: 'Welcome Message', speaker: '' },
+      { time: '8:20 - 8:30 AM', activity: 'Opening Remarks', speaker: '' },
+      { time: '8:30 - 8:35 AM', activity: 'Overview of the Activity', speaker: '' },
+      { time: '9:30 - 9:45 AM', activity: 'AM Snacks', speaker: '' },
+      { time: '12:00 - 1:00 PM', activity: 'LUNCH BREAK', speaker: '' },
+      { time: '3:30 - 4:15 PM', activity: 'PM Snacks / Open Forum', speaker: '' },
+      { time: '4:15 - 4:30 PM', activity: 'Evaluation', speaker: '' },
+      { time: '4:30 - 4:45 PM', activity: 'Closing Remarks', speaker: '' },
+      { time: '4:45 - 5:00 PM', activity: 'Photo Documentation', speaker: '' },
+    ],
   },
-  {
-    type: 'project' as ProposalType,
-    label: 'Project Proposal',
-    description: 'An extension project that belongs under a Program Proposal',
-    color: 'from-green-600 to-emerald-600',
-    dotColor: 'bg-green-500',
-    parentType: 'program' as ProposalType | null,
-    parentLabel: 'Program Proposal',
-  },
-  {
-    type: 'activity' as ProposalType,
-    label: 'Activity Proposal',
-    description: 'A single activity that belongs under a Project Proposal',
-    color: 'from-orange-500 to-amber-600',
-    dotColor: 'bg-orange-500',
-    parentType: 'project' as ProposalType | null,
-    parentLabel: 'Project Proposal',
-  },
-];
+  budget: defaultBudget(),
+});
 
 // ─────────────────────────────────────────────
-// PARENT PROPOSAL SELECTOR
+// VALIDATION HELPERS
 // ─────────────────────────────────────────────
 
-const ParentProposalSelector: React.FC<{
-  proposalType: ProposalType;
-  parentOptions: ParentProposalOption[];
-  selectedParent: ParentProposalOption | null;
-  onSelect: (parent: ParentProposalOption | null) => void;
-  isLoading: boolean;
-}> = ({ proposalType, parentOptions, selectedParent, onSelect, isLoading }) => {
-  const [query, setQuery] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const config = PROPOSAL_TYPES.find((t) => t.type === proposalType)!;
+const getProgramCompletion = (data) => {
+  const fields = ['program_title', 'program_leader', 'implementing_agency', 'rationale', 'significance', 'general_objectives', 'specific_objectives', 'methodology', 'sustainability_plan'];
+  const filled = fields.filter(f => data[f]?.trim()).length;
+  const projectsFilled = data.projects.every(p => p.project_title?.trim() && p.project_leader?.trim());
+  return Math.round(((filled + (projectsFilled ? 2 : 0)) / (fields.length + 2)) * 100);
+};
 
-  const filtered = query.trim()
-    ? parentOptions.filter(
-        (p) =>
-          p.title.toLowerCase().includes(query.toLowerCase()) ||
-          p.leader.toLowerCase().includes(query.toLowerCase()),
-      )
-    : parentOptions;
+const getProjectCompletion = (data) => {
+  const fields = ['implementing_agency', 'rationale', 'significance', 'general_objectives', 'specific_objectives', 'methodology', 'sustainability_plan'];
+  const filled = fields.filter(f => data[f]?.trim()).length;
+  const actsFilled = data.activities.every(a => a.activity_title?.trim());
+  return Math.round(((filled + (actsFilled ? 1 : 0)) / (fields.length + 1)) * 100);
+};
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+const getActivityCompletion = (data) => {
+  const fields = ['implementing_agency', 'rationale', 'significance', 'objectives', 'methodology'];
+  const filled = fields.filter(f => data[f]?.trim()).length;
+  return Math.round((filled / fields.length) * 100);
+};
 
-  const handleSelect = (option: ParentProposalOption) => {
-    onSelect(option);
-    setQuery('');
-    setIsOpen(false);
-  };
+// ─────────────────────────────────────────────
+// COMPLETION BADGE
+// ─────────────────────────────────────────────
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSelect(null);
-    setQuery('');
-    setIsOpen(false);
-  };
-
-  const breadcrumb =
-    proposalType === 'project' ? (
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 font-semibold text-xs">Program</span>
-        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        <span className="px-2.5 py-1 rounded-lg bg-green-200 text-green-800 font-semibold text-xs ring-2 ring-green-400">Project ← You are here</span>
-        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 font-semibold text-xs">Activity</span>
-      </div>
-    ) : (
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 font-semibold text-xs">Program</span>
-        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 font-semibold text-xs">Project</span>
-        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        <span className="px-2.5 py-1 rounded-lg bg-orange-200 text-orange-800 font-semibold text-xs ring-2 ring-orange-400">Activity ← You are here</span>
-      </div>
-    );
-
+const CompletionBadge = ({ pct }) => {
+  const color = pct === 100 ? 'bg-emerald-500 text-white' : pct >= 60 ? 'bg-amber-400 text-amber-900' : 'bg-red-100 text-red-600';
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 md:px-8 py-5">
-        <div className="flex items-center gap-3">
-          <svg className="w-6 h-6 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <div>
-            <h3 className="text-2xl font-bold text-white">Link to {config.parentLabel}</h3>
-            <p className="text-white/80 text-sm mt-0.5">
-              Select the {config.parentLabel} this {config.label} belongs to
-            </p>
+    <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${color}`}>
+      {pct === 100 ? '✓' : `${pct}%`}
+    </span>
+  );
+};
+
+// ─────────────────────────────────────────────
+// STEP INDICATOR
+// ─────────────────────────────────────────────
+
+const StepIndicator = ({ currentStep }) => {
+  const steps = [
+    { label: 'Program', icon: '📋' },
+    { label: 'Projects', icon: '📁' },
+    { label: 'Activities', icon: '📅' },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-0 mb-8">
+      {steps.map((step, i) => {
+        const stepNum = i + 1;
+        const isActive = currentStep === stepNum;
+        const isDone = currentStep > stepNum;
+        return (
+          <div key={i} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                isActive ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 scale-110' :
+                isDone ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-400' :
+                'bg-gray-100 text-gray-400 border-2 border-gray-200'
+              }`}>
+                {isDone ? '✓' : step.icon}
+              </div>
+              <span className={`text-xs font-semibold mt-1.5 ${isActive ? 'text-emerald-700' : isDone ? 'text-emerald-500' : 'text-gray-400'}`}>
+                {step.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={`w-20 h-0.5 mx-1 mb-5 transition-all duration-500 ${currentStep > stepNum ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+            )}
           </div>
-        </div>
-      </div>
-
-      <div className="p-6 md:p-8 space-y-5">
-        {/* Breadcrumb */}
-        <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-          {breadcrumb}
-        </div>
-
-        {/* Dropdown */}
-        <div ref={ref} className="relative">
-          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            {config.parentLabel}
-          </label>
-
-          {/* Trigger button — shows selected value or placeholder */}
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => !isLoading && setIsOpen((o) => !o)}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all duration-150
-              ${isOpen
-                ? 'border-indigo-400 ring-2 ring-indigo-200 bg-white'
-                : selectedParent
-                  ? 'border-indigo-300 bg-indigo-50 hover:border-indigo-400'
-                  : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
-              }
-              ${isLoading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-          >
-            {/* Icon */}
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-sm font-black transition-colors
-              ${selectedParent ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
-              {isLoading ? (
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : selectedParent ? (
-                selectedParent.title.charAt(0).toUpperCase()
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
-            </div>
-
-            {/* Text */}
-            <div className="flex-1 min-w-0">
-              {isLoading ? (
-                <p className="text-sm text-gray-400">Loading {config.parentLabel}s…</p>
-              ) : selectedParent ? (
-                <>
-                  <p className="text-sm font-bold text-gray-900 truncate">{selectedParent.title}</p>
-                  <p className="text-xs text-indigo-500 font-medium mt-0.5">Leader: {selectedParent.leader}</p>
-                </>
-              ) : (
-                <p className="text-sm text-gray-400">
-                  {parentOptions.length === 0
-                    ? `No ${config.parentLabel}s available`
-                    : `Choose a ${config.parentLabel}…`}
-                </p>
-              )}
-            </div>
-
-            {/* Right side: clear or chevron */}
-            <div className="shrink-0 flex items-center gap-1.5">
-              {selectedParent && (
-                <span
-                  role="button"
-                  onClick={handleClear}
-                  className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  title="Clear selection"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </span>
-              )}
-              <svg
-                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </button>
-
-          {/* Dropdown panel */}
-          {isOpen && (
-            <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
-              {/* Search box inside dropdown */}
-              <div className="p-3 border-b border-gray-100">
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={`Search ${config.parentLabel}s…`}
-                    className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400"
-                  />
-                  {query && (
-                    <button onClick={() => setQuery('')} className="text-gray-400 hover:text-gray-600">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Count badge */}
-              <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                <p className="text-xs text-gray-500 font-medium">
-                  {filtered.length} {config.parentLabel}{filtered.length !== 1 ? 's' : ''}
-                  {query ? ' found' : ' available'}
-                </p>
-                {selectedParent && (
-                  <span className="text-xs text-indigo-500 font-semibold flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                    1 selected
-                  </span>
-                )}
-              </div>
-
-              {/* Options list */}
-              <div className="max-h-64 overflow-y-auto">
-                {filtered.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                    <svg className="w-10 h-10 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-sm font-semibold text-gray-500">No results found</p>
-                    <p className="text-xs mt-1 text-gray-400">Try a different search term</p>
-                  </div>
-                ) : (
-                  filtered.map((option) => {
-                    const isSelected = selectedParent?.id === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => handleSelect(option)}
-                        className={`w-full text-left px-4 py-3.5 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0
-                          ${isSelected
-                            ? 'bg-indigo-50 hover:bg-indigo-100'
-                            : 'hover:bg-gray-50 active:bg-gray-100'}`}
-                      >
-                        {/* Avatar letter */}
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-black transition-colors
-                          ${isSelected ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200' : 'bg-gray-100 text-gray-600'}`}>
-                          {option.title.charAt(0).toUpperCase()}
-                        </div>
-
-                        {/* Text */}
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-semibold text-sm truncate leading-tight ${isSelected ? 'text-indigo-700' : 'text-gray-900'}`}>
-                            {option.title}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                            <span>Leader: <span className="font-medium text-gray-700">{option.leader}</span></span>
-                            {option.created_at && (
-                              <>
-                                <span className="text-gray-300">·</span>
-                                <span className="text-gray-400">
-                                  {new Date(option.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                                </span>
-                              </>
-                            )}
-                          </p>
-                        </div>
-
-                        {/* Check mark */}
-                        <div className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all
-                          ${isSelected ? 'bg-indigo-500 scale-100' : 'scale-0 opacity-0'}`}>
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Warning if nothing selected */}
-        {!selectedParent && (
-          <div className="flex items-center gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-            <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>No {config.parentLabel} selected — click the dropdown above to link this proposal.</span>
-          </div>
-        )}
-      </div>
+        );
+      })}
     </div>
   );
 };
+
 // ─────────────────────────────────────────────
-// PROPOSAL TYPE SELECTOR
+// FORM FIELD COMPONENTS
 // ─────────────────────────────────────────────
 
-const ProposalTypeSelector: React.FC<{
-  selected: ProposalType | null;
-  onSelect: (type: ProposalType) => void;
-}> = ({ selected, onSelect }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    {PROPOSAL_TYPES.map(({ type, label, description, color, parentLabel }) => (
-      <button key={type} onClick={() => onSelect(type)}
-        className={`relative p-6 rounded-2xl border-2 text-left transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.99]
-          ${selected === type ? 'border-transparent ring-4 ring-green-400/40 shadow-lg bg-white' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} mb-4 flex items-center justify-center shadow-md`}>
-          {type === 'program' && (
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          )}
-          {type === 'project' && (
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          )}
-          {type === 'activity' && (
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          )}
-        </div>
-        <h4 className="font-bold text-gray-900 text-lg mb-1">{label}</h4>
-        <p className="text-sm text-gray-500 mb-3">{description}</p>
-        {parentLabel && (
-          <div className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 rounded-lg px-2.5 py-1.5 w-fit">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            <span className="font-medium">Under a {parentLabel}</span>
-          </div>
-        )}
-        {selected === type && (
-          <div className={`absolute top-4 right-4 w-6 h-6 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shadow`}>
-            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        )}
-      </button>
-    ))}
+const Field = ({ label, type = 'text', value, onChange, placeholder, required }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+      {label}{required && <span className="text-red-400 ml-1">*</span>}
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder || `Enter ${label.toLowerCase()}...`}
+      className={`bg-gray-50 border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent hover:border-gray-300 transition-all ${
+        required && !value?.trim() ? 'border-red-200 bg-red-50/30' : 'border-gray-200'
+      }`}
+    />
+  </div>
+);
+
+const TextArea = ({ label, value, onChange, rows = 5, placeholder, required }) => (
+  <div className="flex flex-col gap-1">
+    {label && (
+      <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+        {label}{required && <span className="text-red-400 ml-1">*</span>}
+      </label>
+    )}
+    <textarea
+      rows={rows}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={`border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent hover:border-gray-300 transition-all resize-none ${
+        required && !value?.trim() ? 'border-red-200 bg-red-50/30' : 'border-gray-200 bg-gray-50'
+      }`}
+    />
+  </div>
+);
+
+const SectionHeader = ({ title, subtitle }) => (
+  <div className="flex items-center gap-3 mb-6">
+    <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full" />
+    <div>
+      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+    </div>
+  </div>
+);
+
+const Card = ({ children, className = '' }) => (
+  <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 ${className}`}>
+    {children}
   </div>
 );
 
 // ─────────────────────────────────────────────
-// PROFILE SECTION
+// CHECKBOX GROUP
 // ─────────────────────────────────────────────
 
-const ProfileSection: React.FC<{
-  type: ProposalType;
-  profile: ProfileData;
-  onChange: (updates: Partial<ProfileData>) => void;
-}> = ({ type, profile, onChange }) => {
-  const field = (label: string, key: keyof ProfileData, inputType = 'text') => (
-    <div key={key} className="flex flex-col md:flex-row md:items-center gap-3 group">
-      <span className="md:w-72 text-sm font-semibold text-gray-900 flex items-center gap-2 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-        {label}:
-      </span>
-      <input type={inputType}
-        className="flex-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-        value={profile[key] as string}
-        onChange={(e) => onChange({ [key]: e.target.value })}
-        placeholder={`Enter ${label.toLowerCase()}...`} />
+const CheckboxGroup = ({ label, options, selected, onChange }) => (
+  <div className="flex flex-col gap-2">
+    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">{label}</label>
+    <div className="grid grid-cols-1 gap-1.5">
+      {options.map((opt) => (
+        <label key={opt} className="flex items-start gap-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={selected.includes(opt)}
+            onChange={(e) => {
+              if (e.target.checked) onChange([...selected, opt]);
+              else onChange(selected.filter(o => o !== opt));
+            }}
+            className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 shrink-0"
+          />
+          <span className="text-xs text-gray-700 group-hover:text-gray-900 leading-relaxed">{opt}</span>
+        </label>
+      ))}
     </div>
-  );
+  </div>
+);
 
-  const checkbox = (label: string, key: keyof ProfileData) => (
-    <label key={key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900">
-      <input type="checkbox" checked={profile[key] as boolean}
-        onChange={(e) => onChange({ [key]: e.target.checked })}
-        className="rounded border-gray-300 text-green-600 focus:ring-green-500" />
-      {label}
-    </label>
-  );
+// ─────────────────────────────────────────────
+// EXPECTED OUTPUT TABLE
+// ─────────────────────────────────────────────
 
+const ExpectedOutputTable = ({ data, onChange }) => {
+  const rows = [
+    { label: 'Publications', key: 'publications' },
+    { label: 'Patents / IP', key: 'patents' },
+    { label: 'Products', key: 'products' },
+    { label: 'People Services', key: 'people_services' },
+    { label: 'Places and Partnerships', key: 'places_partnerships' },
+    { label: 'Policy', key: 'policy' },
+    { label: 'Social Impact', key: 'social_impact' },
+    { label: 'Economic Impact', key: 'economic_impact' },
+  ];
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      <SectionHeader title="I. Profile" subtitle="Basic program / project / activity information" />
-      <div className="p-6 md:p-8 space-y-4">
-        {field('Program Title', 'program_title')}
-        {(type === 'program' || type === 'project') && field('Program Leader', 'program_leader')}
-        {(type === 'project' || type === 'activity') && field('Project Title', 'project_title')}
-        {field('Project Leader', 'project_leader')}
-        {field('Members', 'members')}
-        {type === 'activity' && (
-          <>
-            {field('Activity Title', 'activity_title')}
-            {field('Activity Duration (hours)', 'activity_duration')}
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <span className="md:w-72 text-sm font-semibold text-gray-900 shrink-0">Date:</span>
-              <input type="date"
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                value={profile.activity_date} onChange={(e) => onChange({ activity_date: e.target.value })} />
-            </div>
-          </>
-        )}
-        {(type === 'program' || type === 'project') && (
-          <>
-            {field('Project Duration (months)', 'project_duration_months')}
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <span className="md:w-72 text-sm font-semibold text-gray-900 shrink-0">Project Start Date:</span>
-              <input type="date"
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                value={profile.project_start_date} onChange={(e) => onChange({ project_start_date: e.target.value })} />
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <span className="md:w-72 text-sm font-semibold text-gray-900 shrink-0">Project End Date:</span>
-              <input type="date"
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                value={profile.project_end_date} onChange={(e) => onChange({ project_end_date: e.target.value })} />
-            </div>
-          </>
-        )}
-        <div className="pt-2 border-t border-gray-100 space-y-4">
-          {field('Implementing Agency / College / Mandated Program', 'implementing_agency')}
-          {field('Address / Telephone / Email', 'address_tel_email')}
-          {field('Cooperating Agency/ies / Program / College', 'cooperating_agencies')}
-        </div>
-        {/* Sites */}
-        <div className="pt-2 border-t border-gray-100">
-          <label className="block text-sm font-bold text-gray-900 mb-3">Extension Site/s or Venue/s</label>
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-gray-100">
-                  {['#', 'Country', 'Region', 'Province', 'District', 'Municipality', 'Barangay'].map((h) => (
-                    <th key={h} className="px-3 py-2 text-left font-semibold text-gray-700">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {profile.sites.map((site, i) => (
-                  <tr key={i} className="border-t border-gray-100">
-                    <td className="px-3 py-2 text-gray-500 font-medium">{i + 1}</td>
-                    {(['country', 'region', 'province', 'district', 'municipality', 'barangay'] as (keyof SiteRow)[]).map((col) => (
-                      <td key={col} className="px-2 py-1">
-                        <input className="w-full bg-transparent border-b border-gray-200 focus:border-green-500 outline-none py-1 text-xs"
-                          value={site[col]}
-                          onChange={(e) => {
-                            const updated = [...profile.sites];
-                            updated[i] = { ...updated[i], [col]: e.target.value };
-                            onChange({ sites: updated });
-                          }} />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button
-            onClick={() => onChange({ sites: [...profile.sites, { country: '', region: '', province: '', district: '', municipality: '', barangay: '' }] })}
-            className="mt-2 text-xs text-green-600 hover:text-green-700 font-semibold bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Site
-          </button>
-        </div>
-        {/* Tagging & Agenda */}
-        <div className="pt-2 border-t border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm font-bold text-gray-900 mb-3">Tagging</p>
-              <div className="space-y-2">
-                {checkbox('General', 'tagging_general')}
-                {checkbox('Environment and Climate Change (for CECC)', 'tagging_env_climate')}
-                {checkbox('Gender and Development (for GAD)', 'tagging_gad')}
-                {checkbox('Mango-Related (for RMC)', 'tagging_mango')}
-              </div>
-              <p className="text-sm font-bold text-gray-900 mt-4 mb-3">Cluster</p>
-              <div className="space-y-2">
-                {checkbox('Health, Education, and Social Sciences', 'cluster_health_edu')}
-                {checkbox('Engineering, Industry, Information Technology', 'cluster_engineering')}
-                {checkbox('Environment and Natural Resources', 'cluster_environment')}
-                {checkbox('Tourism, Hospitality, Entrepreneurship, Criminal Justice', 'cluster_tourism')}
-                {checkbox('Graduate Studies', 'cluster_graduate')}
-                {checkbox('Fisheries', 'cluster_fisheries')}
-                {checkbox('Agriculture, Forestry', 'cluster_agriculture')}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900 mb-3">Extension Agenda</p>
-              <div className="space-y-2">
-                {checkbox('Business Management and Livelihood Skills Development', 'ext_agenda_business')}
-                {checkbox('Accountability, Good Governance, and Peace and Order', 'ext_agenda_governance')}
-                {checkbox('Youth and Adult Functional Literacy and Education', 'ext_agenda_youth')}
-                {checkbox('Accessibility, Inclusivity, and Gender and Development', 'ext_agenda_accessibility')}
-                {checkbox('Nutrition, Health, and Wellness', 'ext_agenda_nutrition')}
-                {checkbox("Indigenous People's Rights and Cultural Heritage Preservation", 'ext_agenda_indigenous')}
-                {checkbox('Human Capital Development', 'ext_agenda_human_capital')}
-                {checkbox('Adoption and Commercialization of Appropriate Technologies', 'ext_agenda_technology')}
-                {checkbox('Natural Resources, Climate Change, and Disaster Risk Reduction Management', 'ext_agenda_natural_resources')}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-gray-100 space-y-4">
-          {field('Sustainable Development Goal (SDG) Addressed', 'sdg_addressed')}
-          {field('College / Campus / Mandated Academic Program', 'college_mandated_program')}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
-// EXPECTED OUTPUT
-// ─────────────────────────────────────────────
-
-const ExpectedOutputSection: React.FC<{
-  title: string;
-  data: ExpectedOutput6Ps;
-  onChange: (key: keyof ExpectedOutput6Ps, value: string) => void;
-}> = ({ title, data, onChange }) => (
-  <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-    <SectionHeader title={title} subtitle="6P's Framework Assessment" />
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b-2 border-green-500">
-            <th className="px-6 py-4 text-left font-bold text-gray-900 w-1/3">6P's</th>
-            <th className="px-6 py-4 text-left font-bold text-gray-900">Output</th>
+          <tr className="bg-gray-50 border-b-2 border-emerald-500">
+            <th className="px-5 py-3 text-left font-bold text-gray-900 w-48">6P's Category</th>
+            <th className="px-5 py-3 text-left font-bold text-gray-900">Expected Output</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {([
-            { label: 'Publications', key: 'publications' },
-            { label: 'Patents / IP', key: 'patents' },
-            { label: 'Products', key: 'products' },
-            { label: 'People Services', key: 'people_services' },
-            { label: 'Places and Partnerships', key: 'places_partnerships' },
-            { label: 'Policy', key: 'policy' },
-            { label: 'Social Impact', key: 'social_impact' },
-            { label: 'Economic Impact', key: 'economic_impact' },
-          ] as { label: string; key: keyof ExpectedOutput6Ps }[]).map(({ label, key }) => (
+          {rows.map(({ label, key }) => (
             <tr key={key} className="hover:bg-gray-50">
-              <td className="px-6 py-4 font-semibold text-gray-900 bg-gray-50">{label}</td>
-              <td className="px-6 py-4">
+              <td className="px-5 py-3 font-semibold text-gray-700 bg-gray-50/60">{label}</td>
+              <td className="px-5 py-3">
                 <input
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
-                  placeholder={`Enter ${label.toLowerCase()}...`}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
                   value={data[key]}
-                  onChange={(e) => onChange(key, e.target.value)} />
+                  onChange={(e) => onChange({ ...data, [key]: e.target.value })}
+                  placeholder={`Enter ${label.toLowerCase()}...`}
+                />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
-  </div>
-);
+  );
+};
 
 // ─────────────────────────────────────────────
-// ORG & STAFFING
+// ORG STAFFING TABLE
 // ─────────────────────────────────────────────
 
-const OrgStaffingSection: React.FC<{
-  title: string;
-  rows: OrgStaffingItem[];
-  onChange: (updated: OrgStaffingItem[]) => void;
-}> = ({ title, rows, onChange }) => {
-  const update = (i: number, field: keyof OrgStaffingItem, value: string) => {
+const OrgStaffingTable = ({ rows, onChange }) => {
+  const update = (i, field, value) => {
     const updated = [...rows];
     updated[i] = { ...updated[i], [field]: value };
     onChange(updated);
   };
+  const remove = (i) => {
+    if (rows.length <= 1) return;
+    onChange(rows.filter((_, idx) => idx !== i));
+  };
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      <SectionHeader title={title} subtitle="Persons involved and responsibility" />
-      <div className="p-6 md:p-8">
-        <div className="rounded-xl border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-3 gap-4 px-4 py-3 bg-gray-100 border-b-2 border-green-500">
-            <span className="text-xs font-bold text-gray-900">Activity</span>
-            <span className="text-xs font-bold text-gray-900">Designation / Name</span>
-            <span className="text-xs font-bold text-gray-900">Terms of Reference</span>
+    <div className="rounded-xl border border-gray-200 overflow-hidden">
+      <div className="grid grid-cols-[1fr_1.5fr_1.5fr_32px] px-4 py-3 bg-gray-100 border-b-2 border-emerald-500 text-xs font-bold text-gray-900 gap-3">
+        <span>Activity / Role</span>
+        <span>Designation / Name</span>
+        <span>Terms of Reference</span>
+        <span></span>
+      </div>
+      {rows.map((item, i) => (
+        <div key={i} className="grid grid-cols-[1fr_1.5fr_1.5fr_32px] gap-3 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 items-start">
+          <div>
+            <input value={item.activity} onChange={(e) => update(i, 'activity', e.target.value)}
+              placeholder="Activity / role name"
+              className="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-gray-800" />
           </div>
-          {rows.map((item, i) => (
-            <div key={i} className="grid grid-cols-3 gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50">
-              <div className="text-sm font-semibold text-gray-900 self-center">{item.activity}</div>
-              <textarea rows={3} placeholder="Full name of faculty / non-teaching"
-                className="bg-white border border-gray-200 rounded-lg p-2.5 text-xs resize-none outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                value={item.designation} onChange={(e) => update(i, 'designation', e.target.value)} />
-              <textarea rows={3} placeholder="Responsibilities and terms of reference"
-                className="bg-white border border-gray-200 rounded-lg p-2.5 text-xs resize-none outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                value={item.terms} onChange={(e) => update(i, 'terms', e.target.value)} />
-            </div>
-          ))}
+          <textarea rows={2} value={item.designation} onChange={(e) => update(i, 'designation', e.target.value)}
+            placeholder="Full name of faculty / non-teaching"
+            className="bg-white border border-gray-200 rounded-lg p-2.5 text-xs resize-none outline-none focus:ring-2 focus:ring-emerald-500" />
+          <textarea rows={2} value={item.terms} onChange={(e) => update(i, 'terms', e.target.value)}
+            placeholder="Responsibilities and terms of reference"
+            className="bg-white border border-gray-200 rounded-lg p-2.5 text-xs resize-none outline-none focus:ring-2 focus:ring-emerald-500" />
+          <button onClick={() => remove(i)} className="mt-1 w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
+      ))}
+      <div className="p-4">
         <button onClick={() => onChange([...rows, { activity: '', designation: '', terms: '' }])}
-          className="mt-3 flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-semibold bg-green-50 hover:bg-green-100 px-4 py-2 rounded-lg transition-all">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-all">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           Add Row
         </button>
       </div>
@@ -871,305 +393,659 @@ const OrgStaffingSection: React.FC<{
 };
 
 // ─────────────────────────────────────────────
-// BUDGET SECTION
+// BUDGET TABLE
 // ─────────────────────────────────────────────
 
-const BudgetSection: React.FC<{
-  title: string;
-  rows: BudgetRows;
-  onChange: (rows: BudgetRows) => void;
-}> = ({ title, rows, onChange }) => {
-  const handleChange = (category: keyof BudgetRows, index: number, field: keyof BudgetRow, value: string) => {
-    const updated = [...rows[category]];
-    updated[index] = { ...updated[index], [field]: value };
+const BudgetTable = ({ rows, onChange }) => {
+  const handle = (cat, i, field, val) => {
+    const updated = [...rows[cat]];
+    updated[i] = { ...updated[i], [field]: val };
     if (field === 'cost' || field === 'qty') {
-      updated[index].amount = (Number(updated[index].cost) || 0) * (Number(updated[index].qty) || 0);
+      updated[i].amount = (Number(updated[i].cost) || 0) * (Number(updated[i].qty) || 0);
     }
-    onChange({ ...rows, [category]: updated });
+    onChange({ ...rows, [cat]: updated });
   };
-  const addRow = (cat: keyof BudgetRows) =>
-    onChange({ ...rows, [cat]: [...rows[cat], { item: '', cost: '', qty: '', amount: '' }] });
-  const totalAmount = (cat: keyof BudgetRows) =>
-    rows[cat].reduce((s, r) => s + (Number(r.amount) || 0), 0);
-  const grandTotal = (['meals', 'transport', 'supplies'] as (keyof BudgetRows)[]).reduce(
-    (s, cat) => s + totalAmount(cat), 0,
-  );
-  const CATS = [
-    { key: 'meals' as keyof BudgetRows, label: 'A. Meals and Snacks', c: { header: 'bg-orange-50 text-orange-900', subtotal: 'bg-orange-100 border-t-2 border-orange-200 text-orange-900', btn: 'text-orange-600 bg-orange-50 hover:bg-orange-100', dot: 'bg-orange-500' } },
-    { key: 'transport' as keyof BudgetRows, label: 'B. Transportation', c: { header: 'bg-blue-50 text-blue-900', subtotal: 'bg-blue-100 border-t-2 border-blue-200 text-blue-900', btn: 'text-blue-600 bg-blue-50 hover:bg-blue-100', dot: 'bg-blue-500' } },
-    { key: 'supplies' as keyof BudgetRows, label: 'C. Supplies and Materials', c: { header: 'bg-purple-50 text-purple-900', subtotal: 'bg-purple-100 border-t-2 border-purple-200 text-purple-900', btn: 'text-purple-600 bg-purple-50 hover:bg-purple-100', dot: 'bg-purple-500' } },
+  const removeRow = (cat, i) => onChange({ ...rows, [cat]: rows[cat].filter((_, idx) => idx !== i) });
+  const addRow = (cat) => onChange({ ...rows, [cat]: [...rows[cat], { item: '', cost: '', qty: '', amount: '' }] });
+  const total = (cat) => rows[cat].reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const grand = ['meals', 'transport', 'supplies'].reduce((s, c) => s + total(c), 0);
+  const cats = [
+    { key: 'meals', label: 'A. Meals and Snacks', color: 'text-orange-700 bg-orange-50' },
+    { key: 'transport', label: 'B. Transportation', color: 'text-blue-700 bg-blue-50' },
+    { key: 'supplies', label: 'C. Supplies and Materials', color: 'text-purple-700 bg-purple-50' },
   ];
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      <SectionHeader title={title} subtitle="Detailed budget breakdown" />
-      <div className="p-6 md:p-8">
+    <div className="overflow-x-auto rounded-xl border border-gray-200">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-900 text-white">
+            {['Item', 'Cost (PHP)', 'Pax / Qty', 'Amount', ''].map((h, idx) => (
+              <th key={idx} className="px-5 py-3 text-left font-bold">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {cats.map(({ key, label, color }) => (
+            <tbody key={key}>
+              <tr><td colSpan={5} className={`px-5 py-2.5 font-bold text-xs uppercase tracking-wide ${color}`}>{label}</td></tr>
+              {rows[key].map((row, i) => (
+                <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-2">
+                    <input placeholder="Item description" value={row.item} onChange={e => handle(key, i, 'item', e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-200 focus:border-emerald-500 outline-none text-sm" />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input type="number" placeholder="0.00" value={row.cost} onChange={e => handle(key, i, 'cost', e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-200 focus:border-emerald-500 outline-none text-sm" />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input type="number" placeholder="0" value={row.qty} onChange={e => handle(key, i, 'qty', e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-200 focus:border-emerald-500 outline-none text-sm" />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input readOnly value={row.amount ? `₱ ${Number(row.amount).toLocaleString()}` : ''} placeholder="₱ 0"
+                      className="w-full bg-gray-100 rounded px-2 py-1 text-sm font-medium text-gray-700 cursor-not-allowed" />
+                  </td>
+                  <td className="px-2 py-2">
+                    <button onClick={() => removeRow(key, i)} className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-all">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              <tr className="bg-gray-50">
+                <td colSpan={3} className="px-5 py-2 font-bold text-gray-700 text-sm">Subtotal</td>
+                <td className="px-5 py-2 font-bold text-sm">₱ {total(key).toLocaleString()}</td>
+                <td></td>
+              </tr>
+              <tr>
+                <td colSpan={5} className="px-5 py-2">
+                  <button onClick={() => addRow(key)} className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Add Row
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          ))}
+          <tr className="bg-emerald-700 text-white font-bold">
+            <td colSpan={3} className="px-5 py-3">GRAND TOTAL</td>
+            <td className="px-5 py-3">₱ {grand.toLocaleString()}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// WORKPLAN TABLE
+// ─────────────────────────────────────────────
+
+const WorkplanTable = ({ rows, onChange }) => {
+  const update = (i, key, val) => {
+    const updated = [...rows];
+    updated[i][key] = val;
+    onChange(updated);
+  };
+  const remove = (i) => {
+    if (rows.length <= 1) return;
+    onChange(rows.filter((_, idx) => idx !== i));
+  };
+  return (
+    <div className="overflow-x-auto rounded-xl border border-gray-200">
+      <table className="w-full text-xs border-collapse">
+        <thead>
+          <tr className="bg-gray-100">
+            <th rowSpan={2} className="px-3 py-2 border border-gray-300 text-left font-bold min-w-[100px]">Objective</th>
+            <th rowSpan={2} className="px-3 py-2 border border-gray-300 text-left font-bold min-w-[100px]">Activity</th>
+            <th rowSpan={2} className="px-3 py-2 border border-gray-300 text-left font-bold min-w-[90px]">Expected Output</th>
+            {['Year 1', 'Year 2', 'Year 3'].map(y => (
+              <th key={y} colSpan={4} className="px-3 py-2 border border-gray-300 text-center font-bold">{y}</th>
+            ))}
+            <th rowSpan={2} className="px-2 py-2 border border-gray-300 w-8"></th>
+          </tr>
+          <tr className="bg-gray-50">
+            {[1,2,3].map(yr => ['Q1','Q2','Q3','Q4'].map(q => (
+              <th key={`${yr}-${q}`} className="px-2 py-1 border border-gray-300 text-center font-semibold w-8">{q}</th>
+            )))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="hover:bg-gray-50">
+              <td className="border border-gray-200 px-2 py-2">
+                <textarea rows={2} value={row.objective} onChange={e => update(i, 'objective', e.target.value)}
+                  className="w-full bg-transparent outline-none resize-none text-xs" placeholder="Objective..." />
+              </td>
+              <td className="border border-gray-200 px-2 py-2">
+                <textarea rows={2} value={row.activity} onChange={e => update(i, 'activity', e.target.value)}
+                  className="w-full bg-transparent outline-none resize-none text-xs" placeholder="Activity..." />
+              </td>
+              <td className="border border-gray-200 px-2 py-2">
+                <textarea rows={2} value={row.expected_output} onChange={e => update(i, 'expected_output', e.target.value)}
+                  className="w-full bg-transparent outline-none resize-none text-xs" placeholder="Output..." />
+              </td>
+              {[1,2,3].map(yr => ['Q1','Q2','Q3','Q4'].map(q => {
+                const key = `year${yr}_${q.toLowerCase()}`;
+                return (
+                  <td key={`${yr}-${q}`} className="border border-gray-200 px-2 py-2 text-center">
+                    <input type="checkbox" checked={row[key]} onChange={e => update(i, key, e.target.checked)}
+                      className="rounded text-emerald-600 focus:ring-emerald-500" />
+                  </td>
+                );
+              }))}
+              <td className="border border-gray-200 px-2 py-2 text-center">
+                <button onClick={() => remove(i)} className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-red-500 rounded transition-all mx-auto">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="p-4">
+        <button onClick={() => onChange([...rows, defaultWorkplanRow()])}
+          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          Add Row
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// COMMON PROFILE FIELDS (shared by all 3 forms)
+// ─────────────────────────────────────────────
+
+const CommonProfileFields = ({ data, onChange }) => {
+  const upd = (field, val) => onChange({ ...data, [field]: val });
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="md:col-span-2">
+          <Field label="Implementing Agency / College / Mandated Program" value={data.implementing_agency} onChange={e => upd('implementing_agency', e.target.value)} required />
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Address / Telephone / Email (Barangay, Municipality, District, Province, Region)" value={data.address_tel_email} onChange={e => upd('address_tel_email', e.target.value)} />
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Cooperating Agency/ies / Program/College (Name/s and Address/es)" value={data.cooperating_agencies} onChange={e => upd('cooperating_agencies', e.target.value)} />
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Extension Site/s or Venue/s" value={data.extension_site} onChange={e => upd('extension_site', e.target.value)} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <CheckboxGroup label="Tagging" options={TAGGING_OPTIONS} selected={data.tagging || []} onChange={val => upd('tagging', val)} />
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <CheckboxGroup label="Cluster" options={CLUSTER_OPTIONS} selected={data.cluster || []} onChange={val => upd('cluster', val)} />
+        </div>
+        <div className="md:col-span-2 bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <CheckboxGroup label="Extension Agenda" options={AGENDA_OPTIONS} selected={data.extension_agenda || []} onChange={val => upd('extension_agenda', val)} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <Field label="Sustainable Development Goal (SDG) Addressed" value={data.sdg_addressed} onChange={e => upd('sdg_addressed', e.target.value)} />
+        <Field label="College / Campus / Mandated Academic Program" value={data.college_mandated_program} onChange={e => upd('college_mandated_program', e.target.value)} />
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// STEP 1: PROGRAM PROPOSAL FORM
+// ─────────────────────────────────────────────
+
+const ProgramProposalForm = ({ data, onChange, onNext, isSubmitting }) => {
+  const updateProject = (i, field, val) => {
+    const updated = [...data.projects];
+    updated[i] = { ...updated[i], [field]: val };
+    onChange({ ...data, projects: updated });
+  };
+  const addProject = () => onChange({ ...data, projects: [...data.projects, defaultProjectRow(data.projects.length)] });
+  const removeProject = (i) => {
+    if (data.projects.length === 1) return;
+    onChange({ ...data, projects: data.projects.filter((_, idx) => idx !== i) });
+  };
+  const upd = (field, val) => onChange({ ...data, [field]: val });
+  const pct = getProgramCompletion(data);
+
+  return (
+    <div className="space-y-6">
+      {/* Basic Info */}
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <SectionHeader title="I. Program Profile" subtitle="Basic program information" />
+          <CompletionBadge pct={pct} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="md:col-span-2">
+            <Field label="Program Title" value={data.program_title} onChange={e => upd('program_title', e.target.value)} required />
+          </div>
+          <Field label="Program Leader" value={data.program_leader} onChange={e => upd('program_leader', e.target.value)} required />
+          <Field label="Members" value={data.members} onChange={e => upd('members', e.target.value)} />
+        </div>
+        <div className="mt-5">
+          <CommonProfileFields data={data} onChange={onChange} />
+        </div>
+      </Card>
+
+      {/* Projects */}
+      <Card>
+        <SectionHeader title="Projects Under This Program" subtitle="Add all projects included in this program proposal" />
+        <div className="space-y-4">
+          {data.projects.map((proj, i) => (
+            <div key={proj.id} className={`border-2 rounded-2xl p-5 transition-all group relative ${!proj.project_title?.trim() ? 'border-red-100 bg-red-50/20' : 'border-gray-100 hover:border-emerald-200'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-black flex items-center justify-center">{i + 1}</div>
+                  <span className="font-bold text-gray-900 text-sm">Project {i + 1}</span>
+                  {proj.project_title && <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{proj.project_title}</span>}
+                  {!proj.project_title?.trim() && <span className="text-xs text-red-400 font-medium">Required</span>}
+                </div>
+                {data.projects.length > 1 && (
+                  <button onClick={() => removeProject(i)}
+                    className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Field label="Project Title" value={proj.project_title} onChange={e => updateProject(i, 'project_title', e.target.value)} required />
+                </div>
+                <Field label="Project Leader" value={proj.project_leader} onChange={e => updateProject(i, 'project_leader', e.target.value)} required />
+                <Field label="Project Members" value={proj.project_members} onChange={e => updateProject(i, 'project_members', e.target.value)} />
+                <Field label="Project Duration (months)" type="number" value={proj.project_duration_months} onChange={e => updateProject(i, 'project_duration_months', e.target.value)} />
+                <div />
+                <Field label="Project Start Date" type="date" value={proj.project_start_date} onChange={e => updateProject(i, 'project_start_date', e.target.value)} />
+                <Field label="Project End Date" type="date" value={proj.project_end_date} onChange={e => updateProject(i, 'project_end_date', e.target.value)} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={addProject}
+          className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2.5 rounded-xl transition-all border-2 border-dashed border-emerald-200 hover:border-emerald-400 w-full justify-center">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          Add Another Project
+        </button>
+      </Card>
+
+      <Card>
+        <SectionHeader title="II. Rationale" subtitle="Include a brief result of the conducted needs assessment." />
+        <TextArea value={data.rationale} onChange={e => upd('rationale', e.target.value)} rows={7} required
+          placeholder="Include a brief result of the conducted needs assessment..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="III. Significance" />
+        <TextArea value={data.significance} onChange={e => upd('significance', e.target.value)} rows={6} required
+          placeholder="Describe the significance of this program..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="IV. Objectives" />
+        <div className="space-y-4">
+          <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-200">
+            <p className="font-bold text-gray-900 text-sm mb-3">General Objectives: <span className="text-red-400">*</span></p>
+            <TextArea value={data.general_objectives} onChange={e => upd('general_objectives', e.target.value)} rows={4} required />
+          </div>
+          <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+            <p className="font-bold text-gray-900 text-sm mb-3">Specific Objectives: <span className="text-red-400">*</span></p>
+            <TextArea value={data.specific_objectives} onChange={e => upd('specific_objectives', e.target.value)} rows={4} required />
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionHeader title="V. Methodology" />
+        <TextArea value={data.methodology} onChange={e => upd('methodology', e.target.value)} rows={7} required
+          placeholder="Describe the methodology..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VI. Expected Output / Outcome" subtitle="6P's Framework Assessment" />
+        <ExpectedOutputTable data={data.expected_output} onChange={val => upd('expected_output', val)} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VII. Sustainability Plan" />
+        <TextArea value={data.sustainability_plan} onChange={e => upd('sustainability_plan', e.target.value)} rows={8} required
+          placeholder="Describe the sustainability plan..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VIII. Organization and Staffing" subtitle="Persons involved and their responsibilities" />
+        <OrgStaffingTable rows={data.org_staffing} onChange={val => upd('org_staffing', val)} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="IX. Workplan" />
+        <WorkplanTable rows={data.workplan} onChange={val => upd('workplan', val)} />
+      </Card>
+
+      {/* Program Budget */}
+      <Card>
+        <SectionHeader title="IX. Budgetary Requirement" subtitle="Budget per project and activity" />
         <div className="overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-900 text-white">
-                {['Item', 'Cost (PHP)', 'Pax / Qty', 'Amount'].map((h) => (
-                  <th key={h} className="px-6 py-4 text-left font-bold">{h}</th>
+                {['Line-Item Budget', 'Qty', 'Unit', 'Unit Cost', 'PRMSU', 'Agency X', 'Total (PHP)', ''].map(h => (
+                  <th key={h} className="px-4 py-3 text-left font-bold">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {CATS.map(({ key, label, c }) => (
-                <React.Fragment key={key}>
-                  <tr className={c.header}>
-                    <td colSpan={4} className="px-6 py-3 font-bold flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${c.dot}`} /> {label}
+            <tbody>
+              {data.program_budget.map((row, i) => (
+                <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
+                  {['label', 'qty', 'unit', 'unit_cost', 'prmsu', 'agency', 'total'].map(col => (
+                    <td key={col} className="px-3 py-2">
+                      <input
+                        readOnly={col === 'total'}
+                        value={row[col]}
+                        onChange={e => {
+                          const updated = [...data.program_budget];
+                          updated[i] = { ...updated[i], [col]: e.target.value };
+                          if (col === 'prmsu' || col === 'agency') {
+                            updated[i].total = String((parseFloat(updated[i].prmsu) || 0) + (parseFloat(updated[i].agency) || 0));
+                          }
+                          upd('program_budget', updated);
+                        }}
+                        className={`w-full text-sm outline-none border-b border-gray-200 focus:border-emerald-500 bg-transparent ${col === 'total' ? 'font-bold text-emerald-700 cursor-not-allowed' : ''}`}
+                        placeholder="—"
+                      />
                     </td>
-                  </tr>
-                  {rows[key].map((row, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <input placeholder="Item description" value={row.item}
-                          onChange={(e) => handleChange(key, i, 'item', e.target.value)}
-                          className="w-full bg-transparent border-b border-gray-200 focus:border-green-500 outline-none text-sm text-center" />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input type="number" placeholder="0.00" value={row.cost}
-                          onChange={(e) => handleChange(key, i, 'cost', e.target.value)}
-                          className="w-full bg-transparent border-b border-gray-200 focus:border-green-500 outline-none text-sm text-center appearance-none" />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input type="number" placeholder="0" value={row.qty}
-                          onChange={(e) => handleChange(key, i, 'qty', e.target.value)}
-                          className="w-full bg-transparent border-b border-gray-200 focus:border-green-500 outline-none text-sm text-center appearance-none" />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input readOnly value={row.amount}
-                          className="w-full bg-gray-100 border border-gray-200 rounded-md text-sm text-center font-medium text-gray-700 cursor-not-allowed" />
-                      </td>
-                    </tr>
                   ))}
-                  <tr className={`font-bold ${c.subtotal}`}>
-                    <td className="px-6 py-3" colSpan={3}>Subtotal — {label.split('. ')[1]}</td>
-                    <td className="px-6 py-3">₱ {totalAmount(key).toLocaleString()}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan={4} className="px-6 py-2">
-                      <button onClick={() => addRow(key)}
-                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${c.btn}`}>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Row
-                      </button>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))}
-              <tr className="bg-green-700 text-white font-bold">
-                <td className="px-6 py-4" colSpan={3}>GRAND TOTAL</td>
-                <td className="px-6 py-4">₱ {grandTotal.toLocaleString()}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
-// PROGRAM BUDGET
-// ─────────────────────────────────────────────
-
-const ProgramBudgetSection: React.FC<{
-  title: string;
-  rows: ProgramBudgetRow[];
-  onChange: (rows: ProgramBudgetRow[]) => void;
-}> = ({ title, rows, onChange }) => {
-  const update = (i: number, key: keyof ProgramBudgetRow, value: string) => {
-    const updated = [...rows];
-    updated[i] = { ...updated[i], [key]: value };
-    if (key === 'prmsu' || key === 'agency') {
-      updated[i].total = String((parseFloat(updated[i].prmsu) || 0) + (parseFloat(updated[i].agency) || 0));
-    }
-    onChange(updated);
-  };
-  const cols: (keyof ProgramBudgetRow)[] = ['label', 'qty', 'unit', 'unit_cost', 'prmsu', 'agency', 'total'];
-  return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      <SectionHeader title={title} subtitle="Budget per project and activity" />
-      <div className="p-6 md:p-8 overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-gray-900 text-white">
-              {['Line-Item Budget', 'Qty', 'Unit', 'Unit Cost', 'PRMSU', 'Agency X', 'Total (PHP)'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left font-bold">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
-                {cols.map((col) => (
-                  <td key={col} className="px-3 py-2">
-                    <input readOnly={col === 'total'} value={row[col]}
-                      onChange={(e) => update(i, col, e.target.value)}
-                      className={`w-full text-sm outline-none border-b border-gray-200 focus:border-green-500 bg-transparent ${col === 'total' ? 'font-bold text-green-700 cursor-not-allowed' : ''}`}
-                      placeholder="—" />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button onClick={() => onChange([...rows, { label: '', qty: '', unit: '', unit_cost: '', prmsu: '', agency: '', total: '' }])}
-          className="mt-3 flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-semibold bg-green-50 hover:bg-green-100 px-4 py-2 rounded-lg transition-all">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Row
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
-// WORKPLAN
-// ─────────────────────────────────────────────
-
-const WorkplanSection: React.FC<{
-  title: string;
-  rows: WorkplanRow[];
-  onChange: (rows: WorkplanRow[]) => void;
-}> = ({ title, rows, onChange }) => {
-  const update = (i: number, key: keyof WorkplanRow, value: any) => {
-    const updated = [...rows];
-    (updated[i] as any)[key] = value;
-    onChange(updated);
-  };
-  return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      <SectionHeader title={title} subtitle="Objectives, activities, and quarterly timeline" />
-      <div className="p-6 md:p-8 overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th rowSpan={2} className="px-3 py-2 border border-gray-300 text-left font-bold text-gray-900 min-w-[120px]">Objective</th>
-              <th rowSpan={2} className="px-3 py-2 border border-gray-300 text-left font-bold text-gray-900 min-w-[120px]">Activity</th>
-              <th rowSpan={2} className="px-3 py-2 border border-gray-300 text-left font-bold text-gray-900 min-w-[100px]">Expected Output/s</th>
-              {['Year 1', 'Year 2', 'Year 3'].map((y) => (
-                <th key={y} colSpan={4} className="px-3 py-2 border border-gray-300 text-center font-bold text-gray-900">{y}</th>
-              ))}
-            </tr>
-            <tr className="bg-gray-50">
-              {[1, 2, 3].map((yr) => ['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-                <th key={`${yr}-${q}`} className="px-2 py-1 border border-gray-300 text-center font-semibold text-gray-700 w-8">{q}</th>
-              )))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="border border-gray-200 px-2 py-2">
-                  <textarea rows={2} value={row.objective} onChange={(e) => update(i, 'objective', e.target.value)}
-                    className="w-full bg-transparent outline-none resize-none text-xs" placeholder="Objective..." />
-                </td>
-                <td className="border border-gray-200 px-2 py-2">
-                  <textarea rows={2} value={row.activity} onChange={(e) => update(i, 'activity', e.target.value)}
-                    className="w-full bg-transparent outline-none resize-none text-xs" placeholder="Activity..." />
-                </td>
-                <td className="border border-gray-200 px-2 py-2">
-                  <textarea rows={2} value={row.expected_output} onChange={(e) => update(i, 'expected_output', e.target.value)}
-                    className="w-full bg-transparent outline-none resize-none text-xs" placeholder="Output..." />
-                </td>
-                {([1, 2, 3] as const).map((yr) => ['Q1', 'Q2', 'Q3', 'Q4'].map((q) => {
-                  const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
-                  return (
-                    <td key={`${yr}-${q}`} className="border border-gray-200 px-2 py-2 text-center">
-                      <input type="checkbox" checked={row[key] as boolean}
-                        onChange={(e) => update(i, key, e.target.checked)}
-                        className="rounded text-green-600 focus:ring-green-500" />
-                    </td>
-                  );
-                }))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button onClick={() => onChange([...rows, { objective: '', activity: '', expected_output: '', year1_q1: false, year1_q2: false, year1_q3: false, year1_q4: false, year2_q1: false, year2_q2: false, year2_q3: false, year2_q4: false, year3_q1: false, year3_q2: false, year3_q3: false, year3_q4: false }])}
-          className="mt-3 flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 font-semibold bg-green-50 hover:bg-green-100 px-4 py-2 rounded-lg transition-all">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Row
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
-// ACTIVITY SCHEDULE
-// ─────────────────────────────────────────────
-
-const ActivityScheduleSection: React.FC<{
-  schedule: ActivityScheduleData;
-  onChange: (updated: ActivityScheduleData) => void;
-}> = ({ schedule, onChange }) => {
-  const updateRow = (i: number, field: keyof ScheduleItem, value: string) => {
-    const updated = [...schedule.schedule];
-    updated[i] = { ...updated[i], [field]: value };
-    onChange({ ...schedule, schedule: updated });
-  };
-  return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-      <SectionHeader title="VIII. Plan of Activities" subtitle="Activity schedule and programme flow" />
-      <div className="p-6 md:p-10">
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
-          <input placeholder="ENTER ACTIVITY TITLE HERE"
-            className="w-full text-center font-bold text-xl md:text-2xl outline-none bg-transparent text-blue-700 placeholder-blue-400 border-b-2 border-blue-400 pb-2 mb-4 focus:border-blue-600"
-            value={schedule.activity_title}
-            onChange={(e) => onChange({ ...schedule, activity_title: e.target.value })} />
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <span className="text-sm font-semibold text-gray-700">Date:</span>
-            <input type="date" className="border-2 border-blue-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              value={schedule.activity_date}
-              onChange={(e) => onChange({ ...schedule, activity_date: e.target.value })} />
-          </div>
-          <p className="text-lg font-bold text-center text-gray-900 uppercase tracking-wide">Programme</p>
-        </div>
-        <div className="overflow-x-auto rounded-xl border-2 border-gray-200">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gradient-to-r from-green-600 to-emerald-600">
-                <th className="py-4 px-6 text-center text-white font-bold text-sm border-r border-white/20 w-40">Time</th>
-                <th className="py-4 px-6 text-center text-white font-bold text-sm">Part of the Program / Speaker</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {schedule.schedule.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="py-4 px-6 align-top border-r border-gray-200 bg-gray-50">
-                    <input value={row.time} placeholder="e.g., 9:00 AM" onChange={(e) => updateRow(i, 'time', e.target.value)}
-                      className="w-full text-center bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-green-500" />
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="space-y-2">
-                      <input value={row.activity} placeholder="Activity / Part of Program" onChange={(e) => updateRow(i, 'activity', e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 font-semibold outline-none focus:ring-2 focus:ring-green-500" />
-                      <input value={row.speaker} placeholder="Speaker / Facilitator (optional)" onChange={(e) => updateRow(i, 'speaker', e.target.value)}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 outline-none focus:ring-2 focus:ring-blue-400" />
-                    </div>
+                  <td className="px-2 py-2">
+                    <button onClick={() => upd('program_budget', data.program_budget.filter((_, idx) => idx !== i))}
+                      className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-all">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <button onClick={() => onChange({ ...schedule, schedule: [...schedule.schedule, { time: '', activity: '', speaker: '' }] })}
-          className="mt-4 flex items-center gap-2 text-sm text-green-600 hover:text-green-700 font-semibold bg-green-50 hover:bg-green-100 px-4 py-2 rounded-lg transition-all">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Schedule Row
+        <button onClick={() => upd('program_budget', [...data.program_budget, { label: '', qty: '', unit: '', unit_cost: '', prmsu: '', agency: '', total: '' }])}
+          className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-lg">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Add Row
+        </button>
+      </Card>
+
+      <div className="flex justify-end py-4">
+        <button onClick={onNext} disabled={isSubmitting}
+          className={`flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-10 py-4 rounded-xl font-bold text-base shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}`}>
+          {isSubmitting ? (
+            <><svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Saving Program...</>
+          ) : (
+            <>Save Program & Configure Projects<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>
+          )}
         </button>
       </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// STEP 2: PROJECT PROPOSAL FORM
+// ─────────────────────────────────────────────
+
+const ProjectProposalForm = ({ projectInfo, data, onChange }) => {
+  const upd = (field, val) => onChange({ ...data, [field]: val });
+  const updateActivity = (i, val) => {
+    const updated = [...data.activities];
+    updated[i] = { ...updated[i], activity_title: val };
+    upd('activities', updated);
+  };
+  const addActivity = () => upd('activities', [...data.activities, defaultActivityRow(data.activities.length)]);
+  const removeActivity = (i) => {
+    if (data.activities.length === 1) return;
+    upd('activities', data.activities.filter((_, idx) => idx !== i));
+  };
+  const pct = getProjectCompletion(data);
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Project Leader</span><span className="text-gray-900 font-semibold">{projectInfo.project_leader || '—'}</span></div>
+          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Duration</span><span className="text-gray-900 font-semibold">{projectInfo.project_duration_months ? `${projectInfo.project_duration_months} months` : '—'}</span></div>
+          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Start Date</span><span className="text-gray-900 font-semibold">{projectInfo.project_start_date || '—'}</span></div>
+          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">End Date</span><span className="text-gray-900 font-semibold">{projectInfo.project_end_date || '—'}</span></div>
+        </div>
+      </div>
+
+      {/* I. Profile */}
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <SectionHeader title="I. Project Profile" subtitle="Extension site and classification" />
+          <CompletionBadge pct={pct} />
+        </div>
+        <CommonProfileFields data={data} onChange={onChange} />
+      </Card>
+
+      {/* Activities */}
+      <Card>
+        <SectionHeader title="Activities Under This Project" subtitle="Add all activities included in this project proposal" />
+        <div className="space-y-3">
+          {data.activities.map((act, i) => (
+            <div key={act.id} className={`flex items-center gap-3 p-4 border-2 rounded-xl transition-all group ${!act.activity_title?.trim() ? 'border-red-100 bg-red-50/20' : 'border-gray-100 hover:border-orange-200'}`}>
+              <div className="w-6 h-6 rounded-md bg-orange-100 text-orange-700 text-xs font-black flex items-center justify-center shrink-0">{i + 1}</div>
+              <div className="flex-1">
+                <input
+                  value={act.activity_title}
+                  onChange={e => updateActivity(i, e.target.value)}
+                  placeholder={`Activity Title ${i + 1} (required)`}
+                  className={`w-full border rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent ${!act.activity_title?.trim() ? 'border-red-200 bg-red-50/30' : 'bg-gray-50 border-gray-200'}`}
+                />
+              </div>
+              {data.activities.length > 1 && (
+                <button onClick={() => removeActivity(i)}
+                  className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <button onClick={addActivity}
+          className="mt-3 flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-4 py-2.5 rounded-xl transition-all border-2 border-dashed border-orange-200 hover:border-orange-400 w-full justify-center">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          Add Another Activity
+        </button>
+      </Card>
+
+      <Card>
+        <SectionHeader title="II. Rationale" subtitle="Include a brief result of the conducted needs assessment." />
+        <TextArea value={data.rationale} onChange={e => upd('rationale', e.target.value)} rows={7} required
+          placeholder="Include a brief result of the conducted needs assessment..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="III. Significance" />
+        <TextArea value={data.significance} onChange={e => upd('significance', e.target.value)} rows={6} required
+          placeholder="Describe the significance..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="IV. Objectives" />
+        <div className="space-y-4">
+          <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-200">
+            <p className="font-bold text-gray-900 text-sm mb-3">General Objectives: <span className="text-red-400">*</span></p>
+            <TextArea value={data.general_objectives} onChange={e => upd('general_objectives', e.target.value)} rows={4} required />
+          </div>
+          <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+            <p className="font-bold text-gray-900 text-sm mb-3">Specific Objectives: <span className="text-red-400">*</span></p>
+            <TextArea value={data.specific_objectives} onChange={e => upd('specific_objectives', e.target.value)} rows={4} required />
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionHeader title="V. Methodology" />
+        <TextArea value={data.methodology} onChange={e => upd('methodology', e.target.value)} rows={7} required />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VI. Expected Output / Outcome" subtitle="6P's Framework Assessment" />
+        <ExpectedOutputTable data={data.expected_output} onChange={val => upd('expected_output', val)} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VII. Sustainability Plan" />
+        <TextArea value={data.sustainability_plan} onChange={e => upd('sustainability_plan', e.target.value)} rows={7} required />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VIII. Organization and Staffing" subtitle="Persons involved and their responsibilities" />
+        <OrgStaffingTable rows={data.org_staffing} onChange={val => upd('org_staffing', val)} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="IX. Workplan" />
+        <WorkplanTable rows={data.workplan} onChange={val => upd('workplan', val)} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="X. Budgetary Requirement" />
+        <BudgetTable rows={data.budget} onChange={val => upd('budget', val)} />
+      </Card>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// STEP 3: ACTIVITY PROPOSAL FORM
+// ─────────────────────────────────────────────
+
+const ActivityProposalForm = ({ activityInfo, data, onChange }) => {
+  const upd = (field, val) => onChange({ ...data, [field]: val });
+
+  const updateScheduleRow = (i, field, val) => {
+    const updated = [...data.schedule.rows];
+    updated[i] = { ...updated[i], [field]: val };
+    upd('schedule', { ...data.schedule, rows: updated });
+  };
+  const removeScheduleRow = (i) => {
+    if (data.schedule.rows.length <= 1) return;
+    upd('schedule', { ...data.schedule, rows: data.schedule.rows.filter((_, idx) => idx !== i) });
+  };
+  const pct = getActivityCompletion(data);
+
+  return (
+    <div className="space-y-5">
+      {/* I. Profile */}
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <SectionHeader title="I. Activity Profile" subtitle="Extension site and classification" />
+          <CompletionBadge pct={pct} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <Field label="Activity Duration (e.g. 8 hours)" value={data.activity_duration} onChange={e => upd('activity_duration', e.target.value)} />
+        </div>
+        <CommonProfileFields data={data} onChange={onChange} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="II. Rationale" subtitle="Include a brief result of the conducted needs assessment." />
+        <TextArea value={data.rationale} onChange={e => upd('rationale', e.target.value)} rows={7} required
+          placeholder="Include a brief result of the conducted needs assessment..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="III. Significance" />
+        <TextArea value={data.significance} onChange={e => upd('significance', e.target.value)} rows={6} required />
+      </Card>
+
+      <Card>
+        <SectionHeader title="IV. Objectives of the Activity" />
+        <TextArea value={data.objectives} onChange={e => upd('objectives', e.target.value)} rows={6} required
+          placeholder="Describe the objectives of this activity..." />
+      </Card>
+
+      <Card>
+        <SectionHeader title="V. Methodology" subtitle="Short narrative" />
+        <TextArea value={data.methodology} onChange={e => upd('methodology', e.target.value)} rows={7} required />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VI. Expected Output / Outcome" subtitle="6P's Framework Assessment" />
+        <ExpectedOutputTable data={data.expected_output} onChange={val => upd('expected_output', val)} />
+      </Card>
+
+      <Card>
+        <SectionHeader title="VII. Organization and Staffing" subtitle="Persons involved and their responsibilities" />
+        <OrgStaffingTable rows={data.org_staffing} onChange={val => upd('org_staffing', val)} />
+      </Card>
+
+      {/* Activity Schedule */}
+      <Card>
+        <SectionHeader title="VIII. Plan of Activities" subtitle="Activity schedule and programme flow" />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Title of the Activity" value={data.schedule.activity_title}
+              onChange={e => upd('schedule', { ...data.schedule, activity_title: e.target.value })} />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Activity Date</label>
+              <input type="date" value={data.schedule.activity_date}
+                onChange={e => upd('schedule', { ...data.schedule, activity_date: e.target.value })}
+                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+            </div>
+          </div>
+          <div className="overflow-x-auto rounded-xl border-2 border-gray-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r from-emerald-600 to-teal-600">
+                  <th className="py-3 px-5 text-center text-white font-bold border-r border-white/20 w-36">Time</th>
+                  <th className="py-3 px-5 text-left text-white font-bold flex-1">Activity</th>
+                  <th className="py-3 px-5 text-left text-white font-bold w-48">Speaker / Facilitator</th>
+                  <th className="py-3 px-3 text-white font-bold w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.schedule.rows.map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="py-2 px-4 border-r border-gray-200 bg-gray-50">
+                      <input value={row.time} onChange={e => updateScheduleRow(i, 'time', e.target.value)}
+                        className="w-full text-center bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500 text-xs" />
+                    </td>
+                    <td className="py-2 px-4">
+                      <input value={row.activity} onChange={e => updateScheduleRow(i, 'activity', e.target.value)}
+                        placeholder="Activity" className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 font-semibold outline-none focus:ring-2 focus:ring-emerald-500 text-sm" />
+                    </td>
+                    <td className="py-2 px-4">
+                      <input value={row.speaker} onChange={e => updateScheduleRow(i, 'speaker', e.target.value)}
+                        placeholder="Name / role" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-600 outline-none focus:ring-2 focus:ring-blue-400" />
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      <button onClick={() => removeScheduleRow(i)} className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-all mx-auto">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={() => upd('schedule', { ...data.schedule, rows: [...data.schedule.rows, { time: '', activity: '', speaker: '' }] })}
+            className="flex items-center gap-2 text-sm font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-lg">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>Add Row
+          </button>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionHeader title="IX. Budgetary Requirement" />
+        <BudgetTable rows={data.budget} onChange={val => upd('budget', val)} />
+      </Card>
     </div>
   );
 };
@@ -1178,372 +1054,316 @@ const ActivityScheduleSection: React.FC<{
 // MAIN COMPONENT
 // ─────────────────────────────────────────────
 
-const CreateProposal: React.FC = () => {
-  const navigate = useNavigate();
-  const { showToast } = useToast();
-
-  const [proposalType, setProposalType] = useState<ProposalType | null>(null);
-  const [title, setTitle] = useState('');
+const CreateProposal = () => {
+  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [toast, setToast] = useState(null);
 
-  // Parent linking
-  const [selectedParent, setSelectedParent] = useState<ParentProposalOption | null>(null);
-  const [parentOptions, setParentOptions] = useState<ParentProposalOption[]>([]);
-  const [isLoadingParents, setIsLoadingParents] = useState(false);
+  const [programData, setProgramData] = useState(defaultProgramFormData());
+  const [projectForms, setProjectForms] = useState([]);
+  const [activeProjectTab, setActiveProjectTab] = useState(0);
+  const [activityForms, setActivityForms] = useState([]);
+  const [activeActivityKey, setActiveActivityKey] = useState(null);
 
-  // Form state
-  const [profile, setProfile] = useState<ProfileData>(defaultProfile());
-  const [cover, setCover] = useState<CoverPageData>(defaultCover());
-  const [rationale, setRationale] = useState('');
-  const [significance, setSignificance] = useState('');
-  const [generalObjectives, setGeneralObjectives] = useState('');
-  const [specificObjectives, setSpecificObjectives] = useState('');
-  const [methodology, setMethodology] = useState('');
-  const [expectedOutput, setExpectedOutput] = useState<ExpectedOutput6Ps>(defaultExpectedOutput());
-  const [sustainabilityPlan, setSustainabilityPlan] = useState('');
-  const [orgStaffing, setOrgStaffing] = useState<OrgStaffingItem[]>(defaultOrgStaffing());
-  const [workplan, setWorkplan] = useState<WorkplanRow[]>(defaultWorkplan());
-  const [budgetRows, setBudgetRows] = useState<BudgetRows>(defaultBudgetRows());
-  const [programBudget, setProgramBudget] = useState<ProgramBudgetRow[]>(defaultProgramBudget());
-  const [activitySchedule, setActivitySchedule] = useState<ActivityScheduleData>(defaultSchedule());
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/', { replace: true }); return; }
-    try { setUser(JSON.parse(stored)); }
-    catch { navigate('/', { replace: true }); }
-  }, [navigate]);
-
-  // ── Debug: fetch all proposal node types on mount to inspect raw API shape ──
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    (async () => {
-      try {
-        console.group('[proposals-node] Fetching all types on mount...');
-        await fetchProposalsNode('Program');
-        await fetchProposalsNode('Project');
-        await fetchProposalsNode('Activity');
-        console.groupEnd();
-      } catch (err) {
-        console.error('[proposals-node] Error:', err);
-      }
-    })();
-  }, []);
-
-  // ── Fetch parent proposals from the real API ──────────────────────────────
-  const fetchParentProposals = useCallback(async (type: ProposalType) => {
-    const config = PROPOSAL_TYPES.find((t) => t.type === type);
-    if (!config?.parentType) return;
-
-    setIsLoadingParents(true);
-    try {
-      const options =
-        type === 'project'
-          ? await fetchProgramProposals()
-          : await fetchProjectProposals();
-      setParentOptions(options);
-    } catch (err) {
-      showToast(
-        `Failed to load ${config.parentLabel}s: ${err instanceof Error ? err.message : 'Unknown error'}`,
-        'error',
-      );
-    } finally {
-      setIsLoadingParents(false);
-    }
-  }, [showToast]);
-
-  const resetForm = (type: ProposalType) => {
-    setSelectedParent(null);
-    setParentOptions([]);
-    setTitle('');
-    setProfile(defaultProfile());
-    setCover(defaultCover());
-    setRationale(''); setSignificance('');
-    setGeneralObjectives(''); setSpecificObjectives('');
-    setMethodology('');
-    setExpectedOutput(defaultExpectedOutput());
-    setSustainabilityPlan('');
-    setOrgStaffing(defaultOrgStaffing());
-    setWorkplan(defaultWorkplan());
-    setBudgetRows(defaultBudgetRows());
-    setProgramBudget(defaultProgramBudget());
-    setActivitySchedule(defaultSchedule());
-    fetchParentProposals(type);
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
   };
 
-  const handleSelectType = (type: ProposalType) => {
-    setProposalType(type);
-    resetForm(type);
-  };
+  // API stubs
+  const submitProgramAPI = async (data) => { await new Promise(r => setTimeout(r, 1200)); return { id: 1000 }; };
+  const submitProjectAPI = async (data) => { await new Promise(r => setTimeout(r, 800)); return { id: 1001 }; };
+  const submitActivityAPI = async (data) => { await new Promise(r => setTimeout(r, 600)); return { id: 1002 }; };
 
-  // Auto-fill profile when a parent is selected
-  const handleSelectParent = (parent: ParentProposalOption | null) => {
-    setSelectedParent(parent);
-    if (!parent) return;
-    if (proposalType === 'project') {
-      setProfile((prev) => ({ ...prev, program_title: parent.title, program_leader: parent.leader }));
-    } else if (proposalType === 'activity') {
-      setProfile((prev) => ({ ...prev, project_title: parent.title, project_leader: parent.leader }));
-    }
-  };
-
-  // ── Submit ────────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    if (!proposalType) { showToast('Please select a proposal type.', 'info'); return; }
-    if (!title.trim()) { showToast('Please enter a proposal title.', 'info'); return; }
-
-    const config = PROPOSAL_TYPES.find((t) => t.type === proposalType)!;
-    if (config.parentType && !selectedParent) {
-      showToast(`Please select a ${config.parentLabel} to link this proposal to.`, 'info');
-      return;
-    }
+  const handleProgramNext = async () => {
+    if (!programData.program_title.trim()) { showToast('Please enter a Program Title.', 'error'); return; }
+    if (programData.projects.some(p => !p.project_title.trim())) { showToast('Please fill in all Project Titles.', 'error'); return; }
+    if (!programData.rationale.trim()) { showToast('Please fill in the Rationale.', 'error'); return; }
 
     setIsSubmitting(true);
     try {
-      if (proposalType === 'program') {
-        const payload = buildProgramPayload(
-          title, profile, rationale, significance,
-          generalObjectives, specificObjectives, methodology,
-          expectedOutput, sustainabilityPlan, orgStaffing, workplan, programBudget,
-        );
-        await submitProgramProposal(payload);
-
-      } else if (proposalType === 'project') {
-        const payload = buildProjectPayload(
-          title, Number(selectedParent!.id), profile, rationale, significance,
-          generalObjectives, specificObjectives, methodology,
-          expectedOutput, sustainabilityPlan, orgStaffing, workplan, budgetRows,
-        );
-        await submitProjectProposal(payload);
-
-      } else {
-        const payload = buildActivityPayload(
-          title, Number(selectedParent!.id), profile, rationale, significance,
-          generalObjectives, methodology, expectedOutput,
-          sustainabilityPlan, orgStaffing, activitySchedule, budgetRows,
-        );
-        await submitActivityProposal(payload);
-      }
-
-      showToast('Proposal submitted successfully!', 'success');
-      resetForm(proposalType);
-    } catch (err) {
-      showToast(`Submission failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+      await submitProgramAPI(programData);
+      showToast('Program proposal saved! Now configure your projects.');
+      setProjectForms(programData.projects.map(() => defaultProjectFormData()));
+      setActiveProjectTab(0);
+      setStep(2);
+      scrollToTop();
+    } catch { showToast('Failed to save program proposal.', 'error'); }
+    finally { setIsSubmitting(false); }
   };
 
-  const typeConfig = PROPOSAL_TYPES.find((t) => t.type === proposalType);
-  const stepOffset = typeConfig?.parentType ? 1 : 0;
+  const handleProjectsNext = async () => {
+    const missing = projectForms.some(f => f.activities.some(a => !a.activity_title.trim()));
+    if (missing) { showToast('Please fill in all Activity Titles in every project.', 'error'); return; }
+    const missingFields = projectForms.some(f => !f.implementing_agency?.trim() || !f.rationale?.trim());
+    if (missingFields) { showToast('Please fill in required fields (Implementing Agency & Rationale) for all projects.', 'error'); return; }
+
+    setIsSubmitting(true);
+    try {
+      for (let i = 0; i < projectForms.length; i++) {
+        await submitProjectAPI({ ...projectForms[i], project_info: programData.projects[i] });
+      }
+      showToast('All project proposals saved! Now configure your activities.');
+      const forms = [];
+      projectForms.forEach((pf, pi) => {
+        pf.activities.forEach((act, ai) => {
+          forms.push({ projectIndex: pi, activityIndex: ai, activityTitle: act.activity_title, data: defaultActivityFormData() });
+        });
+      });
+      setActivityForms(forms);
+      setActiveActivityKey(forms.length > 0 ? `${forms[0].projectIndex}-${forms[0].activityIndex}` : null);
+      setStep(3);
+      scrollToTop();
+    } catch { showToast('Failed to save project proposals.', 'error'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      for (const form of activityForms) {
+        await submitActivityAPI({ ...form.data, activity_title: form.activityTitle });
+      }
+      showToast('All activity proposals submitted successfully! 🎉');
+      setTimeout(() => {
+        setProgramData(defaultProgramFormData());
+        setProjectForms([]);
+        setActivityForms([]);
+        setActiveProjectTab(0);
+        setActiveActivityKey(null);
+        setStep(1);
+        scrollToTop();
+      }, 1500);
+    } catch { showToast('Failed to submit some activities.', 'error'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const updateActivityForm = (key, newData) => {
+    setActivityForms(prev => prev.map(f =>
+      `${f.projectIndex}-${f.activityIndex}` === key ? { ...f, data: newData } : f
+    ));
+  };
+
+  const activitiesByProject = activityForms.reduce((acc, form) => {
+    const pi = form.projectIndex;
+    if (!acc[pi]) acc[pi] = [];
+    acc[pi].push(form);
+    return acc;
+  }, {});
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4 md:p-8 animate-overlay-enter">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-4 md:p-8">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl shadow-xl font-semibold text-sm transition-all ${
+          toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
+          <span>{toast.type === 'error' ? '⚠️' : '✅'}</span>
+          {toast.msg}
+        </div>
+      )}
 
-        <div className="mb-10">
-          <h2 className="text-3xl font-bold text-gray-900">Create Proposal</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Select a proposal type, then fill in the required details.
-          </p>
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Create Proposal</h1>
+          <p className="text-gray-500 mt-1 text-sm">Build your program, projects, and activities step by step.</p>
         </div>
 
-        <div className="space-y-6">
+        <StepIndicator currentStep={step} />
 
-          {/* ── Step 1: Type ── */}
-          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 md:p-8">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm font-bold flex items-center justify-center shrink-0">1</div>
-              <h3 className="text-xl font-bold text-gray-900">Select Proposal Type</h3>
+        {/* ── STEP 1: PROGRAM ── */}
+        {step === 1 && (
+          <ProgramProposalForm
+            data={programData}
+            onChange={setProgramData}
+            onNext={handleProgramNext}
+            isSubmitting={isSubmitting}
+          />
+        )}
+
+        {/* ── STEP 2: PROJECTS ── */}
+        {step === 2 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Project Proposals</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Configure each project under <span className="font-semibold text-emerald-700">{programData.program_title}</span></p>
+              </div>
+              <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full font-medium">
+                {programData.projects.length} project{programData.projects.length !== 1 ? 's' : ''}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mb-5 text-xs bg-gray-50 rounded-xl px-4 py-2.5 border border-gray-100 w-fit flex-wrap">
-              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-              <span className="font-semibold text-blue-700">Program</span>
-              <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-              <span className="font-semibold text-green-700">Project</span>
-              <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
-              <span className="font-semibold text-orange-600">Activity</span>
-              <span className="text-gray-400 mx-1">·</span>
-              <span className="text-gray-500">Proposals are linked in this hierarchy</span>
+
+            {/* Project Tabs as list */}
+            <div className="flex flex-col gap-1.5">
+              {programData.projects.map((proj, i) => {
+                const pct = projectForms[i] ? getProjectCompletion(projectForms[i]) : 0;
+                const isActive = activeProjectTab === i;
+                return (
+                  <button key={i} onClick={() => setActiveProjectTab(i)}
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-left ${
+                      isActive
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-300 hover:text-emerald-700'
+                    }`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>{i + 1}</span>
+                      <span>{proj.project_title || `Project ${i + 1}`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pct < 100 && !isActive && (
+                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">{pct}% filled</span>
+                      )}
+                      {pct === 100 && !isActive && (
+                        <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">✓ Complete</span>
+                      )}
+                      <svg className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90 text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-            <ProposalTypeSelector selected={proposalType} onSelect={handleSelectType} />
+
+            {/* Active Project Form */}
+            {projectForms[activeProjectTab] && (
+              <div>
+                <div className="flex items-center gap-3 mb-5 px-1">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-sm shadow-md">{activeProjectTab + 1}</div>
+                  <h3 className="text-lg font-bold text-gray-900">{programData.projects[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}</h3>
+                </div>
+                <ProjectProposalForm
+                  projectInfo={programData.projects[activeProjectTab]}
+                  data={projectForms[activeProjectTab]}
+                  onChange={(newData) => {
+                    const updated = [...projectForms];
+                    updated[activeProjectTab] = newData;
+                    setProjectForms(updated);
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between py-4">
+              <button onClick={() => { setStep(1); scrollToTop(); }}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold bg-white border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
+                Back to Program
+              </button>
+              <button onClick={handleProjectsNext} disabled={isSubmitting}
+                className={`flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-10 py-4 rounded-xl font-bold shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:scale-[1.02] ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                {isSubmitting ? (
+                  <><svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Saving Projects...</>
+                ) : (
+                  <>Save Projects & Configure Activities<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>
+                )}
+              </button>
+            </div>
           </div>
+        )}
 
-          {proposalType && (
-            <>
-              {/* ── Step 2: Parent Linking (Project & Activity only) ── */}
-              {typeConfig?.parentType && (
-                <div>
-                  <div className="flex items-center gap-3 mb-3 px-1">
-                    <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm font-bold flex items-center justify-center shrink-0">2</div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Link to {typeConfig.parentLabel}
-                    </h3>
+        {/* ── STEP 3: ACTIVITIES ── */}
+        {step === 3 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Activity Proposals</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Configure each activity across all projects</p>
+              </div>
+              <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full font-medium">
+                {activityForms.length} activit{activityForms.length !== 1 ? 'ies' : 'y'}
+              </div>
+            </div>
+
+            {/* Activity list grouped by project */}
+            <div className="flex flex-col gap-3">
+              {Object.entries(activitiesByProject).map(([piStr, forms]) => {
+                const pi = Number(piStr);
+                const projectName = programData.projects[pi]?.project_title || `Project ${pi + 1}`;
+                return (
+                  <div key={pi} className="space-y-1.5">
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 text-xs font-black flex items-center justify-center">{pi + 1}</div>
+                      <h4 className="font-bold text-gray-800 text-sm">{projectName}</h4>
+                      <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+                    <div className="flex flex-col gap-1 pl-7">
+                      {forms.map((form) => {
+                        const key = `${form.projectIndex}-${form.activityIndex}`;
+                        const isActive = activeActivityKey === key;
+                        const pct = getActivityCompletion(form.data);
+                        return (
+                          <button key={key} onClick={() => setActiveActivityKey(key)}
+                            className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-left ${
+                              isActive
+                                ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
+                                : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600'
+                            }`}>
+                            <div className="flex items-center gap-3">
+                              <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black ${isActive ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-600'}`}>
+                                {String.fromCharCode(65 + form.activityIndex)}
+                              </span>
+                              <span>{form.activityTitle || `Activity ${form.activityIndex + 1}`}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {pct < 100 && !isActive && (
+                                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">{pct}% filled</span>
+                              )}
+                              {pct === 100 && !isActive && (
+                                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">✓ Complete</span>
+                              )}
+                              <svg className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90 text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <ParentProposalSelector
-                    proposalType={proposalType}
-                    parentOptions={parentOptions}
-                    selectedParent={selectedParent}
-                    onSelect={handleSelectParent}
-                    isLoading={isLoadingParents}
+                );
+              })}
+            </div>
+
+            {/* Active Activity Form */}
+            {activeActivityKey && (() => {
+              const form = activityForms.find(f => `${f.projectIndex}-${f.activityIndex}` === activeActivityKey);
+              if (!form) return null;
+              return (
+                <div>
+                  <div className="flex items-center gap-3 mb-5 px-1">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-md">
+                      {String.fromCharCode(65 + form.activityIndex)}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{form.activityTitle || `Activity ${form.activityIndex + 1}`}</h3>
+                      <p className="text-xs text-gray-500">Under: {programData.projects[form.projectIndex]?.project_title || `Project ${form.projectIndex + 1}`}</p>
+                    </div>
+                  </div>
+                  <ActivityProposalForm
+                    activityInfo={form}
+                    data={form.data}
+                    onChange={(newData) => updateActivityForm(activeActivityKey, newData)}
                   />
                 </div>
-              )}
+              );
+            })()}
 
-              {/* ── Proposal Title ── */}
-              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm font-bold flex items-center justify-center shrink-0">
-                    {2 + stepOffset}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900">{typeConfig?.label} Title</h3>
-                </div>
-                {selectedParent && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 text-xs font-medium">
-                      <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                      </svg>
-                      Under: <span className="font-bold ml-0.5">{selectedParent.title}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="relative">
-                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                    placeholder={`Enter ${typeConfig?.label.toLowerCase()} title...`}
-                    className="peer w-full px-4 pt-5 pb-2 text-sm bg-white border border-gray-300 rounded-xl shadow-sm outline-none
-                      transition-all duration-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 hover:border-gray-400" />
-                  <label className="absolute left-4 top-1.5 text-xs text-emerald-600 pointer-events-none font-medium">
-                    {typeConfig?.label} Title
-                  </label>
-                </div>
-              </div>
-
-              {/* I. Profile */}
-              <ProfileSection type={proposalType} profile={profile} onChange={(u) => setProfile((p) => ({ ...p, ...u }))} />
-
-              {/* II. Rationale */}
-              <SectionCard title="II. Rationale">
-                <TextAreaField placeholder="Include a brief result of the conducted needs assessment..." value={rationale} onChange={(e) => setRationale(e.target.value)} rows={8} />
-              </SectionCard>
-
-              {/* III. Significance */}
-              <SectionCard title="III. Significance">
-                <TextAreaField placeholder="Describe the significance of this proposal..." value={significance} onChange={(e) => setSignificance(e.target.value)} rows={6} />
-              </SectionCard>
-
-              {/* IV. Objectives */}
-              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-1 h-8 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full" />
-                  <h3 className="text-xl font-bold text-gray-900">
-                    IV. {proposalType === 'activity' ? 'Objectives of the Activity' : 'Objectives'}
-                  </h3>
-                </div>
-                {proposalType !== 'activity' ? (
-                  <div className="space-y-5">
-                    <div className="bg-green-50 rounded-xl p-5 border border-green-200">
-                      <p className="font-bold text-gray-900 mb-3">General Objectives:</p>
-                      <TextAreaField value={generalObjectives} onChange={(e) => setGeneralObjectives(e.target.value)} />
-                    </div>
-                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
-                      <p className="font-bold text-gray-900 mb-3">Specific Objectives:</p>
-                      <TextAreaField value={specificObjectives} onChange={(e) => setSpecificObjectives(e.target.value)} />
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between py-4">
+              <button onClick={() => { setStep(2); scrollToTop(); }}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold bg-white border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl transition-all">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
+                Back to Projects
+              </button>
+              <button onClick={handleFinalSubmit} disabled={isSubmitting}
+                className={`flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-12 py-4 rounded-xl font-bold text-base shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:scale-[1.02] ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                {isSubmitting ? (
+                  <><svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Submitting All Activities...</>
                 ) : (
-                  <TextAreaField placeholder="Describe the objectives of this activity..." value={generalObjectives} onChange={(e) => setGeneralObjectives(e.target.value)} rows={6} />
+                  <>Submit All Activity Proposals<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg></>
                 )}
-              </div>
-
-              {/* V. Methodology */}
-              <SectionCard title="V. Methodology">
-                <TextAreaField
-                  placeholder={
-                    proposalType === 'activity'
-                      ? 'Short narrative of the methodology...'
-                      : 'Describe the methodology (separate phases with new lines)...'
-                  }
-                  value={methodology}
-                  onChange={(e) => setMethodology(e.target.value)}
-                  rows={8}
-                />
-              </SectionCard>
-
-              {/* VI. Expected Output */}
-              <ExpectedOutputSection title="VI. Expected Output / Outcome" data={expectedOutput}
-                onChange={(key, value) => setExpectedOutput((p) => ({ ...p, [key]: value }))} />
-
-              {/* VII. Sustainability Plan (Program & Project only) */}
-              {(proposalType === 'program' || proposalType === 'project') && (
-                <SectionCard title="VII. Sustainability Plan">
-                  <TextAreaField placeholder="Describe the sustainability plan..." value={sustainabilityPlan} onChange={(e) => setSustainabilityPlan(e.target.value)} rows={10} />
-                </SectionCard>
-              )}
-
-              {/* Org & Staffing */}
-              <OrgStaffingSection
-                title={proposalType === 'activity' ? 'VII. Organization and Staffing' : 'VIII. Organization and Staffing'}
-                rows={orgStaffing} onChange={setOrgStaffing}
-              />
-
-              {/* Plan of Activities (Activity only) */}
-              {proposalType === 'activity' && (
-                <ActivityScheduleSection schedule={activitySchedule} onChange={setActivitySchedule} />
-              )}
-
-              {/* Workplan (Program & Project) */}
-              {(proposalType === 'program' || proposalType === 'project') && (
-                <WorkplanSection
-                  title={proposalType === 'program' ? 'VIII. Workplan' : 'IX. Workplan'}
-                  rows={workplan} onChange={setWorkplan}
-                />
-              )}
-
-              {/* Budgetary Requirement */}
-              {proposalType === 'program' ? (
-                <ProgramBudgetSection title="IX. Budgetary Requirement" rows={programBudget} onChange={setProgramBudget} />
-              ) : (
-                <BudgetSection
-                  title={proposalType === 'project' ? 'X. Budgetary Requirement' : 'IX. Budgetary Requirement'}
-                  rows={budgetRows} onChange={setBudgetRows}
-                />
-              )}
-
-              {/* Submit */}
-              <div className="flex justify-end py-6">
-                <button onClick={handleSubmit} disabled={isSubmitting}
-                  className={`group relative bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700
-                    text-white px-12 py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-500/30
-                    transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]
-                    ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl hover:shadow-green-500/40'}`}>
-                  <span className="flex items-center gap-3">
-                    {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Submitting…
-                      </>
-                    ) : (
-                      <>
-                        Submit {typeConfig?.label}
-                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </>
-                    )}
-                  </span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
