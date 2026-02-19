@@ -1,3 +1,4 @@
+import { type ProposalStatus } from "./statusStyles";
 export interface ApiUser {
   id: number;
   username: string;
@@ -36,6 +37,33 @@ export interface UpdateAdminUserPayload {
   role?: "admin" | "reviewer" | "implementor";
 }
 
+export interface ProgramProposal {
+  id: number;
+  child_id: number;
+  reviewer_count: number;
+  title: string;
+  file_path: string | null;
+  proposal_type: "Program";
+  status: ProposalStatus;
+  version_no: number;
+  created_at: string;
+  user: number;
+}
+
+export interface ReviewerAssignment {
+  id: number;
+  proposal: number;
+  reviewer: number;
+  assigned_by: number;
+  is_review: boolean;
+  assigned_at: string;
+}
+
+export interface AssignReviewerPayload {
+  proposal: number;
+  reviewer: number;
+}
+
 const API_URL = "http://127.0.0.1:8000/api";
 
 const getAuthHeaders = () => {
@@ -46,6 +74,80 @@ const getAuthHeaders = () => {
     "Authorization": `Bearer ${token}`,
   };
 };
+
+// Get All Proposals
+export const getProposals = async (): Promise<ProgramProposal[]> => {
+  const response = await fetch(`${API_URL}/admin/proposals-node/Program/`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch program proposals")
+  }
+
+  return response.json();
+}
+
+// Get All Reviewers
+export const getAllReviewers = async (): Promise<ApiUser[]> => {
+  const response = await fetch(`${API_URL}/reviewers/`, {
+    method: "GET",
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch reviewers");
+  }
+
+  return response.json()
+}
+
+// Get Assigned Reviewers
+export const getAssignedReviewers = async (): Promise<ReviewerAssignment[]> => {
+  const response = await fetch(`${API_URL}/assign-reviewer/`, {
+    method: "GET",
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch assigned reviewers");
+  }
+
+  return response.json();
+}
+
+// Assign Reviewer
+export const assignReviewer = async (payload: AssignReviewerPayload): Promise<ReviewerAssignment> => {
+  const response = await fetch(`${API_URL}/assign-reviewer/`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to assign reviewer");
+  }
+
+  return response.json();
+}
+
+// Unassign Revieweer
+export const unassignReviewer = async (proposalId: number ): Promise<void> => {
+  const response = await fetch(`${API_URL}/unassign-reviewer/${proposalId}/`, {
+    method: "DELETE",
+    headers: getAuthHeaders()
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to unassign reviewer");
+  }
+}
 
 // Get All Accounts (Manage Account)
 export const getAllAccounts = async (): Promise<ApiUser[]> => {

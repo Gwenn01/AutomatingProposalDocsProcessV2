@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Edit, Trash2, Search, UserPlus, Table, Grid } from "lucide-react";
+import { Edit, Trash2, Search, UserPlus, Table, Grid, User2 } from "lucide-react";
 import EditProfileAdmin from "@/components/admin/EditProfileAdminModal";
 import AddAccountModal from "@/components/admin/AddAccountModal";
 import DeleteAccountConfirmationModal from "@/components/admin/DeleteAccountConfirmationModal";
@@ -19,10 +19,6 @@ const ManageAccount = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
-
-  /* =========================
-     Fetch Users
-  ========================= */
 
   const fetchUsers = async (): Promise<void> => {
     try {
@@ -188,29 +184,30 @@ const ManageAccount = () => {
                     {/* User Details - Enhanced Identity Style */}
                     <td className="py-5 px-6 group-hover:bg-white border-y border-transparent group-hover:border-slate-100 transition-all duration-300">
                       <div className="flex items-center gap-4">
-                        {/* Avatar Circle with Initials */}
+                        {/* Icon Container */}
                         <div className="relative flex-shrink-0">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center border border-slate-200 group-hover:from-green-50 group-hover:to-green-100 group-hover:border-green-200 transition-all duration-500">
-                            <span className="text-[12px] font-black text-slate-500 group-hover:text-green-600 tracking-tighter">
-                              {user.profile.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()}
-                            </span>
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:scale-105 group-hover:bg-green-50 group-hover:border-green-200 transition-all duration-500 shadow-sm">
+                            <User2 
+                              size={20} 
+                              strokeWidth={2.5} 
+                              className="text-slate-500 group-hover:text-green-600 transition-colors duration-500" 
+                            />
                           </div>
-                          {/* Online Status Dot (Optional Aesthetic) */}
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full group-hover:ring-4 group-hover:ring-green-500/20 transition-all" />
+                          
+                          {/* Online Status Indicator */}
+                          <div className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-20 group-hover:opacity-75 transition-opacity" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-white" />
+                          </div>
                         </div>
 
                         {/* Text Details */}
                         <div className="flex flex-col min-w-0">
-                          <span className="font-black text-slate-800 text-[14px] tracking-tight leading-none mb-1 group-hover:text-green-700 transition-colors">
+                          <span className="font-bold text-slate-800 text-[14px] tracking-tight leading-none mb-1 group-hover:text-green-700 transition-colors">
                             {user.profile.name}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-green-400 transition-colors" />
-                            <span className="text-[11px] text-slate-400 font-bold tracking-tight truncate max-w-[180px]">
+                            <span className="text-[11px] text-slate-400 font-medium tracking-tight truncate max-w-[180px]">
                               {user.email}
                             </span>
                           </div>
