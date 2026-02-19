@@ -14,4 +14,4 @@ class ActivityProposalSerializer(serializers.ModelSerializer):
 class ActivityListDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityProposal
-        fields = ['id', 'activity_title', 'project_leader']
+        fields = ['id', 'activity_title', 'project_leader', 'members', 'activity_duration_hours', 'activity_date']
