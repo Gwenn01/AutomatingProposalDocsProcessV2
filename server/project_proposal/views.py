@@ -10,6 +10,7 @@ from .serializers import (
     ProjectProposalSerializer,
     ProjectActivitiesSerializer,
 )
+from notifications.services import NotificationService
 # Create your views here.
 
 class ProjectProposalList(APIView):
@@ -74,7 +75,10 @@ class ProjectProposalDetail(APIView):
             partial=True
         )
         if serializer.is_valid():
-            serializer.save() 
+            serializer.save()
+            NotoficationService.admin_notifications(
+                f"Project proposal updated by {request.user.username}"
+            )
             return Response({"message": "Project proposal updated successfully",
                          "data": serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

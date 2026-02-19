@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/', include('activity_proposal.urls')),
     path('api/', include('reviewer.urls')),
     path('api/', include('proposal_cover.urls')),
+    path('api/', include('notifications.urls')),
 ]

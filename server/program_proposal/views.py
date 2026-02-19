@@ -13,6 +13,7 @@ from .serializers import (
     ProgramProjectsSerializer
 )
 
+from notifications.services import NotificationService
 # Create your views here.
 
 # IMPLEMENTOR VIEWS CREATE proposal
@@ -38,6 +39,10 @@ class ProgramProposalList(APIView):
         )
         if serializer.is_valid():
             serializer.save()
+            # add notification to admin
+            NotificationService.admin_notifications(
+                f"New program proposal submitted by {request.user.username}"
+            )
             return Response(
                 {
                     "message": "Program proposal created successfully",

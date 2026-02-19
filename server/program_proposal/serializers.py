@@ -30,12 +30,12 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         if not title:
             raise serializers.ValidationError({"title": "This field is required."})
 
-        if ProgramProposal.objects.filter(
-            program_title=program_title,
-        ).exists():
-            raise serializers.ValidationError({
-                "duplicate": "This program already exists on this date"
-            })
+        # if ProgramProposal.objects.filter(
+        #     program_title=program_title,
+        # ).exists():
+        #     raise serializers.ValidationError({
+        #         "duplicate": "This program already exists on this date"
+        #     })
         return data
     
     def create(self, validated_data):

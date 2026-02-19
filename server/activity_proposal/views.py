@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny 
 from .models import ActivityProposal
 from .serializers import ActivityProposalSerializer
+from notifications.services import NotificationService
 
 class ActivityProposalList(APIView):
     permission_classes = [IsAuthenticated]
@@ -56,6 +57,9 @@ class ActivityProposalDetail(APIView):
         )
         if serializer.is_valid():
             serializer.save()
+            NotificationService.admin_notifications(
+                f"Activity proposal updated by {request.user.username}"
+            )
             return Response({"message": "Activity proposal updated successfully",  
                              "data": serializer.data}, status=status.HTTP_200_OK
             )
