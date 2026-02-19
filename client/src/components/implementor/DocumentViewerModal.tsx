@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronRight, X } from "lucide-react";
 
 import { getStatusStyle } from "../../utils/statusStyles";
+import { fetchProjectList } from "@/utils/implementor-api";
 
 // ================= TYPE DEFINITIONS =================
 // Matches the actual API response from /api/program-proposal/{child_id}
@@ -34,10 +35,10 @@ interface ApiProposalDetail {
   projects_list: any[];
   implementing_agency: string[];
   cooperating_agencies: string[];
-  extension_sites: string[];    // e.g. ["g, gh, j, h, hgh", ...]
-  tags: string[];               // e.g. ["general"]
-  clusters: string[];           // e.g. ["Environment and Natural Resources"]
-  agendas: string[];            // e.g. ["Business Management..."]
+  extension_sites: string[];    
+  tags: string[];               
+  clusters: string[];          
+  agendas: string[];           
   sdg_addressed: string;
   mandated_academic_program: string;
   rationale: string;
@@ -45,7 +46,7 @@ interface ApiProposalDetail {
   general_objectives: string;
   specific_objectives: string;
   methodology: MethodologyPhase[];
-  expected_output_6ps: string[]; // 8 items matching 6Ps order
+  expected_output_6ps: string[];
   sustainability_plan: string;
   org_and_staffing: OrgStaffingItem[];
   workplan: WorkplanItem[];
@@ -59,6 +60,12 @@ interface DocumentViewerModalProps {
   proposalData: ApiProposalDetail | null;
   proposalStatus: string;
   proposalTitle: string;
+}
+
+interface ProjectList {
+  id: number;
+  program_title: string;
+  projects: [];
 }
 
 // ================= HELPERS =================
@@ -97,8 +104,10 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   proposalTitle,
 }) => {
   if (!isOpen || !proposalData) return null;
+  const [ projectList, setProjectList ] = useState<ProjectList[]>([]);
 
   const statusStyle = getStatusStyle(proposalStatus);
+  const childId = proposalData?.id;
 
   // Build a lookup for workplan: { "Year 1 Q1": "activity text", ... }
   const workplanMap: Record<string, string> = {};
@@ -106,66 +115,87 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     workplanMap[month] = activity;
   });
 
+
+
+
+  useEffect(() => {
+    if(!childId) return;
+    
+
+    const load = async () => {
+      try {
+        const data : any[] = await fetchProjectList(proposalData.id)
+        setProjectList(data)
+      } catch (error) {
+        console.error("[ProjectList] Failed to fetch Project List", error);
+      }
+    }
+   load();
+  }, [childId])
+
+  console.log("ProjectList", projectList)
+
+
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-6 animate-overlay-enter">
         <div className="bg-white w-full max-w-6xl h-[95vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-modal-enter">
 
           {/* ── Header ── */}
-<div className="flex-shrink-0 flex items-center justify-between px-10 py-7 border-b border-gray-100 bg-primaryGreen">
+          <div className="flex-shrink-0 flex items-center justify-between px-10 py-7 border-b border-gray-100 bg-primaryGreen">
 
-  {/* Left Section */}
-  <div className="flex-1 min-w-0">
+            {/* Left Section */}
+            <div className="flex-1 min-w-0">
 
-    {/* Top Row */}
-    <div className="flex items-center gap-3 mb-2">
+              {/* Top Row */}
+              <div className="flex items-center gap-3 mb-2">
 
-      {/* Label */}
-      <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-white">
-        Extension Program Proposal
-      </span>
+                {/* Label */}
+                <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-white">
+                  Extension Program Proposal
+                </span>
 
-      <ChevronRight size={12} className="text-gray-300" />
+                <ChevronRight size={12} className="text-gray-300" />
 
-      {/* Status */}
-      <span
-        className={`
-          inline-flex items-center px-2.5 py-1 rounded-full
-          text-[11px] font-medium
-          ${statusStyle.className}
-        `}
-      >
-        {statusStyle.label}
-      </span>
+                {/* Status */}
+                <span
+                  className={`
+                    inline-flex items-center px-2.5 py-1 rounded-full
+                    text-[11px] font-medium
+                    ${statusStyle.className}
+                  `}
+                >
+                  {statusStyle.label}
+                </span>
 
-    </div>
+              </div>
 
-    {/* Title */}
-    <h1 className="font-serif text-[22px] font-bold text-white tracking-[-0.02em] leading-snug">
-      {proposalTitle || val(proposalData.program_title)}
-    </h1>
+              {/* Title */}
+              <h1 className="font-serif text-[22px] font-bold text-white tracking-[-0.02em] leading-snug">
+                {proposalTitle || val(proposalData.program_title)}
+              </h1>
 
-    {/* Subtitle */}
+              {/* Subtitle */}
 
 
-  </div>
+            </div>
 
-  {/* Close Button */}
-  <button
-    onClick={onClose}
-    className="
-      w-9 h-9 ml-4 flex-shrink-0
-      flex items-center justify-center
-      rounded-lg border border-gray-200
-      bg-white text-gray-500
-      hover:bg-red-50 hover:border-red-300 hover:text-red-600
-      transition-all duration-150
-    "
-  >
-    <X size={16} />
-  </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="
+                w-9 h-9 ml-4 flex-shrink-0
+                flex items-center justify-center
+                rounded-lg border border-gray-200
+                bg-white text-gray-500
+                hover:bg-red-50 hover:border-red-300 hover:text-red-600
+                transition-all duration-150
+              "
+            >
+              <X size={16} />
+            </button>
 
-</div>
+          </div>
 
 
           {/* ── Main Content ── */}

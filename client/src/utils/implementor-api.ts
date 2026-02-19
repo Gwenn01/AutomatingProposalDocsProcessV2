@@ -1,20 +1,5 @@
-// ─────────────────────────────────────────────
-// utils/implementor-api.ts
-// API utilities for Program, Project, and Activity proposals
-// ─────────────────────────────────────────────
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-
-// ─────────────────────────────────────────────
-// TOKEN MANAGEMENT
-// Mirrors auth-api.ts: tokens are stored as
-//   localStorage.access_token  (JWT access)
-//   localStorage.refresh_token (JWT refresh)
-// ─────────────────────────────────────────────
 
 function getAccessToken(): string | null {
   return localStorage.getItem('access_token');
@@ -28,19 +13,14 @@ function storeAccessToken(token: string): void {
   localStorage.setItem('access_token', token);
 }
 
-/** Redirect to login and wipe stored auth data. */
 function forceLogout(): void {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
-  // Redirect to root — adjust path if your login route is different
+
   window.location.href = '/';
 }
 
-/**
- * Calls SimpleJWT's token-refresh endpoint and stores the new access token.
- * Returns the new token, or null if refresh fails (session expired).
- */
 async function refreshAccessToken(): Promise<string | null> {
   const refresh = getRefreshToken();
   if (!refresh) return null;
@@ -80,7 +60,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
     } catch {
       // ignore parse errors
     }
-    // Always log full Django error in dev so we can see exactly which fields failed
     if (import.meta.env.DEV) {
       console.error(
         `[implementor-api] ${res.status} ${res.url}\n`,
@@ -92,12 +71,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/**
- * Fetch wrapper that:
- *  1. Attaches Bearer auth header automatically
- *  2. On 401 → refreshes the access token once and retries
- *  3. On second 401 → forceLogout() and throws
- */
 async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const makeRequest = () =>
     fetch(url, { ...options, headers: { ...getAuthHeaders(), ...(options.headers ?? {}) } });
@@ -123,10 +96,6 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
   return res;
 }
 
-// ─────────────────────────────────────────────
-// SHARED TYPES
-// ─────────────────────────────────────────────
-
 export interface MethodologyPhase {
   phase: string;
   activities: string[];
@@ -151,10 +120,6 @@ export interface PlanOfActivityItem {
   time: string;
   activity: string;
 }
-
-// ─────────────────────────────────────────────
-// PROGRAM PROPOSAL
-// ─────────────────────────────────────────────
 
 export interface ProgramProposalPayload {
   title: string;
@@ -207,14 +172,10 @@ export async function submitProgramProposal(
   return handleResponse(res);
 }
 
-// ─────────────────────────────────────────────
-// PROJECT PROPOSAL
-// ─────────────────────────────────────────────
-
 export interface ProjectProposalPayload {
   title: string;
 
-  /** ID of the parent Program Proposal */
+
   program_proposal_id: number;
 
   project_title: string;
@@ -263,7 +224,6 @@ export async function submitProjectProposal(
     console.log('[submitProjectProposal] payload:', JSON.stringify(payload, null, 2));
     console.log('[submitProjectProposal] program_proposal_id type:', typeof payload.program_proposal_id, '| value:', payload.program_proposal_id);
 
-    // Check if logged-in user matches the program owner
     try {
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
       console.log('[submitProjectProposal] logged-in user_id:', user?.user_id, '| program owner user field from node API: check console above');
@@ -276,14 +236,6 @@ export async function submitProjectProposal(
   return handleResponse(res);
 }
 
-/**
- * DEV-ONLY: Probe the project-proposal endpoint to find the exact field name
- * Django expects for the program FK. Call this from the browser console:
- *   import('/src/utils/implementor-api.ts').then(m => m.diagnoseProjectProposalFields(14))
- *
- * It tries submitting a minimal payload with different FK field names and logs
- * which one Django accepts (or which error changes).
- */
 export async function diagnoseProjectProposalFields(programId: number): Promise<void> {
   const minimalBase = {
     title: '__DIAG_TEST__',
@@ -320,7 +272,6 @@ export async function diagnoseProjectProposalFields(programId: number): Promise<
 
   console.group(`[diagnoseProjectProposalFields] Testing program FK field name with id=${programId}`);
 
-  // First: fetch the actual program proposal detail to check its status
   try {
     const detailRes = await authFetch(`${BASE_URL}/program-proposal/${programId}/`);
     if (detailRes.ok) {
@@ -356,9 +307,6 @@ export async function diagnoseProjectProposalFields(programId: number): Promise<
   console.groupEnd();
 }
 
-// ─────────────────────────────────────────────
-// ACTIVITY PROPOSAL
-// ─────────────────────────────────────────────
 
 export interface ActivityProposalPayload {
   title: string;
@@ -413,9 +361,6 @@ export async function submitActivityProposal(
   return handleResponse(res);
 }
 
-// ─────────────────────────────────────────────
-// FETCH PARENT PROPOSALS (for linking dropdowns)
-// ─────────────────────────────────────────────
 
 export interface ParentProposalOption {
   id: number;
@@ -424,10 +369,6 @@ export interface ParentProposalOption {
   created_at?: string;
 }
 
-// ─────────────────────────────────────────────
-// PROPOSALS NODE — debug fetch
-// GET /api/proposals-node/Program|Project|Activity
-// ─────────────────────────────────────────────
 
 export type ProposalNodeType = 'Program' | 'Project' | 'Activity';
 
@@ -438,44 +379,36 @@ export async function fetchProposalsNode(type: ProposalNodeType): Promise<any> {
   return data;
 }
 
-/** Fetch all Program Proposals (used when creating a Project) */
 export async function fetchProgramProposals(): Promise<ParentProposalOption[]> {
   const res = await authFetch(`${BASE_URL}/proposals-node/Program`);
   const data: any[] = await handleResponse(res);
   console.log('[fetchProgramProposals] raw response:', JSON.stringify(data, null, 2));
   return data.map((p) => ({
-    id: p.child_id,   // ✅ actual ProjectProposal PK                                       // number — used as FK
+    id: p.child_id,                                         
     title: p.title,
     leader: p.program_leader ?? p.project_leader ?? p.created_by ?? `User #${p.user}`,
     created_at: p.created_at,
   }));
 }
 
-/** Fetch all Project Proposals (used when creating an Activity) */
 export async function fetchProjectProposals(): Promise<ParentProposalOption[]> {
   const res = await authFetch(`${BASE_URL}/proposals-node/Project`);
   const data: any[] = await handleResponse(res);
   console.log('[fetchProjectProposals] raw response:', JSON.stringify(data, null, 2));
   return data.map((p) => ({
-    id: p.child_id,   // ✅ actual ProjectProposal PK                                       // number — used as FK
+    id: p.child_id,                                          
     title: p.title,
     leader: p.project_leader ?? p.program_leader ?? p.created_by ?? `User #${p.user}`,
     created_at: p.created_at,
   }));
 }
 
-/** Fetch all Activity Proposals (utility / debug) */
 export async function fetchActivityProposals(): Promise<any[]> {
   const res = await authFetch(`${BASE_URL}/proposals-node/Activity`);
   const data: any[] = await handleResponse(res);
   console.log('[fetchActivityProposals] raw response:', JSON.stringify(data, null, 2));
   return data;
 }
-
-// ─────────────────────────────────────────────
-// DATA MAPPERS
-// Converts CreateProposal.tsx local state → API payload shapes
-// ─────────────────────────────────────────────
 
 import type {
   ProfileData,
@@ -485,9 +418,8 @@ import type {
   BudgetRows,
   ProgramBudgetRow,
   ActivityScheduleData,
-} from '@/pages/implementor/CreateProposal'; // adjust path if needed
+} from '@/pages/implementor/CreateProposal'; 
 
-/** Split a newline- or comma-separated string into a trimmed string array. */
 function toStringArray(value: string): string[] {
   if (!value?.trim()) return [];
   return value
@@ -496,13 +428,12 @@ function toStringArray(value: string): string[] {
     .filter(Boolean);
 }
 
-/** Convert workplan rows to month-based API shape. */
 function mapWorkplanRows(rows: WorkplanRow[]): WorkplanMonth[] {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
   const result: WorkplanMonth[] = [];
   rows.forEach((row) => {
     if (!row.activity.trim() && !row.objective.trim()) return;
-    // Collect which quarters are checked across all 3 years
+
     [1, 2, 3].forEach((yr) => {
       quarters.forEach((q) => {
         const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
@@ -511,7 +442,7 @@ function mapWorkplanRows(rows: WorkplanRow[]): WorkplanMonth[] {
         }
       });
     });
-    // If no quarters checked but there is content, still include it
+
     if (result.length === 0 && (row.activity || row.objective)) {
       result.push({ month: '—', activity: row.activity || row.objective });
     }
@@ -519,14 +450,12 @@ function mapWorkplanRows(rows: WorkplanRow[]): WorkplanMonth[] {
   return result;
 }
 
-/** Convert OrgStaffingItem[] → OrgStaffingApiItem[] */
 function mapOrgStaffing(rows: OrgStaffingItem[]): OrgStaffingApiItem[] {
   return rows
     .filter((r) => r.designation.trim())
     .map((r) => ({ role: r.activity, name: r.designation }));
 }
 
-/** Convert BudgetRows → BudgetItem[] */
 function mapBudgetRows(rows: BudgetRows): BudgetItem[] {
   return (['meals', 'transport', 'supplies'] as (keyof BudgetRows)[])
     .flatMap((cat) =>
@@ -536,19 +465,16 @@ function mapBudgetRows(rows: BudgetRows): BudgetItem[] {
     );
 }
 
-/** Convert ProgramBudgetRow[] → BudgetItem[] */
 function mapProgramBudgetRows(rows: ProgramBudgetRow[]): BudgetItem[] {
   return rows
     .filter((r) => r.label.trim())
     .map((r) => ({ item: r.label, amount: Number(r.total) || 0 }));
 }
 
-/** Convert ExpectedOutput6Ps → string[] (non-empty values) */
 function mapExpectedOutput(output: ExpectedOutput6Ps): string[] {
   return Object.values(output).filter(Boolean);
 }
 
-/** Convert tags/clusters/agendas from ProfileData booleans → string arrays */
 function mapTags(profile: ProfileData): string[] {
   const tags: string[] = [];
   if (profile.tagging_general) tags.push('general');
@@ -589,10 +515,6 @@ function mapSitesToStrings(profile: ProfileData): string[] {
     .filter((s) => s.barangay || s.municipality || s.province)
     .map((s) => [s.barangay, s.municipality, s.province, s.region, s.country].filter(Boolean).join(', '));
 }
-
-// ─────────────────────────────────────────────
-// BUILDER FUNCTIONS
-// ─────────────────────────────────────────────
 
 export function buildProgramPayload(
   title: string,
@@ -725,5 +647,10 @@ export function buildActivityPayload(
 
 export async function fetchProgramProposalDetail(childId: number | string): Promise<any> {
   const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/`);
+  return handleResponse<any>(res);
+}
+
+export async function fetchProjectList(childId: number | string): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/projects/`);
   return handleResponse<any>(res);
 }
