@@ -13,6 +13,30 @@ export interface ApiUser {
   };
 }
 
+export interface UsersOverview {
+  total_user: number;
+  implementor: number;
+  reviewer: number;
+  admin: number;
+}
+
+export interface ProposalsOverview {
+  proposal: {
+    total_proposals: number;
+    total_program: number;
+    total_project: number;
+    total_activity: number;
+  };
+  status: {
+    total_under_review: number;
+    total_for_review: number;
+    total_for_revision: number;
+    total_for_approval: number;
+    total_approved: number;
+    total_rejected: number;
+  }
+}
+
 export interface CreateAdminUserPayload {
   username: string;
   email: string;
@@ -74,6 +98,36 @@ const getAuthHeaders = () => {
     "Authorization": `Bearer ${token}`,
   };
 };
+
+// Get Users Overview
+export const getUsersOverview = async (): Promise<UsersOverview> => {
+  const response = await fetch(`${API_URL}/users/admin/overview-users/`, {
+    method: "GET",
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch users overview");
+  }
+
+  return response.json();
+}
+
+// Get Proposals Overview
+export const getProposalsOverview = async (): Promise<ProposalsOverview> => {
+  const response = await fetch(`${API_URL}/admin/overview-proposals/`, {
+    method: "GET",
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch proposals overview");
+  }
+
+  return response.json()
+}
 
 // Get All Proposals
 export const getProposals = async (): Promise<ProgramProposal[]> => {
@@ -201,7 +255,7 @@ export const deleteAdminAccount = async (userId: number): Promise<void> => {
     headers: getAuthHeaders()
   });
 
-  if (response.ok) {
+  if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to delete account");
   }
