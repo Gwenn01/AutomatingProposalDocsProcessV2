@@ -33,8 +33,18 @@ class AssignReviewerView(APIView):
                 {"message": "Reviewer assigned successfully", "data": ReviewerSerializer(reviewer).data},
                 status=status.HTTP_201_CREATED
             )
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UnassignReviewerView(APIView):
+    permission_classes = [IsAdminUser]
+    def delete(self, request, pk):
+        try:
+            proposal_reviewer = ProposalReviewer.objects.get(pk=pk, assigned_by=request.user)
+        except ProposalReviewer.DoesNotExist:
+            return Response({"message": "Reviewer assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        proposal_reviewer.delete()
+        return Response({"message": "Reviewer unassigned successfully"}, status=status.HTTP_204_NO_CONTENT)
     
 # get all reviewers  
 class ReviewerListView(APIView):

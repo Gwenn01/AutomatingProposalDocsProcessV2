@@ -1,7 +1,8 @@
 from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
-    AssignReviewerView, 
+    AssignReviewerView,
+    UnassignReviewerView,
     ReviewerListView,
     MyAssignedProposalsView,
     AssignedReviewerProposalView
@@ -10,6 +11,7 @@ from .views import (
 urlpatterns = [
     # admin
     path('assign-reviewer/', AssignReviewerView.as_view(), name='assign-reviewer'),
+    path('unassign-reviewer/<int:pk>/', UnassignReviewerView.as_view(), name='unassign-reviewer'),
     path('reviewers/', ReviewerListView.as_view(), name='reviewer-list'),
     
     # reviewer get the proposal 
