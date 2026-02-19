@@ -63,20 +63,5 @@ class AssignedReviewerProposalView(APIView):
         proposals = ProposalReviewer.objects.filter(
             proposal_id=proposal_id,
         )
-         # allow admin
-        if request.user.is_staff:
-            pass
-
-        # allow proposal owner
-        elif proposals.user == request.user:
-            pass
-
-        # allow assigned reviewer
-        elif not ProposalReviewer.objects.filter(
-            proposal=proposals,
-            reviewer=request.user
-        ).exists():
-            raise PermissionDenied("You cannot view this proposal reviewers.")
-        
         serializer = ReviewerAssignedProposalSerializer(proposals, many=True)
         return Response(serializer.data)
