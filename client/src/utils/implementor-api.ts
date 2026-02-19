@@ -58,16 +58,18 @@ async function handleResponse<T>(res: Response): Promise<T> {
     let errorBody: any = {};
     let message = `Request failed with status ${res.status}`;
     try {
-      errorBody = await res.json();
-      message = errorBody?.detail ?? errorBody?.message ?? JSON.stringify(errorBody) ?? message;
-    } catch {
-      // ignore parse errors
-    }
+      const text = await res.text();
+      try {
+        errorBody = JSON.parse(text);
+        message = errorBody?.detail ?? errorBody?.message ?? JSON.stringify(errorBody) ?? message;
+      } catch {
+        // Not JSON — likely a Django HTML traceback
+        message = text.slice(0, 300) || message;
+        errorBody = { raw: text };
+      }
+    } catch { /* ignore read errors */ }
     if (import.meta.env.DEV) {
-      console.error(
-        `[implementor-api] ${res.status} ${res.url}\n`,
-        'Django error body:', JSON.stringify(errorBody, null, 2),
-      );
+      console.error(`[implementor-api] ${res.status} ${res.url}\n`, 'Error body:', JSON.stringify(errorBody, null, 2));
     }
     throw new Error(message);
   }
@@ -82,51 +84,16 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
 
   if (res.status === 401) {
     const newToken = await refreshAccessToken();
-    if (!newToken) {
-      forceLogout();
-      throw new Error('Session expired. Please log in again.');
-    }
+    if (!newToken) { forceLogout(); throw new Error('Session expired. Please log in again.'); }
     res = await makeRequest();
-    if (res.status === 401) {
-      forceLogout();
-      throw new Error('Session expired. Please log in again.');
-    }
+    if (res.status === 401) { forceLogout(); throw new Error('Session expired. Please log in again.'); }
   }
 
   return res;
 }
 
 // ─────────────────────────────────────────────
-// SHARED TYPES
-// ─────────────────────────────────────────────
-
-export interface MethodologyPhase {
-  phase: string;
-  activities: string[];
-}
-
-export interface OrgStaffingApiItem {
-  role: string;
-  name: string;
-}
-
-export interface BudgetItem {
-  item: string;
-  amount: number;
-}
-
-export interface WorkplanMonth {
-  month: string;
-  activity: string;
-}
-
-export interface PlanOfActivityItem {
-  time: string;
-  activity: string;
-}
-
-// ─────────────────────────────────────────────
-// FORM DATA TYPES (used in CreateProposal.tsx)
+// FORM DATA TYPES
 // ─────────────────────────────────────────────
 
 export interface ExpectedOutput6Ps {
@@ -203,190 +170,43 @@ export interface ProjectItem {
 export interface ActivityItem {
   id: number;
   activity_title: string;
+  project_leader: string;
+  project_members: string;
+  activity_duration: string;
+  activity_date: string;
 }
 
-// ─────────────────────────────────────────────
-// PAYLOAD TYPES
-// ─────────────────────────────────────────────
-
-export interface ProjectListItem {
+// API response shapes
+export interface ApiProject {
+  id: number;
   project_title: string;
   project_leader: string;
-  project_member: string[];
-  project_duration: number;
-  project_start_date: string | null;
-  project_end_date: string | null;
+  members: string[];
+  duration_months: number;
+  start_date: string | null;
+  end_date: string | null;
 }
 
-export interface ProgramProposalPayload {
-  title: string;
+export interface ApiProjectListResponse {
+  id: number; // child_id of the program-proposal
   program_title: string;
-  program_leader: string;
-  project_list: ProjectListItem[];
-  implementing_agency: string[];
-  cooperating_agencies: string[];
-  extension_sites: string[];
-  tags: string[];
-  clusters: string[];
-  agendas: string[];
-  sdg_addressed: string;
-  mandated_academic_program: string;
-  rationale: string;
-  significance: string;
-  general_objectives: string;
-  specific_objectives: string;
-  methodology: MethodologyPhase[];
-  expected_output_6ps: string[];
-  sustainability_plan: string;
-  org_and_staffing: OrgStaffingApiItem[];
-  workplan: WorkplanMonth[];
-  budget_requirements: BudgetItem[];
+  projects: ApiProject[];
 }
 
-export interface ActivityListItem {
+export interface ApiActivity {
+  id: number;
   activity_title: string;
   project_leader: string;
-  project_member: string[];
-  activity_duration: number;
+  members: string[];
+  activity_duration_hours: number;
   activity_date: string | null;
 }
 
-export interface ProjectDetailsPayload {
-  activity_list: ActivityListItem[];
-  implementing_agency: string[];
-  cooperating_agencies: string[];
-  extension_sites: string[];
-  tags: string[];
-  clusters: string[];
-  agendas: string[];
-  sdg_addressed: string;
-  mandated_academic_program: string;
-  rationale: string;
-  significance: string;
-  general_objectives: string;
-  specific_objectives: string;
-  methodology: MethodologyPhase[];
-  expected_output_6ps: string[];
-  sustainability_plan: string;
-  org_and_staffing: OrgStaffingApiItem[];
-  workplan: WorkplanMonth[];
-  budget_requirements: BudgetItem[];
+export interface ApiActivityListResponse {
+  id: number; // project id
+  project_title: string;
+  activities: ApiActivity[];
 }
-
-export interface ActivityProposalPayload {
-  implementing_agency: string[];
-  cooperating_agencies: string[];
-  extension_sites: string[];
-  tags: string[];
-  clusters: string[];
-  agendas: string[];
-  sdg_addressed: string;
-  mandated_academic_program: string;
-  rationale: string;
-  significance: string;
-  objectives_of_activity: string;
-  methodology: string;
-  expected_output_6ps: string[];
-  sustainability_plan: string;
-  org_and_staffing: OrgStaffingApiItem[];
-  plan_of_activity: PlanOfActivityItem[];
-  budget_requirements: BudgetItem[];
-}
-
-// ─────────────────────────────────────────────
-// API RESPONSE TYPES
-// ─────────────────────────────────────────────
-
-export interface ProgramProposalResponse {
-  id?: number;
-  child_id?: number;
-  program_proposal_id?: number;
-  title?: string;
-  [key: string]: any;
-}
-
-export interface ProjectDetailsResponse {
-  activities?: Array<{ id: number; activity_title: string; [key: string]: any }>;
-  [key: string]: any;
-}
-
-export interface ParentProposalOption {
-  id: number;
-  title: string;
-  leader: string;
-  created_at?: string;
-}
-
-export type ProposalNodeType = 'Program' | 'Project' | 'Activity';
-
-// ─────────────────────────────────────────────
-// MAPPING UTILITIES
-// ─────────────────────────────────────────────
-
-export function toStringArray(value: string): string[] {
-  if (!value?.trim()) return [];
-  return value
-    .split(/[\n,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-export function mapWorkplanRows(rows: WorkplanRow[]): WorkplanMonth[] {
-  const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-  const result: WorkplanMonth[] = [];
-  rows.forEach((row) => {
-    if (!row.activity.trim() && !row.objective.trim()) return;
-    [1, 2, 3].forEach((yr) => {
-      quarters.forEach((q) => {
-        const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
-        if (row[key]) {
-          result.push({ month: `Year ${yr} ${q}`, activity: row.activity || row.objective });
-        }
-      });
-    });
-  });
-  if (result.length === 0) {
-    rows.forEach((row) => {
-      if (row.activity || row.objective) {
-        result.push({ month: '—', activity: row.activity || row.objective });
-      }
-    });
-  }
-  return result;
-}
-
-export function mapOrgStaffing(rows: OrgStaffingItem[]): OrgStaffingApiItem[] {
-  return rows
-    .filter((r) => r.designation?.trim())
-    .map((r) => ({ role: r.activity, name: r.designation }));
-}
-
-export function mapBudgetRows(rows: BudgetRows): BudgetItem[] {
-  return (['meals', 'transport', 'supplies'] as (keyof BudgetRows)[]).flatMap((cat) =>
-    rows[cat]
-      .filter((r) => r.item?.trim())
-      .map((r) => ({ item: r.item, amount: Number(r.amount) || 0 })),
-  );
-}
-
-export function mapProgramBudgetRows(rows: ProgramBudgetRow[]): BudgetItem[] {
-  return rows
-    .filter((r) => r.label?.trim())
-    .map((r) => ({ item: r.label, amount: Number(r.total) || 0 }));
-}
-
-export function mapExpectedOutput(output: ExpectedOutput6Ps): string[] {
-  return Object.values(output).filter(Boolean);
-}
-
-export function mapMethodology(text: string): MethodologyPhase[] {
-  const lines = toStringArray(text);
-  return [{ phase: 'Methodology', activities: lines.length ? lines : [text || '—'] }];
-}
-
-// ─────────────────────────────────────────────
-// PAYLOAD BUILDERS
-// ─────────────────────────────────────────────
 
 export interface ProgramFormData {
   program_title: string;
@@ -415,6 +235,12 @@ export interface ProgramFormData {
 }
 
 export interface ProjectFormData {
+  // From API (pre-filled, read-only)
+  apiProjectId: number;
+  project_title: string;
+  project_leader: string;
+
+  // User-filled fields
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
@@ -434,10 +260,20 @@ export interface ProjectFormData {
   org_staffing: OrgStaffingItem[];
   workplan: WorkplanRow[];
   budget: BudgetRows;
+
+  // Activity list for this project
   activities: ActivityItem[];
+
+  // Track save state
+  saved: boolean;
 }
 
 export interface ActivityFormData {
+  // From API (pre-filled, read-only)
+  apiActivityId: number;
+  activity_title: string;
+
+  // User-filled fields
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
@@ -457,31 +293,70 @@ export interface ActivityFormData {
   org_staffing: OrgStaffingItem[];
   schedule: ActivityScheduleData;
   budget: BudgetRows;
+
+  // Track save state
+  saved: boolean;
 }
 
-/**
- * Builds the payload for POST /api/program-proposal/
- * Aggregates all project/activity budgets automatically.
- */
-export function buildProgramPayload(
-  programData: ProgramFormData,
-  projectForms: ProjectFormData[],
-): ProgramProposalPayload {
-  // Aggregate budgets: program-level rows + all project budget rows
-  const aggregatedBudget: BudgetItem[] = [];
+// ─────────────────────────────────────────────
+// MAPPING UTILITIES
+// ─────────────────────────────────────────────
 
-  // From program-level budget table
-  mapProgramBudgetRows(programData.program_budget).forEach((b) => aggregatedBudget.push(b));
+export function toStringArray(value: string): string[] {
+  if (!value?.trim()) return [];
+  return value.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+}
 
-  // From each project's budget
-  projectForms.forEach((pf, i) => {
-    const projectLabel = programData.projects[i]?.project_title || `Project ${i + 1}`;
-    mapBudgetRows(pf.budget).forEach((b) =>
-      aggregatedBudget.push({ item: `${projectLabel} - ${b.item}`, amount: b.amount }),
-    );
+export function mapWorkplanRows(rows: WorkplanRow[]): { month: string; activity: string }[] {
+  const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+  const result: { month: string; activity: string }[] = [];
+  rows.forEach((row) => {
+    if (!row.activity.trim() && !row.objective.trim()) return;
+    [1, 2, 3].forEach((yr) => {
+      quarters.forEach((q) => {
+        const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
+        if (row[key]) result.push({ month: `Year ${yr} ${q}`, activity: row.activity || row.objective });
+      });
+    });
   });
+  if (result.length === 0) {
+    rows.forEach((row) => {
+      if (row.activity || row.objective) result.push({ month: '—', activity: row.activity || row.objective });
+    });
+  }
+  return result;
+}
 
-  return {
+export function mapOrgStaffing(rows: OrgStaffingItem[]): { role: string; name: string }[] {
+  return rows.filter((r) => r.designation?.trim()).map((r) => ({ role: r.activity, name: r.designation }));
+}
+
+export function mapBudgetRows(rows: BudgetRows): { item: string; amount: number }[] {
+  return (['meals', 'transport', 'supplies'] as (keyof BudgetRows)[]).flatMap((cat) =>
+    rows[cat].filter((r) => r.item?.trim()).map((r) => ({ item: r.item, amount: Number(r.amount) || 0 })),
+  );
+}
+
+export function mapProgramBudgetRows(rows: ProgramBudgetRow[]): { item: string; amount: number }[] {
+  return rows.filter((r) => r.label?.trim()).map((r) => ({ item: r.label, amount: Number(r.total) || 0 }));
+}
+
+export function mapExpectedOutput(output: ExpectedOutput6Ps): string[] {
+  return Object.values(output).filter(Boolean);
+}
+
+export function mapMethodology(text: string): { phase: string; activities: string[] }[] {
+  const lines = toStringArray(text);
+  return [{ phase: 'Methodology', activities: lines.length ? lines : [text || '—'] }];
+}
+
+// ─────────────────────────────────────────────
+// API FUNCTIONS
+// ─────────────────────────────────────────────
+
+/** POST /api/program-proposal/ — Create program proposal, then resolve child_id via /proposals-node/Program */
+export async function submitProgramProposal(programData: ProgramFormData): Promise<{ child_id: number; [key: string]: any }> {
+  const payload = {
     title: programData.program_title || 'Program Proposal',
     program_title: programData.program_title,
     program_leader: programData.program_leader,
@@ -510,183 +385,124 @@ export function buildProgramPayload(
     sustainability_plan: programData.sustainability_plan,
     org_and_staffing: mapOrgStaffing(programData.org_staffing),
     workplan: mapWorkplanRows(programData.workplan),
-    budget_requirements: aggregatedBudget,
+    budget_requirements: mapProgramBudgetRows(programData.program_budget),
   };
+
+  if (import.meta.env.DEV) console.log('[submitProgramProposal] payload:', JSON.stringify(payload, null, 2));
+
+  // POST the program proposal (response does NOT include child_id)
+  const res = await authFetch(`${BASE_URL}/program-proposal/`, { method: 'POST', body: JSON.stringify(payload) });
+  const postResult: any = await handleResponse(res);
+
+  // If the POST response already has child_id, use it directly
+  if (postResult?.child_id) return postResult;
+
+  // Otherwise, fetch the proposals list and find the most recently created one matching the title
+  const listRes = await authFetch(`${BASE_URL}/proposals-node/Program`);
+  const list: Array<{ id: number; child_id: number; title: string; created_at: string }> = await handleResponse(listRes);
+
+  // Sort by id descending to get the latest, filter by matching title
+  const matching = list
+    .filter((p) => p.title === programData.program_title)
+    .sort((a, b) => b.id - a.id);
+
+  const found = matching[0];
+  if (!found?.child_id) {
+    // Fallback: just grab the overall latest entry
+    const latest = [...list].sort((a, b) => b.id - a.id)[0];
+    if (!latest?.child_id) throw new Error('Could not resolve child_id for the created program proposal.');
+    if (import.meta.env.DEV) console.log('[submitProgramProposal] resolved child_id (fallback):', latest.child_id);
+    return { ...postResult, child_id: latest.child_id };
+  }
+
+  if (import.meta.env.DEV) console.log('[submitProgramProposal] resolved child_id:', found.child_id);
+  return { ...postResult, child_id: found.child_id };
 }
 
-/**
- * Builds the payload for PUT /api/program-proposal/{child_id}/projects/
- * Sends all activities for the given project plus its proposal fields.
- */
-export function buildProjectDetailsPayload(
-  projectForm: ProjectFormData,
-  projectLeader: string,
-): ProjectDetailsPayload {
-  return {
-    activity_list: projectForm.activities.map((act) => ({
+/** GET /api/program-proposal/{childId}/projects/ — Fetch project list */
+export async function fetchProjectList(childId: number): Promise<ApiProjectListResponse> {
+  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/projects/`);
+  return handleResponse<ApiProjectListResponse>(res);
+}
+
+/** PUT /api/project-proposal/{projectId}/ — Save project proposal */
+export async function saveProjectProposal(projectId: number, form: ProjectFormData): Promise<any> {
+  const payload = {
+    activity_list: form.activities.map((act) => ({
       activity_title: act.activity_title,
-      project_leader: projectLeader,
-      project_member: [],
-      activity_duration: 8,
-      activity_date: null,
+      project_leader: act.project_leader || form.project_leader,
+      project_member: toStringArray(act.project_members),
+      activity_duration: Number(act.activity_duration) || 8,
+      activity_date: act.activity_date || null,
     })),
-    implementing_agency: toStringArray(projectForm.implementing_agency),
-    cooperating_agencies: toStringArray(projectForm.cooperating_agencies),
-    extension_sites: toStringArray(projectForm.extension_site),
-    tags: projectForm.tagging,
-    clusters: projectForm.cluster,
-    agendas: projectForm.extension_agenda,
-    sdg_addressed: projectForm.sdg_addressed,
-    mandated_academic_program: projectForm.college_mandated_program,
-    rationale: projectForm.rationale,
-    significance: projectForm.significance,
-    general_objectives: projectForm.general_objectives,
-    specific_objectives: projectForm.specific_objectives,
-    methodology: mapMethodology(projectForm.methodology),
-    expected_output_6ps: mapExpectedOutput(projectForm.expected_output),
-    sustainability_plan: projectForm.sustainability_plan,
-    org_and_staffing: mapOrgStaffing(projectForm.org_staffing),
-    workplan: mapWorkplanRows(projectForm.workplan),
-    budget_requirements: mapBudgetRows(projectForm.budget),
+    implementing_agency: toStringArray(form.implementing_agency),
+    cooperating_agencies: toStringArray(form.cooperating_agencies),
+    extension_sites: toStringArray(form.extension_site),
+    tags: form.tagging,
+    clusters: form.cluster,
+    agendas: form.extension_agenda,
+    sdg_addressed: form.sdg_addressed,
+    mandated_academic_program: form.college_mandated_program,
+    rationale: form.rationale,
+    significance: form.significance,
+    general_objectives: form.general_objectives,
+    specific_objectives: form.specific_objectives,
+    methodology: mapMethodology(form.methodology),
+    expected_output_6ps: mapExpectedOutput(form.expected_output),
+    sustainability_plan: form.sustainability_plan,
+    org_and_staffing: mapOrgStaffing(form.org_staffing),
+    workplan: mapWorkplanRows(form.workplan),
+    budget_requirements: mapBudgetRows(form.budget),
   };
-}
 
-/**
- * Builds the payload for PATCH /api/activity-proposal/{id}/
- */
-export function buildActivityPayload(actData: ActivityFormData): ActivityProposalPayload {
-  return {
-    implementing_agency: toStringArray(actData.implementing_agency),
-    cooperating_agencies: toStringArray(actData.cooperating_agencies),
-    extension_sites: toStringArray(actData.extension_site),
-    tags: actData.tagging,
-    clusters: actData.cluster,
-    agendas: actData.extension_agenda,
-    sdg_addressed: actData.sdg_addressed,
-    mandated_academic_program: actData.college_mandated_program,
-    rationale: actData.rationale,
-    significance: actData.significance,
-    objectives_of_activity: actData.objectives,
-    methodology: actData.methodology,
-    expected_output_6ps: mapExpectedOutput(actData.expected_output),
-    sustainability_plan: actData.sustainability_plan,
-    org_and_staffing: mapOrgStaffing(actData.org_staffing),
-    plan_of_activity: actData.schedule.rows
-      .filter((r) => r.activity?.trim())
-      .map((r) => ({
-        time: r.time,
-        activity: `${r.activity}${r.speaker ? ` — ${r.speaker}` : ''}`,
-      })),
-    budget_requirements: mapBudgetRows(actData.budget),
-  };
-}
-
-// ─────────────────────────────────────────────
-// API FUNCTIONS
-// ─────────────────────────────────────────────
-
-/**
- * POST /api/program-proposal/
- * Creates a new program proposal. Returns the created object with child_id.
- */
-export async function submitProgramProposal(
-  programData: ProgramFormData,
-  projectForms: ProjectFormData[],
-): Promise<ProgramProposalResponse> {
-  const payload = buildProgramPayload(programData, projectForms);
-  if (import.meta.env.DEV) {
-    console.log('[submitProgramProposal] payload:', JSON.stringify(payload, null, 2));
-  }
-  const res = await authFetch(`${BASE_URL}/program-proposal/`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<ProgramProposalResponse>(res);
-}
-
-/**
- * PUT /api/program-proposal/{childId}/projects/
- * Submits detailed fields for a specific project under the program (including activity_list).
- */
-export async function submitProjectDetails(
-  childId: number,
-  projectForm: ProjectFormData,
-  projectLeader: string,
-): Promise<ProjectDetailsResponse> {
-  const payload = buildProjectDetailsPayload(projectForm, projectLeader);
-  if (import.meta.env.DEV) {
-    console.log(`[submitProjectDetails] childId=${childId} payload:`, JSON.stringify(payload, null, 2));
-  }
-  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/projects/`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<ProjectDetailsResponse>(res);
-}
-
-/**
- * PATCH /api/activity-proposal/{activityId}/
- * Saves/updates a single activity proposal.
- */
-export async function saveActivityProposal(
-  activityId: number,
-  actData: ActivityFormData,
-): Promise<unknown> {
-  const payload = buildActivityPayload(actData);
-  if (import.meta.env.DEV) {
-    console.log(`[saveActivityProposal] activityId=${activityId} payload:`, JSON.stringify(payload, null, 2));
-  }
-  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  });
+  if (import.meta.env.DEV) console.log(`[saveProjectProposal] projectId=${projectId}`, JSON.stringify(payload, null, 2));
+  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/`, { method: 'PUT', body: JSON.stringify(payload) });
   return handleResponse(res);
 }
 
-// ─────────────────────────────────────────────
-// FETCH / LIST FUNCTIONS
-// ─────────────────────────────────────────────
-
-export async function fetchProposalsNode(type: ProposalNodeType): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/proposals-node/${type}`);
-  const data = await handleResponse<any>(res);
-  console.log(`[fetchProposalsNode/${type}]`, JSON.stringify(data, null, 2));
-  return data;
+/** GET /api/project-proposal/{projectId}/activities/ — Fetch activity list */
+export async function fetchActivityList(projectId: number): Promise<ApiActivityListResponse> {
+  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/activities/`);
+  return handleResponse<ApiActivityListResponse>(res);
 }
 
-export async function fetchProgramProposals(): Promise<ParentProposalOption[]> {
-  const res = await authFetch(`${BASE_URL}/proposals-node/Program`);
-  const data: any[] = await handleResponse(res);
-  return data.map((p) => ({
-    id: p.child_id,
-    title: p.title,
-    leader: p.program_leader ?? p.project_leader ?? p.created_by ?? `User #${p.user}`,
-    created_at: p.created_at,
-  }));
-}
+/** PATCH /api/activity-proposal/{activityId}/ — Save activity proposal */
+export async function saveActivityProposal(activityId: number, form: ActivityFormData): Promise<any> {
+  const payload = {
+    implementing_agency: toStringArray(form.implementing_agency),
+    cooperating_agencies: toStringArray(form.cooperating_agencies),
+    extension_sites: toStringArray(form.extension_site),
+    tags: form.tagging,
+    clusters: form.cluster,
+    agendas: form.extension_agenda,
+    sdg_addressed: form.sdg_addressed,
+    mandated_academic_program: form.college_mandated_program,
+    rationale: form.rationale,
+    significance: form.significance,
+    objectives_of_activity: form.objectives,
+    methodology: form.methodology,
+    expected_output_6ps: mapExpectedOutput(form.expected_output),
+    sustainability_plan: form.sustainability_plan,
+    org_and_staffing: mapOrgStaffing(form.org_staffing),
+    plan_of_activity: form.schedule.rows
+      .filter((r) => r.activity?.trim())
+      .map((r) => ({ time: r.time, activity: `${r.activity}${r.speaker ? ` — ${r.speaker}` : ''}` })),
+    budget_requirements: mapBudgetRows(form.budget),
+  };
 
-export async function fetchProjectProposals(): Promise<ParentProposalOption[]> {
-  const res = await authFetch(`${BASE_URL}/proposals-node/Project`);
-  const data: any[] = await handleResponse(res);
-  return data.map((p) => ({
-    id: p.child_id,
-    title: p.title,
-    leader: p.project_leader ?? p.program_leader ?? p.created_by ?? `User #${p.user}`,
-    created_at: p.created_at,
-  }));
+  if (import.meta.env.DEV) console.log(`[saveActivityProposal] activityId=${activityId}`, JSON.stringify(payload, null, 2));
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+  return handleResponse(res);
 }
-
-export async function fetchActivityProposals(): Promise<any[]> {
-  const res = await authFetch(`${BASE_URL}/proposals-node/Activity`);
-  return handleResponse<any[]>(res);
-}
+export type ProposalNodeType = 'Program' | 'Project' | 'Activity';
 
 export async function fetchProgramProposalDetail(childId: number | string): Promise<any> {
   const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/`);
   return handleResponse<any>(res);
 }
-
-export async function fetchProjectList(childId: number | string): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/projects/`);
-  return handleResponse<any>(res);
+export async function fetchProposalsNode(type: ProposalNodeType): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/proposals-node/${type}`);
+  const data = await handleResponse<any>(res);
+  console.log(`[fetchProposalsNode/${type}]`, JSON.stringify(data, null, 2));
+  return data;
 }
