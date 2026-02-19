@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 class Proposal(models.Model):
 
     STATUS_CHOICES = [
+        ('for_review', 'For Review'),
         ('under_review', 'Under Review'),
-        ('for_review', 'Under Review'),
         ('for_revision', 'For Revision'),
         ('for_approval', 'For Approval'),
         ('approved', 'Approved'),
@@ -28,7 +28,7 @@ class Proposal(models.Model):
         null=True,
         blank=True
     ) 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="under_review")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="for_review")
     version_no = models.IntegerField(default=1)
 
     created_at = models.DateTimeField(auto_now_add=True)
