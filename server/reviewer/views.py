@@ -50,11 +50,8 @@ class ReviewerListView(APIView):
 # REVIEWER VIEWS get the assigned proposal for the reviewer
 class MyAssignedProposalsView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request, format=None):
-        proposal_reviewers = ProposalReviewer.objects.filter(reviewer=request.user)
-        serializer = ReviewerProposalSerializer(proposal_reviewers, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(ReviewerProposalSelector.get_reviewer_assigned_proposals(request.user), status=status.HTTP_200_OK)
     
 #GENERAL VIEWS get the assigned reviewers for a proposal
 class AssignedReviewerProposalView(APIView):
