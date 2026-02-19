@@ -20,6 +20,7 @@ class ProjectProposal(models.Model):
    start_date = models.DateField(null=True, blank=True)
    end_date = models.DateField(null=True, blank=True)
    
+   activity_list = models.JSONField(null=True, blank=True)
    # agencies
    implementing_agency = models.JSONField(null=True, blank=True)
 
@@ -75,6 +76,7 @@ class ProjectProposalHistory(models.Model):
    start_date = models.DateField(null=True, blank=True)
    end_date = models.DateField(null=True, blank=True)
    
+   activity_list = models.JSONField(null=True, blank=True)
    # agencies
    implementing_agency = models.JSONField(null=True, blank=True)
 

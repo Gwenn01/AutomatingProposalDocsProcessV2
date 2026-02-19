@@ -9,8 +9,8 @@ class ProgramProposal(models.Model):
    program_title = models.CharField(max_length=255, null=True, blank=True)
    program_leader = models.CharField(max_length=255, null=True, blank=True)
 
-   # list of projects
-   projects_list = models.JSONField(null=True, blank=True)
+    # list of projects
+   project_list = models.JSONField(null=True, blank=True)
    
    implementing_agency = models.JSONField(null=True, blank=True)
 
@@ -61,6 +61,9 @@ class ProgramProposalHistory(models.Model):
    # profile 
    program_title = models.CharField(max_length=255, null=True, blank=True)
    program_leader = models.CharField(max_length=255, null=True, blank=True)
+   
+   # list of projects
+   project_list = models.JSONField(null=True, blank=True)
    
    implementing_agency = models.JSONField(null=True, blank=True)
 
