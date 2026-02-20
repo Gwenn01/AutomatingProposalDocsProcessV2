@@ -8,6 +8,7 @@ import {
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";
+import Loading from "@/components/Loading";
 
 const AssignToReview = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,27 +84,11 @@ const AssignToReview = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-full bg-white inset-0 z-[60] flex items-center justify-center backdrop-blur-md animate-fade-in">
-        <div className="relative bg-white px-14 py-10 flex flex-col items-center animate-pop-out w-[450px]">
-          <p className="text-lg font-semibold shimmer-text mb-2 text-center">
-            Synchronizing Registry
-          </p>
-          <p className="text-xs w-full text-gray-500 mb-4 text-center">
-            Preparing the latest Proposals and reviewer data for you
-          </p>
-          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-green-400 via-emerald-500 to-green-700 transition-all duration-500 ease-out relative"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse" />
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-gray-500 font-medium">
-            {Math.round(progress)}%
-          </p>
-        </div>
-      </div>
+      <Loading
+        title="Synchronizing Proposal Data"
+        subtitle="Loading proposals and related statistics for you."
+        progress={progress}
+      />
     );
   }
 

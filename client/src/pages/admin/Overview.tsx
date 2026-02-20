@@ -15,28 +15,70 @@ import { Users, FileText, CheckCircle, Zap } from "lucide-react";
 import { getUsersOverview, getProposalsOverview } from "@/utils/admin-api";
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 import { getWorkflowCardStyle } from "@/utils/statusCardStyle";
+import Loading from "@/components/Loading";
 
 const PIE_COLORS = ["#6366f1", "#10b981", "#f59e0b"];
 
 const AdminOverview = () => {
   const [users, setUsers] = useState<any>(null);
   const [proposals, setProposals] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const usersData = await getUsersOverview();
-      const proposalData = await getProposalsOverview();
+    let intervalId: number;
+    if (loading) {
+      setProgress(0);
+      let value = 0;
+      const step = 5;
+      const intervalTime = 200;
+
+      intervalId = window.setInterval(() => {
+        value += step;
+        if (value >= 95) value = 95; // stop at 95%, wait for fetch
+        setProgress(value);
+      }, intervalTime);
+    }
+
+    return () => window.clearInterval(intervalId);
+  }, [loading]);
+
+  const fetchOverviewData = async () => {
+    try {
+      setLoading(true);
+      const [usersData, proposalsData] = await Promise.all([
+        getUsersOverview(),
+        getProposalsOverview(),
+      ]);
       setUsers(usersData);
-      setProposals(proposalData);
-    };
-    fetchData();
+      setProposals(proposalsData);
+      setProgress(100);
+      setTimeout(() => setLoading(false), 200);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch overview data");
+      setUsers([]);
+      setProposals([]);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOverviewData();
   }, []);
 
-  if (!users || !proposals) {
+  if (loading) {
     return (
-      <div className="p-10 text-sm text-slate-400">Loading dashboard...</div>
+      <Loading
+        title="Loading System Analytics"
+        subtitle="System performance at a glance."
+        progress={progress}
+      />
     );
   }
+
+  if (error) return <p className="p-8">{error}</p>;
 
   /* ================= USERS PIE DATA ================= */
   const pieData = [
