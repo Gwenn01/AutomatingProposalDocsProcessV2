@@ -1,100 +1,115 @@
 import { useState, useEffect } from "react";
 import { Search, FileText, Grid, Table } from "lucide-react";
-import { getProposals, getAssignedReviewers, type ProgramProposal } from "@/utils/admin-api";
+import {
+  getProposals,
+  getAssignedReviewers,
+  type ProgramProposal,
+} from "@/utils/admin-api";
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";
 
 const AssignToReview = () => {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [allDocs, setAllDocs] = useState<ProgramProposal[]>([]);
-    const [viewMode, setViewMode] = useState<"table" | "card">("table");
-    const [progress, setProgress] = useState(0);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedProposal, setSelectedProposal] = useState<{ id: number; title: string; } | null>(null);
-    const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
-    const [selectedForUnassign, setSelectedForUnassign] = useState<{ id: number; title: string; } | null>(null);
-    const [assignedMap, setAssignedMap] = useState<Record<number, number>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [allDocs, setAllDocs] = useState<ProgramProposal[]>([]);
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [progress, setProgress] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
+  const [selectedForUnassign, setSelectedForUnassign] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+  const [assignedMap, setAssignedMap] = useState<Record<number, number>>({});
 
-    useEffect(() => {
-        if (!loading) return
-        setProgress(0);
-        let value = 0;
+  useEffect(() => {
+    if (!loading) return;
+    setProgress(0);
+    let value = 0;
 
-        const interval = setInterval(() => {
-            value += Math.random() * 10;
-            setProgress(Math.min(value, 95));
-        }, 300);
+    const interval = setInterval(() => {
+      value += Math.random() * 10;
+      setProgress(Math.min(value, 95));
+    }, 300);
 
-        return () => clearInterval(interval)
-    }, [loading]);
+    return () => clearInterval(interval);
+  }, [loading]);
 
-    useEffect(() => {
-        const fetchDocuments = async () => {
-            try {
-                const data = await getProposals();
-                console.log("Fetched data:", data);
-                setAllDocs(data)
-            } catch (error) {
-                console.error("Error fetching Proposals", error)
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchDocuments();
-    }, [])
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        const data = await getProposals();
+        console.log("Fetched data:", data);
+        setAllDocs(data);
+      } catch (error) {
+        console.error("Error fetching Proposals", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDocuments();
+  }, []);
 
-    useEffect(() => {
-      const fetchAssigned = async () => {
-        try {
-          const assignments = await getAssignedReviewers();
-          const map: Record<number, number> = {};
-          assignments.forEach(a => {
-            map[a.proposal] = (map[a.proposal] || 0) + 1;
-          });
-          setAssignedMap(map);
-        } catch (error) {
-          console.error("Failed to fetch assigned reviewers", error);
-        }
-      };
+  useEffect(() => {
+    const fetchAssigned = async () => {
+      try {
+        const assignments = await getAssignedReviewers();
+        const map: Record<number, number> = {};
+        assignments.forEach((a) => {
+          map[a.proposal] = (map[a.proposal] || 0) + 1;
+        });
+        setAssignedMap(map);
+      } catch (error) {
+        console.error("Failed to fetch assigned reviewers", error);
+      }
+    };
 
-      fetchAssigned();
-    }, [allDocs])
+    fetchAssigned();
+  }, [allDocs]);
 
-    const openAssignModal = (doc: ProgramProposal) => {
-      setSelectedProposal({ id: doc.id, title: doc.title });
-      setIsModalOpen(true);
-    }
+  const openAssignModal = (doc: ProgramProposal) => {
+    setSelectedProposal({ id: doc.id, title: doc.title });
+    setIsModalOpen(true);
+  };
 
-    const filteredDocs = allDocs.filter((doc) =>
-        doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    
-    if (loading) {
-        return (
-            <div className="w-full h-full bg-white inset-0 z-[60] flex items-center justify-center backdrop-blur-md animate-fade-in">
-                <div className="relative bg-white px-14 py-10 flex flex-col items-center animate-pop-out w-[450px]">
-                    <p className="text-lg font-semibold shimmer-text mb-2 text-center">
-                        Synchronizing Registry
-                    </p>
-                    <p className="text-xs w-full text-gray-500 mb-4 text-center">
-                        Preparing the latest Proposals and reviewer data for you
-                    </p>
-                    <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-green-400 via-emerald-500 to-green-700 transition-all duration-500 ease-out relative" style={{ width: `${progress}%`  }}>
-                            <div className="absolute inset-0 bg-white/20 animate-pulse"/>
-                        </div>
-                    </div>
-                    <p className="mt-3 text-xs text-gray-500 font-medium">{Math.round(progress)}%</p>
-                </div>
-            </div>
-        )
-    }
+  const filteredDocs = allDocs.filter((doc) =>
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
+  if (loading) {
     return (
-      <>
-      <div className="p-8 lg:p-10 space-y-10 bg-[#fbfcfb] h-full animate-in fade-in duration-500">
+      <div className="w-full h-full bg-white inset-0 z-[60] flex items-center justify-center backdrop-blur-md animate-fade-in">
+        <div className="relative bg-white px-14 py-10 flex flex-col items-center animate-pop-out w-[450px]">
+          <p className="text-lg font-semibold shimmer-text mb-2 text-center">
+            Synchronizing Registry
+          </p>
+          <p className="text-xs w-full text-gray-500 mb-4 text-center">
+            Preparing the latest Proposals and reviewer data for you
+          </p>
+          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-green-400 via-emerald-500 to-green-700 transition-all duration-500 ease-out relative"
+              style={{ width: `${progress}%` }}
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-gray-500 font-medium">
+            {Math.round(progress)}%
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="p-8 lg:p-10 space-y-10 bg-[#fbfcfb] h-auto animate-in fade-in duration-500">
         {/* Header */}
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2 mb-10">
           <div className="flex-shrink-0">
@@ -166,7 +181,9 @@ const AssignToReview = () => {
               <table className="w-full border-separate border-spacing-y-3">
                 <thead>
                   <tr className="text-slate-400 uppercase text-[10px] tracking-[0.15em] font-bold">
-                    <th className="pb-4 px-8 text-left font-bold">Proposal Title</th>
+                    <th className="pb-4 px-8 text-left font-bold">
+                      Proposal Title
+                    </th>
                     <th className="pb-4 px-6 text-center font-bold">Status</th>
                     <th className="pb-4 px-6 text-center font-bold">Actions</th>
                   </tr>
@@ -175,7 +192,10 @@ const AssignToReview = () => {
                   {filteredDocs.map((doc) => {
                     const status = getStatusStyle(doc.status as ProposalStatus);
                     return (
-                      <tr key={doc.id} className="group transition-all duration-500">
+                      <tr
+                        key={doc.id}
+                        className="group transition-all duration-500"
+                      >
                         <td className="py-6 px-8 bg-white border-y border-l border-slate-50">
                           {doc.title}
                         </td>
@@ -198,7 +218,10 @@ const AssignToReview = () => {
                               </button>
                               <button
                                 onClick={() => {
-                                  setSelectedForUnassign({ id: doc.id, title: doc.title });
+                                  setSelectedForUnassign({
+                                    id: doc.id,
+                                    title: doc.title,
+                                  });
                                   setIsUnassignModalOpen(true);
                                 }}
                                 className="px-3 py-1 text-xs font-bold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all duration-300"
@@ -256,7 +279,10 @@ const AssignToReview = () => {
 
                           <button
                             onClick={() => {
-                              setSelectedForUnassign({ id: doc.id, title: doc.title });
+                              setSelectedForUnassign({
+                                id: doc.id,
+                                title: doc.title,
+                              });
                               setIsUnassignModalOpen(true);
                             }}
                             className="flex-1 px-3 py-2 text-xs font-bold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all duration-300"
@@ -299,14 +325,14 @@ const AssignToReview = () => {
           setAllDocs(refreshed);
           const assignments = await getAssignedReviewers();
           const map: Record<number, number> = {};
-          assignments.forEach(a => {
+          assignments.forEach((a) => {
             map[a.proposal] = (map[a.proposal] || 0) + 1;
           });
-          setAssignedMap(map)
-        }}  
+          setAssignedMap(map);
+        }}
       />
-      </>
-    )
-}
+    </>
+  );
+};
 
 export default AssignToReview;
