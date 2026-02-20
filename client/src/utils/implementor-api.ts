@@ -491,7 +491,7 @@ export async function saveActivityProposal(activityId: number, form: ActivityFor
   };
 
   if (import.meta.env.DEV) console.log(`[saveActivityProposal] activityId=${activityId}`, JSON.stringify(payload, null, 2));
-  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`, { method: 'PUT', body: JSON.stringify(payload) });
   return handleResponse(res);
 }
 export type ProposalNodeType = 'Program' | 'Project' | 'Activity';
