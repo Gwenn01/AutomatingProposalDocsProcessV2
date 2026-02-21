@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
 from .views import (
     AssignReviewerView,
+    AssignedReviewerDetailView,
     UnassignReviewerView,
     ReviewerListView,
     MyAssignedProposalsView,
@@ -11,6 +12,7 @@ from .views import (
 urlpatterns = [
     # admin
     path('assign-reviewer/', AssignReviewerView.as_view(), name='assign-reviewer'),
+    path('assigned-reviewer/<int:proposal>/', AssignedReviewerDetailView.as_view(), name='assigned-reviewer-detail'),
     path('unassign-reviewer/<int:pk>/', UnassignReviewerView.as_view(), name='unassign-reviewer'),
     path('reviewers/', ReviewerListView.as_view(), name='reviewer-list'),
     

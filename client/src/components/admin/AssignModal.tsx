@@ -1,100 +1,121 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { X, Search, Check, User, Loader2, ChevronRight } from "lucide-react";
-import { getAllReviewers, getAssignedReviewers, assignReviewer, type ApiUser, type ReviewerAssignment } from "@/utils/admin-api";
+import {
+  getAllReviewers,
+  getAssignedReviewers,
+  assignReviewer,
+  type ApiUser,
+  type ReviewerAssignment,
+} from "@/utils/admin-api";
 
 interface AssignModalProps {
-    isOpen: boolean,
-    onClose: () => void;
-    data: { id: number; title: string; } | null;
-    onUpdate: (proposalId: number) => void;  
+  isOpen: boolean;
+  onClose: () => void;
+  data: { id: number; title: string } | null;
+  onUpdate: (proposalId: number) => void;
 }
 
-const AssignModal: React.FC<AssignModalProps> = ({ isOpen, onClose, data, onUpdate }) => {
-    const [assignSearch, setAssignSearch] = useState("");
-    const [reviewers, setReviewers] = useState<ApiUser[]>([]);
-    const [assigned, setAssigned] = useState<ReviewerAssignment[]>([]);
-    const [selectedReviewers, setSelectedReviewers] = useState<number[]>([]);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoadingReviewers, setIsLoadingReviewers] = useState(true);
+const AssignModal: React.FC<AssignModalProps> = ({
+  isOpen,
+  onClose,
+  data,
+  onUpdate,
+}) => {
+  const [assignSearch, setAssignSearch] = useState("");
+  const [reviewers, setReviewers] = useState<ApiUser[]>([]);
+  const [assigned, setAssigned] = useState<ReviewerAssignment[]>([]);
+  const [selectedReviewers, setSelectedReviewers] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingReviewers, setIsLoadingReviewers] = useState(false);
 
-    useEffect(() => {
-        if (!isOpen || !data) return;
+  useEffect(() => {
+    if (!isOpen || !data) return;
 
-        const fetchData = async () => {
-            setIsLoadingReviewers(true);
+    const fetchData = async () => {
+      setIsLoadingReviewers(true);
 
-            try {
-                const [reviewerList, assignments] = await Promise.all([
-                    getAllReviewers(),
-                    getAssignedReviewers(),
-                ])
+      try {
+        const [reviewerList, assignments] = await Promise.all([
+          getAllReviewers(),
+          getAssignedReviewers(data.id), // ✅ pass proposal id
+        ]);
 
-                setReviewers(reviewerList)
-                setAssigned(assignments)
+        setReviewers(reviewerList);
+        setAssigned(assignments);
 
-                const alreadyAssigned = assignments 
-                    .filter((a) => a.proposal === data.id) 
-                    .map((a) => a.reviewer);
+        // Backend already filtered by proposal
+        const alreadyAssigned = assignments.map((a) => a.reviewer.id);
 
-                setSelectedReviewers(alreadyAssigned)
-            } catch (error) {
-                console.error("Failed to load reviewers");
-            } finally {
-                setIsLoadingReviewers(false);
-            }
-        };
-
-        fetchData();
-    }, [isOpen, data])
-
-    if (!isOpen || !data) return null;
-
-    const toggleReviewer = (id: number) => {
-        setSelectedReviewers((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
+        setSelectedReviewers(alreadyAssigned);
+      } catch (error) {
+        console.error("Failed to load reviewers:", error);
+      } finally {
+        setIsLoadingReviewers(false);
+      }
     };
 
-    const handleConfirm = async () => {
-        if (!data) return;
-        setIsSubmitting(true);
-        try {
-            const currentAssigned = assigned
-                .filter((a) => a.proposal === data.id)
-                .map((a) => a.reviewer);
+    fetchData();
+  }, [isOpen, data]);
 
-            const newSelections = selectedReviewers.filter(
-                (id) => !currentAssigned.includes(id)
-            );
+  // Optional: reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setAssignSearch("");
+      setSelectedReviewers([]);
+      setAssigned([]);
+    }
+  }, [isOpen]);
 
-            if (newSelections.length === 0) {
-                setIsSubmitting(false);
-                return;
-            }
+  if (!isOpen || !data) return null;
 
-            for (const reviewerId of newSelections) {
-                await assignReviewer({ proposal: data.id, reviewer: reviewerId });
-            }
+  const toggleReviewer = (id: number) => {
+    setSelectedReviewers((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
 
-            onUpdate(data.id);
-            onClose();
-        } catch (error) {
-            console.error("Assignment failed:", error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+  const handleConfirm = async () => {
+    if (!data) return;
 
-    const filteredReviewers = reviewers.filter((reviewer) =>
-        reviewer.profile.name
-            .toLowerCase()
-            .includes(assignSearch.toLowerCase())
-    )
+    setIsSubmitting(true);
 
-    return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    try {
+      const currentAssignedIds = assigned.map((a) => a.reviewer.id);
+      const newSelections = selectedReviewers.filter(
+        (id) => !currentAssignedIds.includes(id),
+      );
 
+      if (newSelections.length === 0) {
+        onClose();
+        return;
+      }
+
+      const assignedResults = await Promise.all(
+        newSelections.map((reviewerId) =>
+          assignReviewer({
+            proposal: data.id,
+            reviewer: reviewerId,
+          }),
+        ),
+      );
+      setAssigned((prev) => [...prev, ...assignedResults]);
+      onUpdate(data.id);
+      onClose();
+    } catch (error: any) {
+      console.error("Assignment failed:", error);
+      alert(error.message || "Failed to assign reviewer");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredReviewers = reviewers.filter((reviewer) =>
+    reviewer.profile.name.toLowerCase().includes(assignSearch.toLowerCase()),
+  );
+
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
         onClick={onClose}
@@ -109,9 +130,7 @@ const AssignModal: React.FC<AssignModalProps> = ({ isOpen, onClose, data, onUpda
         </div>
 
         <div className="mb-4">
-          <p className="text-sm font-semibold text-slate-600">
-            {data.title}
-          </p>
+          <p className="text-sm font-semibold text-slate-600">{data.title}</p>
         </div>
 
         <div className="relative mb-6">
@@ -128,7 +147,7 @@ const AssignModal: React.FC<AssignModalProps> = ({ isOpen, onClose, data, onUpda
           />
         </div>
 
-        <div className="max-h-[200px] overflow-y-auto space-y-3">
+        <div className="max-h-[220px] overflow-y-auto space-y-3">
           {isLoadingReviewers ? (
             <div className="flex justify-center py-8">
               <Loader2 className="animate-spin" />
@@ -189,8 +208,8 @@ const AssignModal: React.FC<AssignModalProps> = ({ isOpen, onClose, data, onUpda
         </button>
       </div>
     </div>,
-    document.body
-    )
-}
+    document.body,
+  );
+};
 
 export default AssignModal;

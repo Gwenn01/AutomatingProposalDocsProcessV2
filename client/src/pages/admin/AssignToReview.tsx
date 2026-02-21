@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, FileText, Grid, Table } from "lucide-react";
 import {
   getProposals,
-  getAssignedReviewers,
+  getAllReviewerAssignments,
   type ProgramProposal,
 } from "@/utils/admin-api";
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
@@ -16,68 +16,87 @@ const AssignToReview = () => {
   const [allDocs, setAllDocs] = useState<ProgramProposal[]>([]);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [progress, setProgress] = useState(0);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<{
     id: number;
     title: string;
   } | null>(null);
+
   const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
   const [selectedForUnassign, setSelectedForUnassign] = useState<{
     id: number;
     title: string;
   } | null>(null);
+
   const [assignedMap, setAssignedMap] = useState<Record<number, number>>({});
 
+  // Loading progress animation
   useEffect(() => {
     if (!loading) return;
     setProgress(0);
     let value = 0;
-
     const interval = setInterval(() => {
       value += Math.random() * 10;
       setProgress(Math.min(value, 95));
     }, 300);
-
     return () => clearInterval(interval);
   }, [loading]);
 
+  // Fetch proposals
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchProposalsAndAssignments = async () => {
       try {
-        const data = await getProposals();
-        console.log("Fetched data:", data);
-        setAllDocs(data);
+        setLoading(true);
+
+        // Fetch all proposals
+        const proposals = await getProposals();
+        setAllDocs(proposals);
+
+        // Fetch all reviewer assignments
+        const assignments = await getAllReviewerAssignments();
+
+        // Map proposal ID → number of assigned reviewers
+        const counts: Record<number, number> = {};
+        assignments.forEach((a) => {
+          counts[a.proposal] = (counts[a.proposal] || 0) + 1;
+        });
+
+        setAssignedMap(counts);
       } catch (error) {
-        console.error("Error fetching Proposals", error);
+        console.error("Failed to fetch proposals or assignments", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchDocuments();
+
+    fetchProposalsAndAssignments();
   }, []);
 
-  useEffect(() => {
-    const fetchAssigned = async () => {
-      try {
-        const assignments = await getAssignedReviewers();
-        const map: Record<number, number> = {};
-        assignments.forEach((a) => {
-          map[a.proposal] = (map[a.proposal] || 0) + 1;
-        });
-        setAssignedMap(map);
-      } catch (error) {
-        console.error("Failed to fetch assigned reviewers", error);
-      }
-    };
-
-    fetchAssigned();
-  }, [allDocs]);
-
+  // Open Assign Modal
   const openAssignModal = (doc: ProgramProposal) => {
     setSelectedProposal({ id: doc.id, title: doc.title });
     setIsModalOpen(true);
   };
 
+  // Update assigned reviewers map after assign/unassign
+  const handleUpdateAssignments = async () => {
+    try {
+      const proposals = await getProposals();
+      setAllDocs(proposals);
+
+      const assignments = await getAllReviewerAssignments();
+      const counts: Record<number, number> = {};
+      assignments.forEach((a) => {
+        counts[a.proposal] = (counts[a.proposal] || 0) + 1;
+      });
+      setAssignedMap(counts);
+    } catch (error) {
+      console.error("Failed to update assignments", error);
+    }
+  };
+
+  // Filter proposals by search
   const filteredDocs = allDocs.filter((doc) =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -176,6 +195,7 @@ const AssignToReview = () => {
                 <tbody>
                   {filteredDocs.map((doc) => {
                     const status = getStatusStyle(doc.status as ProposalStatus);
+                    const hasReviewer = assignedMap[doc.id] > 0;
                     return (
                       <tr
                         key={doc.id}
@@ -191,9 +211,8 @@ const AssignToReview = () => {
                             {status.label}
                           </span>
                         </td>
-                        {/* ✅ NEW ACTION COLUMN */}
                         <td className="py-6 px-6 bg-white border-y border-r border-slate-50 text-center space-x-2">
-                          {assignedMap[doc.id] > 0 ? (
+                          {hasReviewer ? (
                             <>
                               <button
                                 onClick={() => openAssignModal(doc)}
@@ -261,7 +280,6 @@ const AssignToReview = () => {
                           >
                             Assign
                           </button>
-
                           <button
                             onClick={() => {
                               setSelectedForUnassign({
@@ -291,30 +309,20 @@ const AssignToReview = () => {
           )}
         </div>
       </div>
+
+      {/* Modals */}
       <AssignModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         data={selectedProposal}
-        onUpdate={async () => {
-          const refreshed = await getProposals();
-          setAllDocs(refreshed);
-        }}
+        onUpdate={handleUpdateAssignments}
       />
 
       <UnassignModal
         isOpen={isUnassignModalOpen}
         onClose={() => setIsUnassignModalOpen(false)}
         data={selectedForUnassign}
-        onUpdate={async () => {
-          const refreshed = await getProposals();
-          setAllDocs(refreshed);
-          const assignments = await getAssignedReviewers();
-          const map: Record<number, number> = {};
-          assignments.forEach((a) => {
-            map[a.proposal] = (map[a.proposal] || 0) + 1;
-          });
-          setAssignedMap(map);
-        }}
+        onUpdate={handleUpdateAssignments}
       />
     </>
   );

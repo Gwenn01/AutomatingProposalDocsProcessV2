@@ -77,7 +77,7 @@ export interface ProgramProposal {
 export interface ReviewerAssignment {
   id: number;
   proposal: number;
-  reviewer: number;
+  reviewer: ApiUser;
   assigned_by: number;
   is_review: boolean;
   assigned_at: string;
@@ -159,9 +159,24 @@ export const getAllReviewers = async (): Promise<ApiUser[]> => {
   return response.json()
 }
 
-// Get Assigned Reviewers
-export const getAssignedReviewers = async (): Promise<ReviewerAssignment[]> => {
+// Get All Reviewer Assignments
+export const getAllReviewerAssignments = async (): Promise<ReviewerAssignment[]> => {
   const response = await fetch(`${API_URL}/assign-reviewer/`, {
+    method: "GET",
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch reviewer assignments");
+  }
+
+  return response.json();
+}
+
+// Get Assigned Reviewers by Proposal ID
+export const getAssignedReviewers = async (proposalId: number): Promise<ReviewerAssignment[]> => {
+  const response = await fetch(`${API_URL}/assigned-reviewer/${proposalId}/`, {
     method: "GET",
     headers: getAuthHeaders()
   });
@@ -171,7 +186,8 @@ export const getAssignedReviewers = async (): Promise<ReviewerAssignment[]> => {
     throw new Error(errorData.detail || "Failed to fetch assigned reviewers");
   }
 
-  return response.json();
+  const data = await response.json();
+  return Array.isArray(data) ? data : [data];
 }
 
 // Assign Reviewer
@@ -182,12 +198,14 @@ export const assignReviewer = async (payload: AssignReviewerPayload): Promise<Re
     body: JSON.stringify(payload)
   });
 
+  const resJson = await response.json().catch(() => ({}));
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to assign reviewer");
   }
 
-  return response.json();
+  return resJson.data as ReviewerAssignment;
 }
 
 // Unassign Revieweer

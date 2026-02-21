@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 
 # app
 from django.contrib.auth.models import User
@@ -34,6 +35,24 @@ class AssignReviewerView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AssignedReviewerDetailView(APIView):
+    permission_classes = [IsAdminUser]
+    
+    def get_object(self, proposal, user):
+        try:
+            return ProposalReviewer.objects.filter(proposal=proposal, assigned_by=user)
+        except ProposalReviewer.DoesNotExist:
+            raise PermissionDenied("Reviewer assignment not found or you do not have permission to access it.")
+
+    def get(self, request, proposal):
+        try:
+            proposal_reviewer = self.get_object(proposal, request.user)
+        except ProposalReviewer.DoesNotExist:
+            return Response({"message": "Reviewer assignment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ReviewerSerializer(proposal_reviewer, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UnassignReviewerView(APIView):
     permission_classes = [IsAdminUser]
