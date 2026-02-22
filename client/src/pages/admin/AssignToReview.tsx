@@ -203,7 +203,7 @@ const AssignToReview = () => {
               </p>
             </div>
           ) : viewMode === "table" ? (
-            <div className="overflow-x-auto rounded-2xl border border-slate-200/60 bg-slate-50/30 p-2">
+            <div className="overflow-x-auto rounded-2xl border border-white bg-slate-50/30 p-4">
               <table className="w-full border-separate border-spacing-y-2">
                 <thead>
                   <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-[0.15em]">
