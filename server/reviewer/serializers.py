@@ -7,10 +7,21 @@ from proposals_node.serializers import ProposalSerializer
 
 class ReviewerSerializer(serializers.ModelSerializer):
     reviewer = UserSerializer(read_only=True)
+    reviewer_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='reviewer',
+        write_only=True
+    )
     class Meta:
         model = ProposalReviewer
-        fields = ['id', 'proposal', 'reviewer', 'reviewer_data', 'assigned_by', 'is_review', 'assigned_at']
+        fields = ['id', 'proposal', 'reviewer', 'reviewer_id', 'assigned_by', 'is_review', 'assigned_at']
         read_only_fields = ['assigned_by', 'assigned_at']
+
+    def to_internal_value(self, data):
+        if 'reviewer' in data and 'reviewer_id' not in data:
+            data = dict(data) 
+            data['reviewer_id'] = data.pop('reviewer')
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         request = self.context['request']
