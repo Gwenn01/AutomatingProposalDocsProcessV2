@@ -9,6 +9,7 @@ import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";
 import Loading from "@/components/Loading";
+import { useToast } from "@/context/toast";
 
 const AssignToReview = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,7 +17,7 @@ const AssignToReview = () => {
   const [allDocs, setAllDocs] = useState<ProgramProposal[]>([]);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [progress, setProgress] = useState(0);
-
+  const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<{
     id: number;
@@ -80,7 +81,8 @@ const AssignToReview = () => {
   };
 
   // Update assigned reviewers map after assign/unassign
-  const handleUpdateAssignments = async () => {
+  const handleUpdateAssignments = async (message?: string) => {
+    if (message) showToast(message, "success");
     try {
       const proposals = await getProposals();
       setAllDocs(proposals);
@@ -93,6 +95,7 @@ const AssignToReview = () => {
       setAssignedMap(counts);
     } catch (error) {
       console.error("Failed to update assignments", error);
+      showToast("Failed to update assignments", "error");
     }
   };
 
@@ -315,14 +318,18 @@ const AssignToReview = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         data={selectedProposal}
-        onUpdate={handleUpdateAssignments}
+        onUpdate={() =>
+          handleUpdateAssignments("Reviewer assigned successfully!")
+        }
       />
 
       <UnassignModal
         isOpen={isUnassignModalOpen}
         onClose={() => setIsUnassignModalOpen(false)}
         data={selectedForUnassign}
-        onUpdate={handleUpdateAssignments}
+        onUpdate={() =>
+          handleUpdateAssignments("Reviewer unassigned successfully!")
+        }
       />
     </>
   );

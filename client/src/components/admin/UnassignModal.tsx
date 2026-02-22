@@ -11,7 +11,7 @@ interface UnassignModalPropos {
   isOpen: boolean;
   onClose: () => void;
   data: { id: number; title: string } | null;
-  onUpdate: (proposalId: number) => void;
+  onUpdate: () => void;
 }
 
 const UnassignModal: React.FC<UnassignModalPropos> = ({
@@ -64,11 +64,9 @@ const UnassignModal: React.FC<UnassignModalPropos> = ({
 
     try {
       await unassignReviewer(assignmentId);
-
-      // optimistic UI update
       setAssignedReviewers((prev) => prev.filter((a) => a.id !== assignmentId));
-
-      onUpdate(data.id);
+      onUpdate();
+      onClose();
     } catch (error: any) {
       console.error(error.message || "Failed to unassign reviewer");
     } finally {
