@@ -33,7 +33,7 @@ const AssignToReview = () => {
     title: string;
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = viewMode === "table" ? 10 : 12;
   const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
   const [selectedForUnassign, setSelectedForUnassign] = useState<{
     id: number;
@@ -121,7 +121,7 @@ const AssignToReview = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, viewMode]);
 
   if (loading) {
     return (
