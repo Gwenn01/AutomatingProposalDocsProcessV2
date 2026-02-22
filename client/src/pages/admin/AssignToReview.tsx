@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
-import { Search, FileText, Grid, Table } from "lucide-react";
+import {
+  Search,
+  FileText,
+  Grid,
+  Table,
+  UserPlus,
+  UserMinus,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import {
   getProposals,
   getAllReviewerAssignments,
   type ProgramProposal,
 } from "@/utils/admin-api";
-import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
+import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";
 import Loading from "@/components/Loading";
@@ -23,7 +32,8 @@ const AssignToReview = () => {
     id: number;
     title: string;
   } | null>(null);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
   const [selectedForUnassign, setSelectedForUnassign] = useState<{
     id: number;
@@ -104,6 +114,15 @@ const AssignToReview = () => {
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredDocs.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   if (loading) {
     return (
       <Loading
@@ -174,7 +193,7 @@ const AssignToReview = () => {
 
         {/* Content */}
         <div className="bg-white p-8 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 overflow-hidden relative">
-          {filteredDocs.length === 0 ? (
+          {currentData.length === 0 ? (
             <div className="py-24 text-center bg-slate-50/50 rounded-[24px] border-2 border-dashed border-slate-100 mt-4">
               <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
                 <FileText size={28} className="text-slate-200" />
@@ -184,66 +203,127 @@ const AssignToReview = () => {
               </p>
             </div>
           ) : viewMode === "table" ? (
-            <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-y-3">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/60 bg-slate-50/30 p-2">
+              <table className="w-full border-separate border-spacing-y-2">
                 <thead>
-                  <tr className="text-slate-400 uppercase text-[10px] tracking-[0.15em] font-bold">
-                    <th className="pb-4 px-8 text-left font-bold">
-                      Proposal Title
-                    </th>
-                    <th className="pb-4 px-6 text-center font-bold">Status</th>
-                    <th className="pb-4 px-6 text-center font-bold">Actions</th>
+                  <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-[0.15em]">
+                    <th className="pb-3 px-6 text-left">Proposal Details</th>
+                    <th className="pb-3 px-6 text-center">Current Status</th>
+                    <th className="pb-3 px-6 text-right">Management</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredDocs.map((doc) => {
-                    const status = getStatusStyle(doc.status as ProposalStatus);
+                <tbody className="space-y-2">
+                  {currentData.map((doc) => {
+                    const status = getStatusStyleAdmin(
+                      doc.status as ProposalStatus,
+                    );
                     const hasReviewer = assignedMap[doc.id] > 0;
+
                     return (
                       <tr
                         key={doc.id}
-                        className="group transition-all duration-500"
+                        className="group transition-all duration-200"
                       >
-                        <td className="py-6 px-8 bg-white border-y border-l border-slate-50">
-                          {doc.title}
+                        {/* Title Cell */}
+                        <td className="py-5 px-6 bg-white border-y border-l border-slate-200/60 rounded-l-[20px] group-hover:bg-slate-50/80 transition-all duration-300 ease-out">
+                          <div className="flex items-center gap-4">
+                            {/* Icon Container with Glassmorphism and Soft Shadow */}
+                            <div
+                              className="relative flex items-center justify-center w-12 h-12 rounded-[14px] bg-slate-50 text-slate-400 
+      group-hover:bg-white group-hover:text-indigo-600 group-hover:shadow-sm group-hover:shadow-indigo-100/50 
+      transition-all duration-300 border border-slate-100 group-hover:border-indigo-100/50"
+                            >
+                              {/* Subtle Background Glow on Hover */}
+                              <div className="absolute inset-0 rounded-[14px] bg-indigo-500/0 group-hover:bg-indigo-500/5 transition-colors duration-300" />
+
+                              <FileText
+                                size={20}
+                                strokeWidth={2}
+                                className="relative z-10 group-hover:scale-110 transition-transform duration-300"
+                              />
+                            </div>
+
+                            {/* Text Content */}
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-bold text-slate-800 text-[14px] tracking-tight group-hover:text-indigo-900 transition-colors">
+                                {doc.title}
+                              </span>
+
+                              {/* Monospace Reference ID with Badge Style */}
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-colors duration-300">
+                                  ID
+                                </span>
+                                <span className="text-[11px] font-mono text-slate-400 font-medium tracking-tighter">
+                                  {String(doc.id).slice(-6).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </td>
-                        <td className="py-6 px-6 bg-white border-y border-slate-50 text-center">
-                          <span
-                            className={`${status.className} px-3 py-1 rounded-full text-xs font-bold`}
-                          >
-                            {status.label}
-                          </span>
+
+                        {/* Status Cell */}
+                        <td className="py-4 px-6 bg-white border-y border-slate-200/50 text-center group-hover:bg-slate-50/50 transition-colors">
+                          <div className="inline-flex items-center transition-all duration-300 group-hover:scale-[1.02]">
+                            {/* The Badge Container */}
+                            <div
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${status.className}`}
+                            >
+                              {/* Animated Status Indicator */}
+                              <span className="relative flex h-1.5 w-1.5">
+                                {/* Ping effect inherits the text color via bg-current */}
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40 bg-current"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-current"></span>
+                              </span>
+
+                              {/* Status Label */}
+                              <span className="text-[10px] font-bold uppercase tracking-[0.15em] leading-none">
+                                {status.label}
+                              </span>
+                            </div>
+                          </div>
                         </td>
-                        <td className="py-6 px-6 bg-white border-y border-r border-slate-50 text-center space-x-2">
-                          {hasReviewer ? (
-                            <>
+
+                        {/* Actions Cell */}
+                        <td className="py-4 px-6 bg-white border-y border-r border-slate-200/50 rounded-r-xl text-right group-hover:bg-slate-50/50 transition-colors">
+                          <div className="flex justify-end items-center gap-2">
+                            {hasReviewer ? (
+                              <>
+                                {/* Modern Green Assign Button */}
+                                <button
+                                  onClick={() => openAssignModal(doc)}
+                                  className="inline-flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-tight rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-200"
+                                >
+                                  <UserPlus size={15} strokeWidth={2.5} />
+                                  <span>Assign</span>
+                                </button>
+
+                                {/* Modern Red Unassign Button */}
+                                <button
+                                  onClick={() => {
+                                    setSelectedForUnassign({
+                                      id: doc.id,
+                                      title: doc.title,
+                                    });
+                                    setIsUnassignModalOpen(true);
+                                  }}
+                                  className="inline-flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-tight rounded-lg bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all duration-200"
+                                >
+                                  <UserMinus size={15} strokeWidth={2.5} />
+                                  <span>Unassign</span>
+                                </button>
+                              </>
+                            ) : (
+                              /* Primary Assign Action (When empty) */
                               <button
                                 onClick={() => openAssignModal(doc)}
-                                className="px-3 py-1 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all duration-300"
+                                className="group/btn inline-flex items-center gap-2 px-4 py-2 text-[11px] font-bold uppercase tracking-widest rounded-lg bg-emerald-600 text-white shadow-sm shadow-emerald-200 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200/50 transition-all duration-300"
                               >
-                                Assign
+                                <UserPlus size={15} strokeWidth={2.5} />
+                                <span>Assign Reviewer</span>
                               </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedForUnassign({
-                                    id: doc.id,
-                                    title: doc.title,
-                                  });
-                                  setIsUnassignModalOpen(true);
-                                }}
-                                className="px-3 py-1 text-xs font-bold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all duration-300"
-                              >
-                                Unassign
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => openAssignModal(doc)}
-                              className="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all duration-300"
-                            >
-                              Assign
-                            </button>
-                          )}
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -252,35 +332,71 @@ const AssignToReview = () => {
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {filteredDocs.map((doc) => {
-                const status = getStatusStyle(doc.status as ProposalStatus);
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {currentData.map((doc) => {
+                const status = getStatusStyleAdmin(
+                  doc.status as ProposalStatus,
+                );
                 const hasReviewer = assignedMap[doc.id] > 0;
+
                 return (
                   <div
                     key={doc.id}
-                    className="bg-white rounded-[38px] p-6 border border-slate-200 shadow-sm"
+                    className="group relative bg-white rounded-[28px] border border-slate-200/60 p-2 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col"
                   >
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm font-semibold">{doc.title}</span>
-                      <span
-                        className={`${status.className} px-2 py-1 rounded-full text-xs font-bold`}
-                      >
-                        {status.label}
-                      </span>
-                      {hasReviewer && (
-                        <span className="text-xs text-slate-400 mt-1">
-                          {assignedMap[doc.id]} Reviewer(s) Assigned
-                        </span>
-                      )}
+                    {/* Card Header & Content */}
+                    <div className="p-5 flex-1">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        {/* Title & ID Section */}
+                        <div className="space-y-1">
+                          <h3 className="font-bold text-slate-800 text-[15px] tracking-tight leading-snug group-hover:text-indigo-600 transition-colors">
+                            {doc.title}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-bold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              #{String(doc.id).slice(-6).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Floating Status Icon/Badge */}
+                        <div
+                          className={`p-2 rounded-xl border ${status.className} bg-opacity-10 shrink-0`}
+                        >
+                          <FileText size={18} strokeWidth={2.5} />
+                        </div>
+                      </div>
+
+                      {/* Status Badge & Reviewer Count */}
+                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+                        <div
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${status.className}`}
+                        >
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40 bg-current"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-current"></span>
+                          </span>
+                          {status.label}
+                        </div>
+
+                        {hasReviewer && (
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                            {assignedMap[doc.id]} Reviewer
+                            {assignedMap[doc.id] > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-4 flex gap-2">
+
+                    {/* Action Footer - Premium Bento Glass Effect */}
+                    <div className="bg-slate-50/80 rounded-[22px] p-3 flex gap-2 border border-slate-100/50">
                       {hasReviewer ? (
                         <>
                           <button
                             onClick={() => openAssignModal(doc)}
-                            className="flex-1 px-3 py-2 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all duration-300"
+                            className="flex-1 inline-flex items-center justify-center gap-2 h-10 text-[11px] font-bold uppercase tracking-tight rounded-xl bg-white text-emerald-600 border border-emerald-100 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 shadow-sm transition-all duration-200"
                           >
+                            <UserPlus size={14} />
                             Assign
                           </button>
                           <button
@@ -291,16 +407,18 @@ const AssignToReview = () => {
                               });
                               setIsUnassignModalOpen(true);
                             }}
-                            className="flex-1 px-3 py-2 text-xs font-bold rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all duration-300"
+                            className="flex-1 inline-flex items-center justify-center gap-2 h-10 text-[11px] font-bold uppercase tracking-tight rounded-xl bg-white text-rose-600 border border-rose-100 hover:bg-rose-600 hover:text-white hover:border-rose-600 shadow-sm transition-all duration-200"
                           >
+                            <UserMinus size={14} />
                             Unassign
                           </button>
                         </>
                       ) : (
                         <button
                           onClick={() => openAssignModal(doc)}
-                          className="w-full px-4 py-2 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all duration-300"
+                          className="w-full inline-flex items-center justify-center gap-2 h-10 text-[11px] font-bold uppercase tracking-widest rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-200/50 hover:bg-emerald-700 hover:scale-[1.02] active:scale-95 transition-all duration-200"
                         >
+                          <UserPlus size={14} />
                           Assign Reviewer
                         </button>
                       )}
@@ -310,6 +428,81 @@ const AssignToReview = () => {
               })}
             </div>
           )}
+        </div>
+        {/* Pagination Controls */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-4 py-6 bg-slate-50/50 rounded-[24px] border border-slate-100/80">
+          {/* Stats Section */}
+          <div className="flex items-center gap-3">
+            <div className="flex -space-x-1 overflow-hidden">
+              {/* Subtle visual indicator of data density */}
+              <div className="h-2 w-8 rounded-full bg-indigo-500/20" />
+            </div>
+            <span className="text-[13px] text-slate-500 font-medium tracking-tight">
+              Showing{" "}
+              <span className="text-slate-900 font-bold">{startIndex + 1}</span>
+              <span className="mx-1 opacity-40">—</span>
+              <span className="text-slate-900 font-bold">
+                {Math.min(endIndex, filteredDocs.length)}
+              </span>{" "}
+              of{" "}
+              <span className="text-slate-900 font-bold">
+                {filteredDocs.length}
+              </span>{" "}
+              items
+            </span>
+          </div>
+
+          <div className="flex items-center gap-8">
+            {/* Minimalist Page Counter */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200/60 shadow-sm">
+              <span className="text-[11px] uppercase font-black tracking-widest text-slate-400 ml-1">
+                Page
+              </span>
+              <span className="text-sm font-bold text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded-full">
+                {currentPage}
+              </span>
+              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest mr-1">
+                of {totalPages}
+              </span>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="group flex items-center gap-2.5 pl-3.5 pr-5 h-10 rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-sm"
+                title="Previous Page"
+              >
+                <ChevronLeft
+                  size={16}
+                  className="group-hover:-translate-x-0.5 transition-transform duration-300"
+                />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                  Prev
+                </span>
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="group flex items-center gap-2.5 pl-5 pr-3.5 h-10 rounded-xl bg-slate-900 text-white hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md shadow-slate-900/5 hover:shadow-indigo-500/20"
+                title="Next Page"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                  Next
+                </span>
+                <ChevronRight
+                  size={16}
+                  className="group-hover:translate-x-0.5 transition-transform duration-300"
+                />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
