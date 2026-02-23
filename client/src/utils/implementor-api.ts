@@ -354,32 +354,56 @@ export function mapMethodology(text: string): { phase: string; activities: strin
 // API FUNCTIONS
 // ─────────────────────────────────────────────
 
-/** POST /api/program-proposal/ — Create program proposal, then resolve child_id via /proposals-node/Program */
-export async function submitProgramProposal(programData: ProgramFormData): Promise<{ child_id: number; [key: string]: any }> {
+/**
+ * POST /api/program-proposal/
+ * Payload matches the Postman-verified structure exactly.
+ * After POST, resolves child_id via GET /proposals-node/Program.
+ */
+export async function submitProgramProposal(
+  programData: ProgramFormData,
+): Promise<{ child_id: number; [key: string]: any }> {
+
+  // ── Build project_list from the program form's projects array ──────────
+  const project_list = programData.projects.map((p) => ({
+    project_title: p.project_title,
+    project_leader: p.project_leader,
+    // project_members is a comma/newline-separated string → split into array
+    project_member: toStringArray(p.project_members),
+    project_duration: Number(p.project_duration_months) || 0,
+    project_start_date: p.project_start_date || null,
+    project_end_date: p.project_end_date || null,
+  }));
+
   const payload = {
-    title: programData.program_title || 'Program Proposal',
+    // "title" mirrors program_title (used as the node title in the API)
+    title: programData.program_title,
     program_title: programData.program_title,
     program_leader: programData.program_leader,
-    project_list: programData.projects.map((p) => ({
-      project_title: p.project_title,
-      project_leader: p.project_leader,
-      project_member: toStringArray(p.project_members),
-      project_duration: Number(p.project_duration_months) || 0,
-      project_start_date: p.project_start_date || null,
-      project_end_date: p.project_end_date || null,
-    })),
+
+    // Project list — required for the API to create child project proposals
+    project_list,
+
+    // Agency / site fields — single text box split on commas/newlines
     implementing_agency: toStringArray(programData.implementing_agency),
     cooperating_agencies: toStringArray(programData.cooperating_agencies),
     extension_sites: toStringArray(programData.extension_site),
+
+    // Checkbox arrays sent directly
     tags: programData.tagging,
     clusters: programData.cluster,
     agendas: programData.extension_agenda,
+
+    // Single-value fields
     sdg_addressed: programData.sdg_addressed,
     mandated_academic_program: programData.college_mandated_program,
+
+    // Narrative fields
     rationale: programData.rationale,
     significance: programData.significance,
     general_objectives: programData.general_objectives,
     specific_objectives: programData.specific_objectives,
+
+    // Structured fields via mappers
     methodology: mapMethodology(programData.methodology),
     expected_output_6ps: mapExpectedOutput(programData.expected_output),
     sustainability_plan: programData.sustainability_plan,
@@ -388,34 +412,47 @@ export async function submitProgramProposal(programData: ProgramFormData): Promi
     budget_requirements: mapProgramBudgetRows(programData.program_budget),
   };
 
-  if (import.meta.env.DEV) console.log('[submitProgramProposal] payload:', JSON.stringify(payload, null, 2));
+  if (import.meta.env.DEV) {
+    console.log('[submitProgramProposal] payload:', JSON.stringify(payload, null, 2));
+  }
 
-  // POST the program proposal (response does NOT include child_id)
-  const res = await authFetch(`${BASE_URL}/program-proposal/`, { method: 'POST', body: JSON.stringify(payload) });
+  // ── POST the program proposal ──────────────────────────────────────────
+  const res = await authFetch(`${BASE_URL}/program-proposal/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
   const postResult: any = await handleResponse(res);
 
-  // If the POST response already has child_id, use it directly
+  // If the POST response already includes child_id, use it directly
   if (postResult?.child_id) return postResult;
 
-  // Otherwise, fetch the proposals list and find the most recently created one matching the title
+  // ── Fallback: fetch the proposals list and find the latest matching entry ──
   const listRes = await authFetch(`${BASE_URL}/proposals-node/Program`);
-  const list: Array<{ id: number; child_id: number; title: string; created_at: string }> = await handleResponse(listRes);
+  const list: Array<{ id: number; child_id: number; title: string; created_at: string }> =
+    await handleResponse(listRes);
 
-  // Sort by id descending to get the latest, filter by matching title
+  // Prefer entries whose title matches; sort by id descending to get the latest
   const matching = list
     .filter((p) => p.title === programData.program_title)
     .sort((a, b) => b.id - a.id);
 
   const found = matching[0];
+
   if (!found?.child_id) {
-    // Fallback: just grab the overall latest entry
+    // Last-resort fallback: grab the overall latest entry
     const latest = [...list].sort((a, b) => b.id - a.id)[0];
-    if (!latest?.child_id) throw new Error('Could not resolve child_id for the created program proposal.');
-    if (import.meta.env.DEV) console.log('[submitProgramProposal] resolved child_id (fallback):', latest.child_id);
+    if (!latest?.child_id) {
+      throw new Error('Could not resolve child_id for the created program proposal.');
+    }
+    if (import.meta.env.DEV) {
+      console.log('[submitProgramProposal] resolved child_id (fallback latest):', latest.child_id);
+    }
     return { ...postResult, child_id: latest.child_id };
   }
 
-  if (import.meta.env.DEV) console.log('[submitProgramProposal] resolved child_id:', found.child_id);
+  if (import.meta.env.DEV) {
+    console.log('[submitProgramProposal] resolved child_id:', found.child_id);
+  }
   return { ...postResult, child_id: found.child_id };
 }
 
@@ -455,8 +492,13 @@ export async function saveProjectProposal(projectId: number, form: ProjectFormDa
     budget_requirements: mapBudgetRows(form.budget),
   };
 
-  if (import.meta.env.DEV) console.log(`[saveProjectProposal] projectId=${projectId}`, JSON.stringify(payload, null, 2));
-  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/`, { method: 'PUT', body: JSON.stringify(payload) });
+  if (import.meta.env.DEV) {
+    console.log(`[saveProjectProposal] projectId=${projectId}`, JSON.stringify(payload, null, 2));
+  }
+  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
   return handleResponse(res);
 }
 
@@ -466,7 +508,7 @@ export async function fetchActivityList(projectId: number): Promise<ApiActivityL
   return handleResponse<ApiActivityListResponse>(res);
 }
 
-/** PATCH /api/activity-proposal/{activityId}/ — Save activity proposal */
+/** PUT /api/activity-proposal/{activityId}/ — Save activity proposal */
 export async function saveActivityProposal(activityId: number, form: ActivityFormData): Promise<any> {
   const payload = {
     implementing_agency: toStringArray(form.implementing_agency),
@@ -486,23 +528,49 @@ export async function saveActivityProposal(activityId: number, form: ActivityFor
     org_and_staffing: mapOrgStaffing(form.org_staffing),
     plan_of_activity: form.schedule.rows
       .filter((r) => r.activity?.trim())
-      .map((r) => ({ time: r.time, activity: `${r.activity}${r.speaker ? ` — ${r.speaker}` : ''}` })),
+      .map((r) => ({
+        time: r.time,
+        activity: `${r.activity}${r.speaker ? ` — ${r.speaker}` : ''}`,
+      })),
     budget_requirements: mapBudgetRows(form.budget),
   };
 
-  if (import.meta.env.DEV) console.log(`[saveActivityProposal] activityId=${activityId}`, JSON.stringify(payload, null, 2));
-  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`, { method: 'PUT', body: JSON.stringify(payload) });
+  if (import.meta.env.DEV) {
+    console.log(`[saveActivityProposal] activityId=${activityId}`, JSON.stringify(payload, null, 2));
+  }
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
   return handleResponse(res);
 }
+
+// ─────────────────────────────────────────────
+// ADDITIONAL FETCH HELPERS
+// ─────────────────────────────────────────────
+
 export type ProposalNodeType = 'Program' | 'Project' | 'Activity';
 
 export async function fetchProgramProposalDetail(childId: number | string): Promise<any> {
   const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/`);
   return handleResponse<any>(res);
 }
+
 export async function fetchProposalsNode(type: ProposalNodeType): Promise<any> {
   const res = await authFetch(`${BASE_URL}/proposals-node/${type}`);
   const data = await handleResponse<any>(res);
   console.log(`[fetchProposalsNode/${type}]`, JSON.stringify(data, null, 2));
   return data;
+}
+
+/** GET /api/project-proposal/{projectId}/ — Fetch single project proposal detail */
+export async function fetchProjectProposalDetail(projectId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/`);
+  return handleResponse<any>(res);
+}
+
+/** GET /api/activity-proposal/{activityId}/ — Fetch single activity proposal detail */
+export async function fetchActivityProposalDetail(activityId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`);
+  return handleResponse<any>(res);
 }
