@@ -62,9 +62,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     ],
     admin: [
       { label: "Overview", icon: Home },
-      { label: "Assign to Review", icon: UserCheck },
-      { label: "Manage Account", icon: Users },
       { label: "Manage Documents", icon: Files },
+      { label: "Assign to Review", icon: UserCheck },
+      { label: "Create Cover Page", icon: FileCheck },
+      { label: "Manage Account", icon: Users },
     ],
   };
 

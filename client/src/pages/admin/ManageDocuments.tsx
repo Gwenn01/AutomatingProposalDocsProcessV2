@@ -9,6 +9,8 @@ import {
   Users,
   User,
   Eye,
+  Check,
+  XCircle,
 } from "lucide-react";
 import { getProposals, type ProgramProposal } from "@/utils/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
@@ -47,7 +49,19 @@ const ManageDocuments = () => {
       try {
         setLoading(true);
         const proposals = await getProposals();
-        setAllDocs(proposals);
+        const staticProposals: ProgramProposal = {
+          id: 9999,
+          child_id: 0,
+          reviewer_count: 0,
+          title: "Sample Proposal for Approval",
+          file_path: null,
+          proposal_type: "Program",
+          status: "for_approval",
+          version_no: 1,
+          created_at: new Date().toISOString(),
+          user: 0,
+        };
+        setAllDocs([staticProposals, ...proposals]);
       } catch (error) {
         console.error("Failed to fetch proposals", error);
       } finally {
@@ -256,30 +270,68 @@ const ManageDocuments = () => {
                           </div>
                         </td>
 
-                        {/* 4. Actions - Bento Card Right (Emerald Theme) */}
                         <td className="px-8 py-5 text-right bg-white rounded-r-[24px] border-y border-r border-slate-100 shadow-sm group-hover:shadow-md transition-all">
-                          <div className="flex justify-end gap-3">
-                            {/* View Docs Button */}
-                            <button className="h-10 px-4 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white transition-all duration-300 flex items-center gap-2 border border-slate-100 group/btn">
-                              <FileText
-                                size={16}
-                                className="group-hover/btn:scale-110 transition-transform"
-                              />
-                              <span className="text-[11px] font-black uppercase tracking-wider">
-                                View Docs
-                              </span>
-                            </button>
+                          <div className="flex flex-col items-end gap-3">
+                            {/* Always Visible: Primary Action Pod */}
+                            <div className="flex justify-end gap-2">
+                              {/* View Docs - Ghost Style */}
+                              <button className="h-9 px-3 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all duration-300 flex items-center gap-2 group/docs">
+                                <FileText
+                                  size={15}
+                                  className="group-hover/docs:scale-110 transition-transform"
+                                />
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                  Docs
+                                </span>
+                              </button>
 
-                            {/* View Reviews Button - Premium Emerald Style */}
-                            <button className="h-10 px-4 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50 transition-all duration-300 flex items-center gap-2 group/btn border border-emerald-500">
-                              <Users
-                                size={16}
-                                className="group-hover/btn:scale-110 transition-transform text-emerald-100 group-hover:text-white"
-                              />
-                              <span className="text-[11px] font-black uppercase tracking-wider">
-                                View Reviews
-                              </span>
-                            </button>
+                              {/* View Reviews - Soft Emerald Style */}
+                              <button className="h-9 px-4 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all duration-300 flex items-center gap-2 group/rev border border-emerald-100/50 hover:border-emerald-600 shadow-sm hover:shadow-emerald-200">
+                                <Users
+                                  size={15}
+                                  className="group-hover/rev:rotate-12 transition-transform"
+                                />
+                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                  Reviews
+                                </span>
+                              </button>
+                            </div>
+
+                            {/* Decision Pod: Appears only for "For Approval" */}
+                            {doc.status === "for_approval" && (
+                              <div className="flex items-center gap-3 animate-in slide-in-from-right-5 duration-500">
+                                {/* Subtle Divider Label */}
+                                <div className="flex items-center self-center mr-2">
+                                  <div className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                                  </div>
+                                </div>
+
+                                {/* Decisions Container */}
+                                <div className="flex gap-2 p-1 bg-slate-50 rounded-[14px] border border-slate-100">
+                                  <button className="h-8 px-4 rounded-lg bg-white text-emerald-600 border border-emerald-100 hover:bg-emerald-600 hover:text-white shadow-sm transition-all duration-300 flex items-center gap-2 group/app">
+                                    <Check
+                                      size={14}
+                                      className="group-hover/app:scale-125 transition-transform"
+                                    />
+                                    <span className="text-[10px] font-black uppercase">
+                                      Approve
+                                    </span>
+                                  </button>
+
+                                  <button className="h-8 px-4 rounded-lg bg-white text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center gap-2 group/rej">
+                                    <XCircle
+                                      size={14}
+                                      className="group-hover/rej:rotate-90 transition-transform"
+                                    />
+                                    <span className="text-[10px] font-black uppercase">
+                                      Reject
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

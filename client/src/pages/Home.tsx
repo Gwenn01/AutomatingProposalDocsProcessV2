@@ -7,8 +7,8 @@ import {
   ManageAccount,
   ManageDocuments,
   Overview,
+  CreateCoverPage,
 } from "@/pages/admin";
-
 
 import ReviewProposal from "./reviewer/ReviewProposal";
 import { CreateProposal, ViewProposal } from "@/pages/implementor";
@@ -31,6 +31,7 @@ type ActiveMenu =
   | "Manage Account"
   | "Manage Documents"
   | "Assign to Review"
+  | "Create Cover Page"
   | "Review Proposal"
   | null;
 
@@ -102,6 +103,7 @@ const Home: React.FC = () => {
         {active === "Manage Account" && <ManageAccount />}
         {active === "Manage Documents" && <ManageDocuments />}
         {active === "Assign to Review" && <AssignToReview />}
+        {active === "Create Cover Page" && <CreateCoverPage />}
 
         {/* REVIEWER */}
         {active === "Review Proposal" && <ReviewProposal />}
