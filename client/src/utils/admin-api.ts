@@ -88,6 +88,16 @@ export interface AssignReviewerPayload {
   reviewer: number;
 }
 
+export interface CreateCoverPagePayload {
+  proposal: number;
+  cover_page_body: string;
+  submission_date: string; 
+}
+
+export interface CreateCoverPageResponse {
+  message: string;
+}
+
 const API_URL = "http://127.0.0.1:8000/api";
 
 const getAuthHeaders = () => {
@@ -219,6 +229,23 @@ export const unassignReviewer = async (proposalId: number ): Promise<void> => {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to unassign reviewer");
   }
+}
+
+// Create Cover Page
+export const createCoverPage = async (payload: CreateCoverPagePayload): Promise<CreateCoverPageResponse> => {
+  const response = await fetch(`${API_URL}/cover-pages/`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  })
+
+  const resJson = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(resJson.detail || "Failed to create cover page");
+  }
+
+  return resJson as CreateCoverPageResponse;
 }
 
 // Get All Accounts (Manage Account)
