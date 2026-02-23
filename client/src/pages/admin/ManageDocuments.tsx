@@ -7,11 +7,13 @@ import {
   ChevronRight,
   ChevronLeft,
   Users,
+  User,
   Eye,
 } from "lucide-react";
 import { getProposals, type ProgramProposal } from "@/utils/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
 import Loading from "@/components/Loading";
+import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";
 
 const ManageDocuments = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,7 +22,11 @@ const ManageDocuments = () => {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
   const itemsPerPage = viewMode === "table" ? 10 : 12;
 
   // Loading animation
@@ -61,6 +67,11 @@ const ManageDocuments = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredDocs.slice(startIndex, endIndex);
 
+  const openReviewerModal = (id: number, title: string) => {
+    setSelectedProposal({ id, title });
+    setIsReviewerModalOpen(true);
+  };
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, viewMode]);
@@ -76,256 +87,391 @@ const ManageDocuments = () => {
   }
 
   return (
-    <div className="p-8 lg:p-10 space-y-10 bg-[#fbfcfb] h-auto animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2 mb-10">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-            Manage Documents
-          </h1>
-          <p className="text-slate-500 text-sm">
-            View proposals and reviewer statistics.
-          </p>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
-          {/* Search */}
-          <div className="relative w-full md:w-80 group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search size={16} className="text-slate-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search proposals..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none text-[13px] font-semibold"
-            />
-          </div>
-
-          {/* View Switch */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
-            <button
-              onClick={() => setViewMode("table")}
-              className={`p-2 rounded-[12px] ${
-                viewMode === "table"
-                  ? "bg-white text-[#1cb35a] shadow-sm"
-                  : "text-slate-400"
-              }`}
-            >
-              <Table size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode("card")}
-              className={`p-2 rounded-[12px] ${
-                viewMode === "card"
-                  ? "bg-white text-[#1cb35a] shadow-sm"
-                  : "text-slate-400"
-              }`}
-            >
-              <Grid size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="bg-white p-8 rounded-[32px] shadow border border-slate-100 overflow-hidden">
-        {currentData.length === 0 ? (
-          <div className="py-24 text-center">
-            <FileText size={40} className="text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 uppercase text-xs font-bold tracking-widest">
-              No proposals found
+    <>
+      <div className="p-8 lg:p-10 space-y-10 bg-[#fbfcfb] h-auto animate-in fade-in duration-500">
+        {/* Header */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2 mb-10">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+              Manage Documents
+            </h1>
+            <p className="text-slate-500 text-sm">
+              View proposals and reviewer statistics.
             </p>
           </div>
-        ) : viewMode === "table" ? (
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-y-2">
-              <thead>
-                <tr className="text-slate-400 uppercase text-[10px] font-bold tracking-widest">
-                  <th className="text-left px-6 pb-3">Proposal</th>
-                  <th className="text-center px-6 pb-3">Status</th>
-                  <th className="text-center px-6 pb-3">Reviewers</th>
-                  <th className="text-right px-6 pb-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.map((doc) => {
-                  const status = getStatusStyleAdmin(
-                    doc.status as ProposalStatus,
-                  );
 
-                  return (
-                    <tr key={doc.id}>
-                      <td className="px-6 py-4 bg-white rounded-l-xl border-y border-l">
-                        <div className="flex items-center gap-3">
-                          <FileText size={18} className="text-slate-400" />
-                          <div>
-                            <div className="font-bold text-sm">{doc.title}</div>
-                            <div className="text-xs text-slate-400">
-                              ID #{doc.id}
+          <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+            {/* Search */}
+            <div className="relative w-full md:w-80 group">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Search size={16} className="text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search proposals..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none text-[13px] font-semibold"
+              />
+            </div>
+
+            {/* View Switch */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
+              <button
+                onClick={() => setViewMode("table")}
+                className={`p-2 rounded-[12px] ${
+                  viewMode === "table"
+                    ? "bg-white text-[#1cb35a] shadow-sm"
+                    : "text-slate-400"
+                }`}
+              >
+                <Table size={16} />
+              </button>
+              <button
+                onClick={() => setViewMode("card")}
+                className={`p-2 rounded-[12px] ${
+                  viewMode === "card"
+                    ? "bg-white text-[#1cb35a] shadow-sm"
+                    : "text-slate-400"
+                }`}
+              >
+                <Grid size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="bg-white p-8 rounded-[32px] shadow border border-slate-100 overflow-hidden">
+          {currentData.length === 0 ? (
+            <div className="py-24 text-center">
+              <FileText size={40} className="text-slate-200 mx-auto mb-4" />
+              <p className="text-slate-400 uppercase text-xs font-bold tracking-widest">
+                No proposals found
+              </p>
+            </div>
+          ) : viewMode === "table" ? (
+            <div className="overflow-x-auto pb-4">
+              <table className="w-full border-separate border-spacing-y-3">
+                <thead>
+                  <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
+                    <th className="text-left px-8 pb-2">Proposal Details</th>
+                    <th className="text-center px-6 pb-2">Status</th>
+                    <th className="text-center px-6 pb-2">Review Team</th>
+                    <th className="text-right px-8 pb-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentData.map((doc) => {
+                    const status = getStatusStyleAdmin(
+                      doc.status as ProposalStatus,
+                    );
+
+                    return (
+                      <tr key={doc.id} className="group">
+                        {/* 1. Proposal Info - Bento Card Left (Emerald Hover) */}
+                        <td className="px-8 py-5 bg-white rounded-l-[24px] border-y border-l border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                            {/* Icon Container with Emerald Hover */}
+                            <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors duration-300">
+                              <FileText
+                                size={20}
+                                className="text-slate-400 group-hover:text-emerald-600 transition-colors"
+                              />
+                            </div>
+
+                            <div>
+                              {/* Title with Emerald Hover */}
+                              <div className="font-bold text-[15px] text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors duration-300">
+                                {doc.title}
+                              </div>
+
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {/* ID Badge */}
+                                <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                  #{String(doc.id).padStart(4, "0")}
+                                </span>
+
+                                <span className="w-1 h-1 rounded-full bg-slate-200" />
+
+                                {/* Timestamp */}
+                                <span className="text-[11px] text-slate-400 font-medium group-hover:text-slate-500 transition-colors">
+                                  Updated 2d ago
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-6 py-4 text-center border-y">
-                        <span
-                          className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full border ${status.className}`}
+                        {/* 2. Status - Bento Middle */}
+                        <td className="px-6 py-5 text-center bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all">
+                          <div
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider ${status.className} shadow-sm`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                            {status.label}
+                          </div>
+                        </td>
+
+                        {/* 3. Reviewers - Minimal Bento Middle */}
+                        <td className="px-6 py-5 bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all">
+                          <div className="flex flex-col items-center justify-center">
+                            <div
+                              onClick={() =>
+                                openReviewerModal(doc.id, doc.title)
+                              }
+                              className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-transparent group-hover:border-emerald-100 cursor-pointer group-hover:bg-emerald-50/40 transition-all duration-300"
+                            >
+                              {/* Icon and Count */}
+                              <div className="flex items-center gap-2">
+                                <div className="relative">
+                                  <Users
+                                    size={18}
+                                    className="text-slate-400 group-hover:text-emerald-600 transition-colors"
+                                  />
+                                  {/* Assigned Indicator Dot */}
+                                  {doc.reviewer_count > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
+                                  )}
+                                </div>
+                                <span className="text-[15px] font-black text-slate-700 tracking-tight">
+                                  {doc.reviewer_count || 0}
+                                </span>
+                              </div>
+
+                              {/* Vertical Divider */}
+                              <div className="w-[1px] h-4 bg-slate-200" />
+
+                              {/* Assigned Indicator Label */}
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`text-[10px] font-black uppercase tracking-widest ${doc.reviewer_count > 0 ? "text-emerald-600" : "text-slate-300"}`}
+                                >
+                                  {doc.reviewer_count > 0
+                                    ? "Assigned"
+                                    : "Empty"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 4. Actions - Bento Card Right (Emerald Theme) */}
+                        <td className="px-8 py-5 text-right bg-white rounded-r-[24px] border-y border-r border-slate-100 shadow-sm group-hover:shadow-md transition-all">
+                          <div className="flex justify-end gap-3">
+                            {/* View Docs Button */}
+                            <button className="h-10 px-4 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white transition-all duration-300 flex items-center gap-2 border border-slate-100 group/btn">
+                              <FileText
+                                size={16}
+                                className="group-hover/btn:scale-110 transition-transform"
+                              />
+                              <span className="text-[11px] font-black uppercase tracking-wider">
+                                View Docs
+                              </span>
+                            </button>
+
+                            {/* View Reviews Button - Premium Emerald Style */}
+                            <button className="h-10 px-4 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50 transition-all duration-300 flex items-center gap-2 group/btn border border-emerald-500">
+                              <Users
+                                size={16}
+                                className="group-hover/btn:scale-110 transition-transform text-emerald-100 group-hover:text-white"
+                              />
+                              <span className="text-[11px] font-black uppercase tracking-wider">
+                                View Reviews
+                              </span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              {currentData.map((doc) => {
+                const status = getStatusStyleAdmin(
+                  doc.status as ProposalStatus,
+                );
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="group relative bg-white rounded-[35px] border border-slate-100 p-2 shadow-sm hover:shadow-2xl hover:shadow-emerald-900/5 transition-all duration-500 hover:-translate-y-1"
+                  >
+                    {/* Main Card Content */}
+                    <div className="p-6">
+                      {/* Top Row: ID & Status */}
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
+                            <FileText
+                              size={18}
+                              className="text-slate-400 group-hover:text-emerald-600"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-300 leading-none mb-1">
+                              Reference
+                            </p>
+                            <p className="text-[11px] font-mono font-bold text-slate-500">
+                              #{String(doc.id).padStart(4, "0")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`
+    px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest shadow-sm transition-all duration-300
+    ${status.className}
+  `}
                         >
-                          {status.label}
-                        </span>
-                      </td>
-
-                      {/* Reviewer Count Column */}
-                      <td className="px-6 py-4 text-center border-y">
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-600">
-                          <Users size={14} />
-                          {doc.reviewer_count}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-right rounded-r-xl border-y border-r">
-                        <div className="flex justify-end gap-2">
-                          <button className="inline-flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase rounded-lg bg-slate-100 hover:bg-slate-200 transition">
-                            <Eye size={14} />
-                            View Docs
-                          </button>
-
-                          <button className="inline-flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition">
-                            <Users size={14} />
-                            View Reviewer
-                          </button>
+                          {/* Optional: Indicator dot na sumasabay sa kulay ng text */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
+                            {status.label}
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {currentData.map((doc) => {
-              const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+                      </div>
 
-              return (
-                <div
-                  key={doc.id}
-                  className="bg-white rounded-2xl border p-5 shadow-sm hover:shadow-lg transition"
-                >
-                  <div className="flex justify-between mb-4">
-                    <div>
-                      <h3 className="font-bold text-sm">{doc.title}</h3>
-                      <p className="text-xs text-slate-400">ID #{doc.id}</p>
+                      {/* Proposal Title */}
+                      <div className="mb-8">
+                        <h3 className="font-bold text-[17px] text-slate-800 leading-snug tracking-tight group-hover:text-emerald-700 transition-colors line-clamp-2 min-h-[3rem]">
+                          {doc.title}
+                        </h3>
+                      </div>
+
+                      {/* Stats Pod - Mini Bento Tile */}
+                      <div
+                        onClick={() => openReviewerModal(doc.id, doc.title)}
+                        className="bg-slate-50/50 rounded-[24px] p-4 flex items-center justify-between border border-slate-100/50 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex -space-x-2">
+                            {[...Array(Math.min(doc.reviewer_count, 3))].map(
+                              (_, i) => (
+                                <div
+                                  key={i}
+                                  className="w-6 h-6 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center overflow-hidden"
+                                >
+                                  <User size={12} className="text-slate-400" />
+                                </div>
+                              ),
+                            )}
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-600">
+                            {doc.reviewer_count} Reviewer
+                            {doc.reviewer_count !== 1 && "s"}
+                          </span>
+                        </div>
+                        <div
+                          className={`h-2 w-2 rounded-full ${doc.reviewer_count > 0 ? "bg-emerald-500" : "bg-slate-300"} animate-pulse`}
+                        />
+                      </div>
                     </div>
 
-                    <span
-                      className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full border ${status.className}`}
-                    >
-                      {status.label}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center border-t pt-4">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-500">
-                      <Users size={14} />
-                      {doc.reviewer_count} Reviewer
-                      {doc.reviewer_count !== 1 && "s"}
-                    </span>
-
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 text-[10px] font-bold uppercase bg-slate-100 rounded-lg">
+                    {/* Action Footer - Split Layout */}
+                    <div className="flex gap-2 p-2 mt-2">
+                      <button className="flex-1 inline-flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-[22px] bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all duration-300">
+                        <Eye size={14} />
                         View Docs
                       </button>
-                      <button className="px-3 py-1 text-[10px] font-bold uppercase bg-indigo-600 text-white rounded-lg">
-                        View Reviewer
+                      <button className="flex-1 inline-flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-[22px] bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50 transition-all duration-300">
+                        <Users size={14} />
+                        Reviews
                       </button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-4 py-6 bg-slate-50/50 rounded-[24px] border border-slate-100/80">
-        {/* Stats Section */}
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-1 overflow-hidden">
-            {/* Subtle visual indicator of data density */}
-            <div className="h-2 w-8 rounded-full bg-indigo-500/20" />
-          </div>
-          <span className="text-[13px] text-slate-500 font-medium tracking-tight">
-            Showing{" "}
-            <span className="text-slate-900 font-bold">{startIndex + 1}</span>
-            <span className="mx-1 opacity-40">—</span>
-            <span className="text-slate-900 font-bold">
-              {Math.min(endIndex, filteredDocs.length)}
-            </span>{" "}
-            of{" "}
-            <span className="text-slate-900 font-bold">
-              {filteredDocs.length}
-            </span>{" "}
-            items
-          </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-8">
-          {/* Minimalist Page Counter */}
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200/60 shadow-sm">
-            <span className="text-[11px] uppercase font-black tracking-widest text-slate-400 ml-1">
-              Page
-            </span>
-            <span className="text-sm font-bold text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded-full">
-              {currentPage}
-            </span>
-            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest mr-1">
-              of {totalPages}
-            </span>
-          </div>
-
-          {/* Navigation Buttons */}
+        {/* Pagination Controls */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-4 py-6 bg-slate-50/50 rounded-[24px] border border-slate-100/80">
+          {/* Stats Section */}
           <div className="flex items-center gap-3">
-            {/* Previous Button */}
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="group flex items-center gap-2.5 pl-3.5 pr-5 h-10 rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-sm"
-              title="Previous Page"
-            >
-              <ChevronLeft
-                size={16}
-                className="group-hover:-translate-x-0.5 transition-transform duration-300"
-              />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
-                Prev
-              </span>
-            </button>
+            <div className="flex -space-x-1 overflow-hidden">
+              {/* Subtle visual indicator of data density */}
+              <div className="h-2 w-8 rounded-full bg-indigo-500/20" />
+            </div>
+            <span className="text-[13px] text-slate-500 font-medium tracking-tight">
+              Showing{" "}
+              <span className="text-slate-900 font-bold">{startIndex + 1}</span>
+              <span className="mx-1 opacity-40">—</span>
+              <span className="text-slate-900 font-bold">
+                {Math.min(endIndex, filteredDocs.length)}
+              </span>{" "}
+              of{" "}
+              <span className="text-slate-900 font-bold">
+                {filteredDocs.length}
+              </span>{" "}
+              items
+            </span>
+          </div>
 
-            {/* Next Button */}
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="group flex items-center gap-2.5 pl-5 pr-3.5 h-10 rounded-xl bg-slate-900 text-white hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md shadow-slate-900/5 hover:shadow-indigo-500/20"
-              title="Next Page"
-            >
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
-                Next
+          <div className="flex items-center gap-8">
+            {/* Minimalist Page Counter */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200/60 shadow-sm">
+              <span className="text-[11px] uppercase font-black tracking-widest text-slate-400 ml-1">
+                Page
               </span>
-              <ChevronRight
-                size={16}
-                className="group-hover:translate-x-0.5 transition-transform duration-300"
-              />
-            </button>
+              <span className="text-sm font-bold text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded-full">
+                {currentPage}
+              </span>
+              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest mr-1">
+                of {totalPages}
+              </span>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="group flex items-center gap-2.5 pl-3.5 pr-5 h-10 rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-sm"
+                title="Previous Page"
+              >
+                <ChevronLeft
+                  size={16}
+                  className="group-hover:-translate-x-0.5 transition-transform duration-300"
+                />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                  Prev
+                </span>
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="group flex items-center gap-2.5 pl-5 pr-3.5 h-10 rounded-xl bg-slate-900 text-white hover:bg-indigo-600 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md shadow-slate-900/5 hover:shadow-indigo-500/20"
+                title="Next Page"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">
+                  Next
+                </span>
+                <ChevronRight
+                  size={16}
+                  className="group-hover:translate-x-0.5 transition-transform duration-300"
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <ReviewerAssignedModal
+        isOpen={isReviewerModalOpen}
+        onClose={() => setIsReviewerModalOpen(false)}
+        proposalId={selectedProposal?.id || null}
+        proposalTitle={selectedProposal?.title}
+      />
+    </>
   );
 };
 
