@@ -15,7 +15,6 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
 
     project_list = serializers.ListField(
         child=serializers.DictField(),
-        write_only=True,
         required=False
     )
     # proposal_node = ProposalSerializer(source='proposal', read_only=True)

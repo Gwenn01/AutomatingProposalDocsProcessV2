@@ -17,13 +17,14 @@ class ProposalReviewSelectors:
         return get_object_or_404(Proposal, pk=proposal_id)
     
     @staticmethod
-    def get_program_proposal():
-        return get_object_or_404(ProgramProposal, proposal_id=proposal_id)
+    def get_program_proposal(proposal):
+        return get_object_or_404(ProgramProposal, proposal=proposal)
     
     @staticmethod
-    def get_project_proposal():
-        return get_object_or_404(ProjectProposal, proposal_id=proposal_id)
+    def get_project_proposal(proposal):
+        return get_object_or_404(ProjectProposal, proposal=proposal)
 
     @staticmethod
-    def get_activity_proposal():
-        return get_object_or_404(ActivityProposal, proposal_id=proposal_id)
+    def get_activity_proposal(proposal):
+        return get_object_or_404(ActivityProposal, proposal=proposal)
+    
