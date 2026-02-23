@@ -77,7 +77,7 @@ class ProjectProposalDetail(APIView):
         if serializer.is_valid():
             serializer.save()
             NotificationService.admin_notifications(
-                f"Project proposal updated by {request.user.username}"
+                f"Project proposal already created by {request.user.username}"
             )
             return Response({"message": "Project proposal updated successfully",
                          "data": serializer.data}, status=status.HTTP_200_OK)
