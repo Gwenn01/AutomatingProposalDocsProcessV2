@@ -1,5 +1,6 @@
 from django.db import models
 from reviewer.models import ProposalReviewer
+from proposals_node.models import Proposal
 
 class ProposalReview(models.Model):
 
@@ -21,6 +22,12 @@ class ProposalReview(models.Model):
         ProposalReviewer,
         on_delete=models.CASCADE,
         related_name="proposal_reviewer"
+    )
+    proposal_node = models.ForeignKey(
+        Proposal,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
     )
 
     # ---------- General Review ----------

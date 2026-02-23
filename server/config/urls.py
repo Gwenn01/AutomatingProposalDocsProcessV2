@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/', include('reviewer.urls')),
     path('api/', include('proposal_cover.urls')),
     path('api/', include('notifications.urls')),
+    path('api/', include('reviews.urls')),
 ]

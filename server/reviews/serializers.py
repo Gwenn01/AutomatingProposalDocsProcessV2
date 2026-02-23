@@ -1,11 +1,8 @@
 from rest_framework import serializers
-from .models import Review
+from .models import ProposalReview
+from reviewer.models import ProposalReviewer
 
-class ReviewSerializer(serializers.ModelSerializer):
+class ProposalReviewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Review
+        model = ProposalReview
         fields = '__all__'
-
-    def create(self, validated_data):
-        ...
-        
