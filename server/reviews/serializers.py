@@ -6,3 +6,4 @@ class ProposalReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProposalReview
         fields = '__all__'
+        

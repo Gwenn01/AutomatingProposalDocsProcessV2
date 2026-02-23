@@ -56,6 +56,7 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         # create program proposal
         program_proposal = ProgramProposal.objects.create(
             proposal=proposal,
+            project_list=project_list,
             **validated_data
         )
         # loop through project list and create project proposal root on it

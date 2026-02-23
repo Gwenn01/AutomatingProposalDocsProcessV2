@@ -7,15 +7,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 # app
 from .models import ProposalReview
 from .serializers import ProposalReviewSerializer
+from proposals_node.models import Proposal
 # Create your views here.
 
 class ProposalReviewList(APIView):
     permission_classes = [IsAuthenticated]
-
-    def get(self, request, format=None):
-        reviews = ProposalReview.objects.all()
-        serializer = ProposalReviewSerializer(reviews, many=True)
-        return Response(serializer.data)
 
     def post(self, request, format=None):
         serializer = ProposalReviewSerializer(data=request.data)
@@ -47,3 +43,13 @@ class ProposalReviewDetail(APIView):
         review = self.get_object(pk)
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+# get reviews by proposal node     
+class ProposalReviewListByProposal(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, proposal_id, format=None):
+        proposal_node = get_object_or_404(Proposal, pk=proposal_id)
+        reviews = ProposalReview.objects.filter(proposal_node=proposal_node)
+        serializer = ProposalReviewSerializer(reviews, many=True)
+        return Response(serializer.data)
