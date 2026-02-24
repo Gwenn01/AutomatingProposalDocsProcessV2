@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 # app
 from .models import ProposalReview
 from .serializers import ProposalReviewSerializer
+from .selectors import ProposalReviewSelectors
 from proposals_node.models import Proposal
 # Create your views here.
 
@@ -47,9 +48,6 @@ class ProposalReviewDetail(APIView):
 # get reviews by proposal node     
 class ProposalReviewListByProposal(APIView):
     permission_classes = [IsAuthenticated]
-
-    def get(self, request, proposal_id, format=None):
-        proposal_node = get_object_or_404(Proposal, pk=proposal_id)
-        reviews = ProposalReview.objects.filter(proposal_node=proposal_node)
-        serializer = ProposalReviewSerializer(reviews, many=True)
-        return Response(serializer.data)
+    def get(self, request, proposal_id, proposal_type, format=None):
+        data = ProposalReviewSelectors.proposal_reviews_mapper(proposal_id, proposal_type)
+        return Response(data, status=status.HTTP_200_OK)
