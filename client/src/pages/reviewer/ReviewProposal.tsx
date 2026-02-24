@@ -13,19 +13,32 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { getStatusStyle } from "@/utils/statusStyles";
-import { Bell } from "lucide-react";
 import ReviewerCommentModal from "@/components/reviewer/ReviewerCommentModal";
 import ReviewerList from "@/components/reviewer/ReviewerList";
 import NotificationBell from "../../components/NotificationBell";
 import { useToast } from "@/context/toast";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
+import {
+  fetchReviewerProposals,
+  fetchReviewerNotifications,
+  markNotificationRead,
+  fetchProposalCoverPage,
+  fetchProposalContent,
+  fetchProposalHistory,
+  type ReviewerProposal,
+  type ReviewerNotification,
+  type ProposalHistory,
+} from "@/utils/reviewer-api";
+
 interface User {
   user_id: string;
   fullname: string;
 }
 
+// Map API shape → internal Proposal shape used by the UI
 interface Proposal {
   proposal_id: string;
+  assignment_id: string;
   status: string;
   decision: string;
   review_status: string;
@@ -37,31 +50,61 @@ interface Proposal {
   review_id: string;
   reviewer_id: string;
   implementor_id: string;
-}
-
-interface Notification {
-  id: string;
-  is_read: number;
-  message: string;
-  created_at: string;
-}
-
-interface History {
-  history_id: string;
-  proposal_id: string;
-  status: string;
+  type: string;
   version_no: number;
-  created_at: string;
 }
+
+interface Review {
+  review_id: string | number;
+  reviewer_id: string | number;
+  status: string;
+  [key: string]: any;
+}
+
+interface Document {
+  proposal_id: string | number;
+  child_id?: string | number;
+  reviewer_count: number;
+  title: string;
+  file_path: string;
+  status: string;
+  submitted_at: string | null;
+  reviews: Review[] | number;
+  reviews_per_docs?: any;
+}
+
+// ─── Helper: map API response to internal Proposal ─────────────────────────
+function mapApiProposal(p: ReviewerProposal): Proposal {
+  return {
+    proposal_id: String(p.proposal),
+    assignment_id: String(p.assignment),
+    status: p.status, // raw status — getStatusStyle handles label + color
+    decision: p.is_reviewed ? "approved" : "",
+    review_status: p.is_reviewed ? "Reviewed" : "Pending Review",
+    is_reviewed: p.is_reviewed ? 1 : 0,
+    title: p.title,
+    description: `${p.type} Proposal — Version ${p.version_no}`,
+    date: new Date(p.assigned_at).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
+    name: p.title,
+    review_id: String(p.assignment),
+    reviewer_id: "",
+    implementor_id: String(p.implementor),
+    type: p.type,
+    version_no: p.version_no,
+  };
+}
+// ───────────────────────────────────────────────────────────────────────────
 
 const ReviewProposal: React.FC = () => {
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(
-    null,
-  );
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [proposalsData, setProposalsData] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -71,67 +114,72 @@ const ReviewProposal: React.FC = () => {
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [progress, setProgress] = useState<number>(0);
   const [showReviewerList, setShowReviewerList] = useState<boolean>(false);
-  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(
-    null,
-  );
+  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
   const [showNotif, setShowNotif] = useState<boolean>(false);
-  const [history, setHistory] = useState<History[]>([]);
-  const [showNotifications, setShowNotifications] = useState<boolean>(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [history, setHistory] = useState<ProposalHistory[]>([]);
+  const [notifications, setNotifications] = useState<ReviewerNotification[]>([]);
 
+  // ── Progress bar while loading ──────────────────────────────────────────
   useEffect(() => {
     if (!loading) return;
-
     setProgress(0);
     let value = 0;
-
     const interval = setInterval(() => {
       value += Math.random() * 10;
       setProgress(Math.min(value, 95));
     }, 300);
-
     return () => clearInterval(interval);
   }, [loading]);
 
-  const statusStyle = getStatusStyle(proposalsData[0]?.status || "");
-
+  // ── Hydrate user from localStorage ─────────────────────────────────────
   useEffect(() => {
-    // Get user from localStorage
     const storedUser = localStorage.getItem("user");
-
     if (!storedUser) {
       console.log("No user found, would redirect to login");
       setLoading(false);
       return;
     }
-
     try {
       const parsedUser: User = JSON.parse(storedUser);
       setUser(parsedUser);
-    } catch (error) {
-      console.error("Error parsing user data:", error);
+    } catch (err) {
+      console.error("Error parsing user data:", err);
       setLoading(false);
     }
   }, []);
 
-  // Mock data - API calls removed
+  // ── Fetch proposals & notifications once user is available ──────────────
   useEffect(() => {
     if (!user) return;
 
-    // Simulate loading
-    setTimeout(() => {
-      setLoading(false);
-      // Set mock data here if needed
-      setProposalsData([]);
-      setNotifications([]);
-    }, 1000);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [apiProposals, apiNotifications] = await Promise.all([
+          fetchReviewerProposals(),
+          fetchReviewerNotifications().catch(() => [] as ReviewerNotification[]),
+        ]);
+
+        setProposalsData(apiProposals.map(mapApiProposal));
+        setNotifications(apiNotifications);
+      } catch (err: any) {
+        console.error("[ReviewProposal] Failed to load data:", err);
+        setError(err?.message ?? "Failed to load proposals.");
+      } finally {
+        setProgress(100);
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, [user]);
 
+  // ── Derived counts ──────────────────────────────────────────────────────
   const unreadCount = notifications.filter((n) => n.is_read === 0).length;
 
   const handleRead = async (id: string) => {
-    if (!user) return;
-
     const target = notifications.find((n) => n.id === id);
     if (!target || target.is_read === 1) return;
 
@@ -139,31 +187,38 @@ const ReviewProposal: React.FC = () => {
       prev.map((notif) => (notif.id === id ? { ...notif, is_read: 1 } : notif)),
     );
 
-    // API call removed
+    try {
+      await markNotificationRead(id);
+    } catch (err) {
+      console.error("[handleRead] Failed to mark notification read:", err);
+    }
   };
 
-  const fetchCoverPage = async (proposalId: string) => {
-    // API call removed
-    return null;
+  const handleFetchCoverAndContent = async (proposalId: string) => {
+    const [cover, content] = await Promise.all([
+      fetchProposalCoverPage(proposalId).catch(() => null),
+      fetchProposalContent(proposalId).catch(() => null),
+    ]);
+    return { cover, content };
   };
 
-  const fetchProposalContent = async (proposalId: string) => {
-    // API call removed
-    return null;
+  const handleFetchHistory = async (proposalId: string) => {
+    try {
+      const data = await fetchProposalHistory(proposalId);
+      setHistory(data);
+    } catch {
+      setHistory([]);
+    }
   };
 
-  const fetchHistory = async (proposalId: string) => {
-    // API call removed
-    setHistory([]);
-  };
-
+  // ── Filtering ───────────────────────────────────────────────────────────
   const filteredProposals = useMemo(() => {
     let filtered = proposalsData;
 
     if (activeFilter === "completed") {
-      filtered = filtered.filter((p) => p.status === "Reviewer Completed");
+      filtered = filtered.filter((p) => p.status === "approved");
     } else if (activeFilter === "pending") {
-      filtered = filtered.filter((p) => p.status === "Pending Evaluation");
+      filtered = filtered.filter((p) => p.status === "for_review");
     }
 
     if (searchQuery.trim()) {
@@ -179,41 +234,45 @@ const ReviewProposal: React.FC = () => {
     return filtered;
   }, [searchQuery, activeFilter, proposalsData]);
 
-  const counts = useMemo(() => {
-    return {
+  const counts = useMemo(
+    () => ({
       all: proposalsData.length,
-      completed: proposalsData.filter((p) => p.status === "Reviewer Completed")
-        .length,
-      pending: proposalsData.filter((p) => p.status === "Pending Evaluation")
-        .length,
-    };
-  }, [proposalsData]);
+      completed: proposalsData.filter((p) => p.status === "approved").length,
+      pending: proposalsData.filter((p) => p.status === "for_review").length,
+    }),
+    [proposalsData],
+  );
 
-  const handleView = (proposal: Proposal) => {
-    setSelectedProposal(proposal);
-  };
-
-  const handleReview = (proposal: Proposal) => {
+  const handleView = (proposal: Proposal) => setSelectedProposal(proposal);
+  const handleReview = (proposal: Proposal) =>
     showToast(`Opening review form for: ${proposal.title}`, "info");
-  };
-
-  const handleViewOthers = (proposal: Proposal) => {
+  const handleViewOthers = (proposal: Proposal) =>
     showToast(`Viewing other reviewers for: ${proposal.title}`, "info");
-  };
 
+    // ================= VIEW PROPOSAL — uses authFetch via implementor-api =================
+    const handleViewProposal = async (doc: Document): Promise<void> => {
+      setActionLoading(true);
+      setSelectedDoc(doc);
+      setProposalDetail(null);
+      try {
+        const childId = doc.child_id ?? doc.proposal_id;
+        const detail = await fetchProgramProposalDetail(childId);
+        setProposalDetail(detail);
+        setShowViewerModal(true);
+      } catch (err) {
+        console.error("[ViewProposal] Failed to fetch proposal detail:", err);
+      } finally {
+        setActionLoading(false);
+      }
+    };
+
+  // ── Loading screen ──────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="w-full h-full bg-white/80 inset-0 z-[60] flex items-center justify-center backdrop-blur-md animate-fade-in">
-        <div
-          key={selectedDoc?.proposal_id}
-          className="relative bg-white/80 px-14 py-10 flex flex-col items-center animate-pop-out w-[380px]"
-        >
-          <p className="text-lg font-semibold shimmer-text mb-1">
-            Loading Proposals
-          </p>
-
+        <div className="relative bg-white/80 px-14 py-10 flex flex-col items-center animate-pop-out w-[380px]">
+          <p className="text-lg font-semibold shimmer-text mb-1">Loading Proposals</p>
           <p className="text-sm text-gray-500 mb-4">Preparing documents…</p>
-
           <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-green-400 via-emerald-500 to-green-700 transition-all duration-500 ease-out relative"
@@ -222,39 +281,23 @@ const ReviewProposal: React.FC = () => {
               <div className="absolute inset-0 bg-white/20 animate-pulse" />
             </div>
           </div>
-
-          <p className="mt-3 text-xs text-gray-500 font-medium">
-            {Math.round(progress)}%
-          </p>
+          <p className="mt-3 text-xs text-gray-500 font-medium">{Math.round(progress)}%</p>
         </div>
       </div>
     );
   }
 
+  // ── Main render ─────────────────────────────────────────────────────────
   return (
     <div className="flex-1 p-10 bg-white min-h-screen font-sans">
-      {loading ? (
+      {!user ? (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-pulse text-gray-400 text-lg">
-              Loading proposals...
-            </div>
-          </div>
-        </div>
-      ) : !user ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="text-gray-400 text-lg">
-              Please log in to view proposals
-            </div>
-          </div>
+          <div className="text-gray-400 text-lg">Please log in to view proposals</div>
         </div>
       ) : error ? (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="text-red-500 text-lg mb-2">
-              Error loading proposals
-            </div>
+            <div className="text-red-500 text-lg mb-2">Error loading proposals</div>
             <div className="text-gray-400 text-sm">{error}</div>
             <button
               onClick={() => window.location.reload()}
@@ -266,11 +309,9 @@ const ReviewProposal: React.FC = () => {
         </div>
       ) : (
         <>
+          {/* Header */}
           <div className="flex justify-between items-center mb-8 relative">
-            <h1 className="text-[32px] font-bold text-gray-900">
-              Review Proposal
-            </h1>
-
+            <h1 className="text-[32px] font-bold text-gray-900">Review Proposal</h1>
             <NotificationBell
               notifications={notifications}
               unreadCount={unreadCount}
@@ -281,6 +322,7 @@ const ReviewProposal: React.FC = () => {
             />
           </div>
 
+          {/* Controls */}
           <div className="flex flex-col xl:flex-row justify-between items-center mb-8 space-y-6 xl:space-y-0">
             <div className="relative w-full xl:w-96">
               <input
@@ -303,36 +345,43 @@ const ReviewProposal: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-6 w-full xl:w-auto justify-between xl:justify-end">
               <div className="flex space-x-8 text-sm font-bold text-gray-500">
-                <button
-                  onClick={() => setActiveFilter("all")}
-                  className={`pb-1 transition-colors ${activeFilter === "all" ? "text-green-600 border-b-2 border-green-600" : "hover:text-gray-700"}`}
-                >
-                  All ({counts.all})
-                </button>
-                <button
-                  onClick={() => setActiveFilter("completed")}
-                  className={`pb-1 transition-colors ${activeFilter === "completed" ? "text-green-600 border-b-2 border-green-600" : "hover:text-gray-700"}`}
-                >
-                  Completed ({counts.completed})
-                </button>
-                <button
-                  onClick={() => setActiveFilter("pending")}
-                  className={`pb-1 transition-colors ${activeFilter === "pending" ? "text-green-600 border-b-2 border-green-600" : "hover:text-gray-700"}`}
-                >
-                  Pending Evaluation ({counts.pending})
-                </button>
+                {(["all", "completed", "pending"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`pb-1 transition-colors capitalize ${
+                      activeFilter === filter
+                        ? "text-green-600 border-b-2 border-green-600"
+                        : "hover:text-gray-700"
+                    }`}
+                  >
+                    {filter === "pending"
+                      ? `Pending Evaluation (${counts.pending})`
+                      : filter === "completed"
+                        ? `Completed (${counts.completed})`
+                        : `All (${counts.all})`}
+                  </button>
+                ))}
               </div>
 
               <div className="flex items-center bg-gray-100 p-1 rounded-xl">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2.5 rounded-lg transition-colors ${viewMode === "grid" ? "bg-white shadow-sm text-green-600" : "text-gray-400 hover:text-gray-600"}`}
+                  className={`p-2.5 rounded-lg transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-white shadow-sm text-green-600"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <Grid className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`p-2.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-white shadow-sm text-green-600" : "text-gray-400 hover:text-gray-600"}`}
+                  className={`p-2.5 rounded-lg transition-colors ${
+                    viewMode === "table"
+                      ? "bg-white shadow-sm text-green-600"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
                 >
                   <Table className="w-5 h-5" />
                 </button>
@@ -349,6 +398,7 @@ const ReviewProposal: React.FC = () => {
             </div>
           )}
 
+          {/* Grid View */}
           {viewMode === "grid" && filteredProposals.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredProposals.map((proposal) => {
@@ -381,15 +431,13 @@ const ReviewProposal: React.FC = () => {
                       </p>
                       {proposal.review_status && (
                         <p
-                          className={`flex items-center gap-2 text-xs rounded-md px-3 py-2 mt-1 mb-3 border
-                                  ${
-                                    proposal.decision === "approved"
-                                      ? "text-green-700 bg-green-50 border-green-200"
-                                      : proposal.is_reviewed === 1
-                                        ? "text-red-700 bg-red-50 border-red-200"
-                                        : "text-orange-700 bg-orange-50 border-orange-200"
-                                  }
-                                `}
+                          className={`flex items-center gap-2 text-xs rounded-md px-3 py-2 mt-1 mb-3 border ${
+                            proposal.decision === "approved"
+                              ? "text-green-700 bg-green-50 border-green-200"
+                              : proposal.is_reviewed === 1
+                                ? "text-red-700 bg-red-50 border-red-200"
+                                : "text-orange-700 bg-orange-50 border-orange-200"
+                          }`}
                         >
                           {proposal.decision === "approved" ? (
                             <CheckCircle className="w-4 h-4" />
@@ -398,34 +446,25 @@ const ReviewProposal: React.FC = () => {
                           ) : (
                             <Clock className="w-4 h-4" />
                           )}
-
                           <span>{proposal.review_status}</span>
                         </p>
                       )}
                     </div>
-                    <div>
-                      <p className="text-gray-400 text-xs font-bold mb-5">
-                        {proposal.date}
-                      </p>
 
+                    <div>
+                      <p className="text-gray-400 text-xs font-bold mb-5">{proposal.date}</p>
                       <div className="flex space-x-3">
                         <button
                           onClick={async () => {
                             setLoading(true);
-
-                            const cover = await fetchCoverPage(
+                            const { cover, content } = await handleFetchCoverAndContent(
                               proposal.proposal_id,
                             );
-                            const content = await fetchProposalContent(
-                              proposal.proposal_id,
-                            );
-
                             setSelectedDoc({
                               ...proposal,
                               cover_page: cover,
                               full_content: content,
                             });
-
                             setShowViewerModal(true);
                             setLoading(false);
                           }}
@@ -438,21 +477,9 @@ const ReviewProposal: React.FC = () => {
                         <button
                           onClick={async () => {
                             setLoading(true);
-
-                            const cover = await fetchCoverPage(
-                              proposal.proposal_id,
-                            );
-                            const content = await fetchProposalContent(
-                              proposal.proposal_id,
-                            );
-                            const historyData = await fetchHistory(
-                              proposal.proposal_id,
-                            );
-
-                            setSelectedDoc({
-                              ...proposal,
-                            });
-
+                            await handleFetchCoverAndContent(proposal.proposal_id);
+                            await handleFetchHistory(proposal.proposal_id);
+                            setSelectedDoc({ ...proposal });
                             setShowReviewerModal(true);
                             setLoading(false);
                           }}
@@ -480,26 +507,17 @@ const ReviewProposal: React.FC = () => {
             </div>
           )}
 
+          {/* Table View */}
           {viewMode === "table" && filteredProposals.length > 0 && (
             <div className="bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-200">
                   <tr>
-                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">
-                      Status
-                    </th>
-                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">
-                      Title
-                    </th>
-                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">
-                      Submitted By
-                    </th>
-                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">
-                      Date
-                    </th>
-                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">
-                      Actions
-                    </th>
+                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Status</th>
+                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Title</th>
+                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Type</th>
+                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Date</th>
+                    <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -520,18 +538,14 @@ const ReviewProposal: React.FC = () => {
                         <td className="px-8 py-5 text-sm font-semibold text-gray-900 max-w-xs">
                           {proposal.title}
                         </td>
-                        <td className="px-8 py-5 text-sm text-gray-500 max-w-md">
-                          <div className="line-clamp-2">
-                            {proposal.description}
-                          </div>
-                        </td>
+                        <td className="px-8 py-5 text-sm text-gray-500">{proposal.type}</td>
                         <td className="px-8 py-5 text-xs font-bold text-gray-400 whitespace-nowrap">
                           {proposal.date}
                         </td>
                         <td className="px-8 py-5">
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleView(proposal)}
+                              onClick={() => }
                               className="p-2 bg-[#16A34A] text-white rounded-lg hover:bg-[#15803d] transition-colors"
                               title="View"
                             >
@@ -564,6 +578,7 @@ const ReviewProposal: React.FC = () => {
             </div>
           )}
 
+          {/* Detail Modal */}
           {selectedProposal && (
             <div
               className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -575,7 +590,9 @@ const ReviewProposal: React.FC = () => {
               >
                 <div className="flex justify-between items-start mb-6">
                   <span
-                    className={`px-4 py-2.5 rounded-full text-xs font-extrabold tracking-wide ${getStatusStyle(selectedProposal.status).className}`}
+                    className={`px-4 py-2.5 rounded-full text-xs font-extrabold tracking-wide ${
+                      getStatusStyle(selectedProposal.status).className
+                    }`}
                   >
                     {selectedProposal.status}
                   </span>
@@ -586,17 +603,9 @@ const ReviewProposal: React.FC = () => {
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  {selectedProposal.title}
-                </h2>
-                <p className="text-gray-500 text-sm mb-6">
-                  {selectedProposal.date}
-                </p>
-                <p className="text-gray-700 leading-relaxed mb-8">
-                  {selectedProposal.description}
-                </p>
-
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedProposal.title}</h2>
+                <p className="text-gray-500 text-sm mb-6">{selectedProposal.date}</p>
+                <p className="text-gray-700 leading-relaxed mb-8">{selectedProposal.description}</p>
                 <div className="flex space-x-3">
                   <button
                     onClick={() => handleReview(selectedProposal)}
