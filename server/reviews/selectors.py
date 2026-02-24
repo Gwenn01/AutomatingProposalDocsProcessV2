@@ -80,6 +80,11 @@ class ProposalReviewSelectors:
                 "comment": r.extension_site_feedback,
             })
             
+            review_for_tagging_cluster_extension.append({
+                "reviewer_name": reviewer_name,
+                "comment": r.tagging_cluster_extension_feedback,
+            })
+            
             review_for_sdg_academic_program.append({
                 "reviewer_name": reviewer_name,
                 "comment": r.sdg_academic_program_feedback,
@@ -216,4 +221,4 @@ class ProposalReviewSelectors:
         return ProposalReviewSelectors.get_review_per_docs_proposal_mapper(
             proposal_content,
             proposal_reviews_queryset
-        )
+        )`                          `
