@@ -1,5 +1,18 @@
-import React, { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
-import { X, User, ShieldCheck, Loader2, ChevronDown } from "lucide-react";
+import React, {
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+} from "react";
+import {
+  X,
+  User,
+  ShieldCheck,
+  Loader2,
+  ChevronDown,
+  Briefcase,
+  MapPin,
+} from "lucide-react";
 import { type ApiUser, updateAdminAccount } from "@/utils/admin-api";
 
 export type UserRole = "reviewer" | "admin" | "implementor";
@@ -26,8 +39,6 @@ const EditProfileAdmin: React.FC<EditProfileAdminProps> = ({
   onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
-
-  // Guard against null data
   const [formData, setFormData] = useState<UpdateAdminUserPayload>({
     name: "",
     campus: "",
@@ -36,7 +47,6 @@ const EditProfileAdmin: React.FC<EditProfileAdminProps> = ({
     role: "reviewer",
   });
 
-  // Initialize form when modal opens
   useEffect(() => {
     if (data) {
       setFormData({
@@ -44,161 +54,224 @@ const EditProfileAdmin: React.FC<EditProfileAdminProps> = ({
         campus: data.profile.campus,
         department: data.profile.department,
         position: data.profile.position,
-        role: data.profile.role as UserRole, // Type assertion
+        role: data.profile.role as UserRole,
       });
     }
   }, [data]);
 
   if (!isOpen || !data) return null;
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
-
-    // Type guard for role
-    if (name === "role" && value !== "reviewer" && value !== "admin" && value !== "implementor") {
-      return;
-    }
-
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const updatedUser = await updateAdminAccount(data.id, formData);
       onSuccess(updatedUser);
       onClose();
     } catch (err: unknown) {
-        if (err instanceof Error) {
-            alert(err.message);
-        } else {
-            alert("Failed to update user");
-        }
+      alert(err instanceof Error ? err.message : "Failed to update user");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-      <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      <div className="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl border border-gray-100 p-8 md:p-10 z-10 animate-in fade-in zoom-in-95 duration-200">
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="text-center mb-6">
-          <div className="inline-flex p-3 bg-green-50 text-[#00923f] rounded-2xl mb-3">
-            <User size={28} strokeWidth={2.5} />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-8 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="relative w-full max-w-5xl h-[70vh] bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        {/* 1. Header Section */}
+        <div className="p-10 pb-6 flex-shrink-0">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                  Profile Management
+                </span>
+              </div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                Edit User Account
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white transition-all duration-300"
+            >
+              <X size={20} />
+            </button>
           </div>
-          <h2 className="text-2xl font-black text-gray-800 tracking-tight">
-            Edit User Profile
-          </h2>
-          <p className="text-gray-500 text-sm font-medium">Update user details below</p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* Full Name */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Full Name
-            </label>
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" size={16} />
-              <input
-                required
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                type="text"
-                placeholder="Full Name"
-                className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-11 pr-4 outline-none focus:bg-white focus:border-[#00923f] transition-all text-gray-700 font-semibold text-sm"
-              />
+        {/* 2. Form Content Area */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-hidden flex flex-col"
+        >
+          <div className="px-10 pb-6 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pod: Personal Identity */}
+              <div className="space-y-6 p-8 bg-slate-50/50 rounded-[32px] border border-slate-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <User size={18} className="text-emerald-600" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Personal Information
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="group">
+                    <label className="text-[11px] font-bold text-slate-500 ml-2 mb-1.5 block uppercase">
+                      Full Name
+                    </label>
+                    <input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-5 py-3.5 bg-white border-2 border-slate-100 rounded-2xl text-sm outline-none focus:border-emerald-500/30 transition-all"
+                      placeholder="Enter full name"
+                    />
+                  </div>
+                  <div className="group">
+                    <label className="text-[11px] font-bold text-slate-500 ml-2 mb-1.5 block uppercase">
+                      Campus Location
+                    </label>
+                    <div className="relative">
+                      <MapPin
+                        size={16}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        name="campus"
+                        value={formData.campus}
+                        onChange={handleChange}
+                        className="w-full px-11 py-3.5 bg-white border-2 border-slate-100 rounded-2xl text-sm outline-none focus:border-emerald-500/30 transition-all"
+                        placeholder="Assign campus"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pod: Organization */}
+              <div className="space-y-6 p-8 bg-slate-50/50 rounded-[32px] border border-slate-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Briefcase size={18} className="text-emerald-600" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Work Details
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="group">
+                    <label className="text-[11px] font-bold text-slate-500 ml-2 mb-1.5 block uppercase">
+                      Department
+                    </label>
+                    <input
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-slate-100 rounded-2xl text-sm outline-none focus:border-emerald-500/30 transition-all"
+                      placeholder="e.g. Computer Studies"
+                    />
+                  </div>
+                  <div className="group">
+                    <label className="text-[11px] font-bold text-slate-500 ml-2 mb-1.5 block uppercase">
+                      Job Position
+                    </label>
+                    <input
+                      name="position"
+                      value={formData.position}
+                      onChange={handleChange}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-slate-100 rounded-2xl text-sm outline-none focus:border-emerald-500/30 transition-all"
+                      placeholder="e.g. Faculty / Dean"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pod: Access Control (Full Width) */}
+              <div className="md:col-span-2 relative group p-8 bg-slate-900 rounded-[40px] overflow-hidden shadow-2xl">
+                <ShieldCheck
+                  size={160}
+                  className="absolute -right-10 -bottom-10 text-white/[0.03] -rotate-12 group-hover:text-emerald-500/[0.05] transition-all duration-700"
+                />
+
+                <div className="relative z-10">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-6 block">
+                    Permissions & Authorization
+                  </span>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div className="relative">
+                      <label className="text-[11px] font-bold text-slate-500 ml-2 mb-1.5 block uppercase">
+                        User Role
+                      </label>
+                      <div className="relative">
+                        <ShieldCheck
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500"
+                          size={18}
+                        />
+                        <select
+                          name="role"
+                          value={formData.role}
+                          onChange={handleChange}
+                          className="w-full bg-white/5 border-2 border-white/10 rounded-2xl py-3.5 pl-12 pr-10 outline-none focus:border-emerald-500 focus:bg-white/10 transition-all text-white appearance-none cursor-pointer text-sm"
+                        >
+                          <option value="reviewer" className="bg-slate-900">
+                            Reviewer
+                          </option>
+                          <option value="implementor" className="bg-slate-900">
+                            Implementor
+                          </option>
+                          <option value="admin" className="bg-slate-900">
+                            System Admin
+                          </option>
+                        </select>
+                        <ChevronDown
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                          size={18}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-slate-500 italic leading-relaxed">
+                        Updating the user role will immediately change their
+                        access permissions across the Document Suite.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Campus */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Campus
-            </label>
-            <input
-              name="campus"
-              value={formData.campus}
-              onChange={handleChange}
-              type="text"
-              placeholder="Campus"
-              className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:bg-white focus:border-[#00923f] transition-all text-gray-700 font-semibold text-sm"
-            />
-          </div>
+          {/* 3. Footer Actions */}
+          <div className="px-10 py-8 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between flex-shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Cancel
+            </button>
 
-          {/* Department */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Department
-            </label>
-            <input
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              type="text"
-              placeholder="Department"
-              className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:bg-white focus:border-[#00923f] transition-all text-gray-700 font-semibold text-sm"
-            />
-          </div>
-
-          {/* Position */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Position
-            </label>
-            <input
-              name="position"
-              value={formData.position}
-              onChange={handleChange}
-              type="text"
-              placeholder="Position"
-              className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 px-4 outline-none focus:bg-white focus:border-[#00923f] transition-all text-gray-700 font-semibold text-sm"
-            />
-          </div>
-
-          {/* Role */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Role
-            </label>
-            <div className="relative group">
-              <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" size={16} />
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-11 pr-10 outline-none focus:bg-white focus:border-[#00923f] transition-all text-gray-700 font-semibold text-sm appearance-none cursor-pointer"
-              >
-                <option value="reviewer">Reviewer</option>
-                <option value="implementor">Implementor</option>
-                <option value="admin">Admin</option>
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-            </div>
-          </div>
-
-          {/* Submit */}
-          <div className="pt-4">
             <button
               disabled={loading}
-              type="submit"
-              className="w-full bg-[#00923f] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-[#007a35] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              className="flex items-center gap-3 px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-emerald-600 shadow-xl transition-all duration-500 active:scale-95 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : <span className="uppercase tracking-widest text-xs">Update Profile</span>}
+              {loading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <ShieldCheck size={16} className="text-emerald-400" />
+              )}
+              <span>{loading ? "Updating..." : "Save Changes"}</span>
             </button>
           </div>
         </form>

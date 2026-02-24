@@ -338,94 +338,147 @@ const ManageAccount = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            {filteredUsers.map((user) => (
-              <div
-                key={user.id}
-                className="group relative bg-white rounded-[38px] p-2 border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:border-slate-300 transition-all duration-500 flex flex-col h-full overflow-hidden"
-              >
-                {/* Premium Glass Background Effect (Visible on Hover) */}
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-slate-50/30 to-emerald-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {filteredUsers.map((user) => {
+              // 1. Dynamic Color Logic
+              const roleConfig = {
+                admin: {
+                  bg: "bg-blue-50/50",
+                  text: "text-blue-600",
+                  border: "border-blue-100",
+                  glow: "shadow-blue-200/40",
+                  avatar: "bg-blue-100 text-blue-600",
+                },
+                reviewer: {
+                  bg: "bg-amber-50/50",
+                  text: "text-amber-600",
+                  border: "border-amber-100",
+                  glow: "shadow-amber-200/40",
+                  avatar: "bg-amber-100 text-amber-600",
+                },
+                implementor: {
+                  bg: "bg-emerald-50/50",
+                  text: "text-emerald-600",
+                  border: "border-emerald-100",
+                  glow: "shadow-emerald-200/40",
+                  avatar: "bg-emerald-100 text-emerald-600",
+                },
+              };
 
-                <div className="relative z-10 p-6 flex flex-col h-full">
-                  {/* Top Header: ID & Role */}
-                  <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="font-mono text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                        ID-{String(user.id).padStart(3, "0")}
-                      </span>
-                    </div>
+              const currentRole =
+                (user.profile.role?.toLowerCase() as keyof typeof roleConfig) ||
+                "reviewer";
+              const style = roleConfig[currentRole];
 
-                    <span
-                      className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] shadow-sm border ${
-                        user.profile.role === "implementor"
-                          ? "bg-emerald-50/50 text-emerald-600 border-emerald-100"
-                          : "bg-amber-50/50 text-amber-600 border-amber-100"
-                      }`}
-                    >
-                      {user.profile.role}
-                    </span>
-                  </div>
+              return (
+                <div
+                  key={user.id}
+                  className="group relative bg-white rounded-[40px] p-3 border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.02)] hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] hover:border-slate-300 transition-all duration-500 flex flex-col h-full overflow-hidden"
+                >
+                  {/* Subtle Background Mesh Glow */}
+                  <div
+                    className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-[80px] opacity-0 group-hover:opacity-40 transition-opacity duration-700 ${style.bg}`}
+                  />
 
-                  {/* User Identity Section */}
-                  <div className="flex flex-col items-center text-center mb-10">
-                    <div className="relative mb-5">
-                      {/* Multi-layered Avatar Container */}
-                      <div className="w-20 h-20 rounded-[28px] bg-[#f5f5f7] flex items-center justify-center border border-slate-100 group-hover:bg-white group-hover:shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05)] transition-all duration-500 overflow-hidden">
-                        <span className="text-xl font-black text-slate-400 group-hover:text-[#1cb35a] transition-colors duration-500 tracking-tighter">
-                          {user.profile.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()}
+                  <div className="relative z-10 p-5 flex flex-col h-full">
+                    {/* Header Row */}
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+                        <span className="font-mono text-[9px] font-black tracking-widest text-slate-400 uppercase">
+                          #{String(user.id).padStart(3, "0")}
                         </span>
                       </div>
-                      {/* Subtle Reflection Effect */}
-                      <div className="absolute inset-0 rounded-[28px] bg-gradient-to-tr from-white/0 via-white/40 to-white/0 pointer-events-none" />
+
+                      <div
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border ${style.bg} ${style.text} ${style.border} shadow-sm transition-transform duration-500 group-hover:scale-105`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${currentRole === "admin" ? "bg-blue-500" : currentRole === "reviewer" ? "bg-amber-500" : "bg-emerald-500"} animate-pulse`}
+                        />
+                        <span className="text-[10px] font-black uppercase tracking-widest">
+                          {user.profile.role}
+                        </span>
+                      </div>
                     </div>
 
-                    <h3 className="font-bold text-[#1d1d1f] text-xl tracking-tight mb-1 group-hover:text-[#1cb35a] transition-colors duration-300">
-                      {user.profile.name}
-                    </h3>
-                    <p className="text-slate-400 text-[13px] font-medium tracking-tight">
-                      {user.email}
-                    </p>
+                    {/* Identity Section - Bento Split */}
+                    <div className="flex items-center gap-5 mb-8">
+                      <div
+                        className={`relative w-20 h-20 shrink-0 rounded-[32px] ${style.avatar} flex items-center justify-center text-xl font-black shadow-inner overflow-hidden group-hover:shadow-lg transition-all duration-500 ${style.glow}`}
+                      >
+                        {user.profile.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                        {/* Glass Reflection on Avatar */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/30 to-white/0" />
+                      </div>
+
+                      <div className="flex flex-col min-w-0">
+                        <h3 className="font-black text-slate-900 text-xl tracking-tight leading-tight truncate group-hover:text-slate-700 transition-colors">
+                          {user.profile.name}
+                        </h3>
+                        <p className="text-slate-400 text-sm font-medium truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Information Bento Row */}
+                    <div className="grid grid-cols-2 gap-2 mb-8">
+                      <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-all duration-300">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                          Department
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-700 truncate">
+                          {user.profile.department || "General"}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-all duration-300">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                          Location
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-700 truncate">
+                          {user.profile.campus || "Main"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Footer */}
+                    <div className="mt-auto flex gap-3 pt-5 border-t border-slate-50">
+                      <button
+                        onClick={() => handleEditClick(user)}
+                        className="flex-1 group/btn relative flex items-center justify-center gap-2 h-12 rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-200 active:scale-95 overflow-hidden"
+                      >
+                        {/* Shimmer Effect Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
+
+                        <Edit
+                          size={14}
+                          strokeWidth={3}
+                          className="relative z-10 group-hover/btn:rotate-12 group-hover/btn:scale-110 transition-transform duration-300"
+                        />
+
+                        <span className="relative z-10">Edit Profile</span>
+
+                        {/* Glow Layer */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-emerald-400/10 blur-xl" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteClick(user)}
+                        className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center transition-all duration-300 hover:bg-rose-500 hover:text-white hover:border-rose-500 active:scale-95"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Apple-Style Action Buttons */}
-                  <div className="mt-auto grid grid-cols-2 gap-3 pt-6 border-t border-slate-50">
-                    <button
-                      onClick={() => handleEditClick(user)}
-                      className="group/btn relative flex items-center justify-center gap-2 h-12 rounded-[18px] bg-emerald-50 text-emerald-600 font-black text-[11px] uppercase tracking-widest transition-all duration-300 hover:bg-emerald-600 hover:text-white hover:shadow-[0_10px_20px_-5px_rgba(16,185,129,0.4)] active:scale-95 overflow-hidden"
-                    >
-                      <Edit
-                        size={14}
-                        strokeWidth={2.5}
-                        className="group-hover/btn:rotate-12 transition-transform"
-                      />
-                      <span>Edit</span>
-                      {/* Shine effect on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteClick(user)}
-                      className="group/btn relative flex items-center justify-center gap-2 h-12 rounded-[18px] bg-red-50 text-red-500 font-black text-[11px] uppercase tracking-widest transition-all duration-300 hover:bg-red-500 hover:text-white hover:shadow-[0_10px_20px_-5px_rgba(239,68,68,0.4)] active:scale-95 overflow-hidden"
-                    >
-                      <Trash2
-                        size={14}
-                        strokeWidth={2.5}
-                        className="group-hover/btn:-translate-y-0.5 transition-transform"
-                      />
-                      <span>Delete</span>
-                    </button>
-                  </div>
+                  {/* Top Edge Light Reflection */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
                 </div>
-
-                {/* Modern High-End Detail: Glass Light Reflection at the top */}
-                <div className="absolute top-0 left-[10%] right-[10%] h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

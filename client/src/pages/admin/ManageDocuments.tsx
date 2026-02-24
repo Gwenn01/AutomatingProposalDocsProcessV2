@@ -49,19 +49,7 @@ const ManageDocuments = () => {
       try {
         setLoading(true);
         const proposals = await getProposals();
-        const staticProposals: ProgramProposal = {
-          id: 9999,
-          child_id: 0,
-          reviewer_count: 0,
-          title: "Sample Proposal for Approval",
-          file_path: null,
-          proposal_type: "Program",
-          status: "for_approval",
-          version_no: 1,
-          created_at: new Date().toISOString(),
-          user: 0,
-        };
-        setAllDocs([staticProposals, ...proposals]);
+        setAllDocs(proposals);
       } catch (error) {
         console.error("Failed to fetch proposals", error);
       } finally {
@@ -165,14 +153,14 @@ const ManageDocuments = () => {
               </p>
             </div>
           ) : viewMode === "table" ? (
-            <div className="overflow-x-auto pb-4">
-              <table className="w-full border-separate border-spacing-y-3">
+            <div className="overflow-x-auto pb-8 -mx-4 px-4">
+              <table className="w-full border-separate border-spacing-y-4">
                 <thead>
-                  <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
-                    <th className="text-left px-8 pb-2">Proposal Details</th>
+                  <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.25em]">
+                    <th className="text-left px-10 pb-2">Proposal</th>
                     <th className="text-center px-6 pb-2">Status</th>
-                    <th className="text-center px-6 pb-2">Review Team</th>
-                    <th className="text-right px-8 pb-2">Actions</th>
+                    <th className="text-center px-6 pb-2">Reviewers</th>
+                    <th className="text-right px-10 pb-2">Management</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -183,33 +171,28 @@ const ManageDocuments = () => {
 
                     return (
                       <tr key={doc.id} className="group">
-                        {/* 1. Proposal Info - Bento Card Left (Emerald Hover) */}
-                        <td className="px-8 py-5 bg-white rounded-l-[24px] border-y border-l border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-300">
-                          <div className="flex items-center gap-4">
-                            {/* Icon Container with Emerald Hover */}
-                            <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors duration-300">
-                              <FileText
-                                size={20}
-                                className="text-slate-400 group-hover:text-emerald-600 transition-colors"
-                              />
+                        {/* 1. Proposal Info - Left "Pill" */}
+                        <td className="pl-10 pr-6 py-6 bg-white border-y border-l border-slate-100 rounded-l-[32px] shadow-sm group-hover:shadow-md group-hover:bg-slate-50/50 transition-all duration-500">
+                          <div className="flex items-center gap-5">
+                            <div className="relative flex-shrink-0">
+                              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:scale-110 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-all duration-500">
+                                <FileText
+                                  size={22}
+                                  className="text-slate-400 group-hover:text-emerald-600 transition-colors"
+                                />
+                              </div>
                             </div>
 
-                            <div>
-                              {/* Title with Emerald Hover */}
-                              <div className="font-bold text-[15px] text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors duration-300">
+                            <div className="min-w-0 max-w-[280px]">
+                              <div className="font-bold text-[16px] text-slate-800 tracking-tight group-hover:text-emerald-800 transition-colors duration-300 truncate">
                                 {doc.title}
                               </div>
-
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {/* ID Badge */}
-                                <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                  #{String(doc.id).padStart(4, "0")}
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-100/80 px-2 py-0.5 rounded-full border border-slate-200/50">
+                                  ID-{String(doc.id).padStart(4, "0")}
                                 </span>
-
-                                <span className="w-1 h-1 rounded-full bg-slate-200" />
-
-                                {/* Timestamp */}
-                                <span className="text-[11px] text-slate-400 font-medium group-hover:text-slate-500 transition-colors">
+                                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                <span className="text-[11px] text-slate-400 font-semibold italic">
                                   Updated 2d ago
                                 </span>
                               </div>
@@ -217,115 +200,97 @@ const ManageDocuments = () => {
                           </div>
                         </td>
 
-                        {/* 2. Status - Bento Middle */}
-                        <td className="px-6 py-5 text-center bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all">
+                        {/* 2. Status - Middle Bento */}
+                        <td className="px-6 py-6 text-center bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-500">
                           <div
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider ${status.className} shadow-sm`}
+                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${status.className} shadow-sm ring-4 ring-transparent group-hover:ring-slate-50 transition-all`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                             {status.label}
                           </div>
                         </td>
 
-                        {/* 3. Reviewers - Minimal Bento Middle */}
-                        <td className="px-6 py-5 bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all">
-                          <div className="flex flex-col items-center justify-center">
-                            <div
+                        {/* 3. Reviewers - Compact Pod */}
+                        <td className="px-6 py-6 bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-500">
+                          <div className="flex justify-center">
+                            <button
                               onClick={() =>
                                 openReviewerModal(doc.id, doc.title)
                               }
-                              className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-transparent group-hover:border-emerald-100 cursor-pointer group-hover:bg-emerald-50/40 transition-all duration-300"
+                              className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 transition-all duration-300 group/btn"
                             >
-                              {/* Icon and Count */}
-                              <div className="flex items-center gap-2">
-                                <div className="relative">
-                                  <Users
-                                    size={18}
-                                    className="text-slate-400 group-hover:text-emerald-600 transition-colors"
-                                  />
-                                  {/* Assigned Indicator Dot */}
-                                  {doc.reviewer_count > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />
-                                  )}
-                                </div>
-                                <span className="text-[15px] font-black text-slate-700 tracking-tight">
-                                  {doc.reviewer_count || 0}
-                                </span>
+                              <div className="relative">
+                                <Users
+                                  size={18}
+                                  className="text-slate-400 group-hover/btn:text-emerald-600"
+                                />
+                                {doc.reviewer_count > 0 && (
+                                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+                                )}
                               </div>
-
-                              {/* Vertical Divider */}
-                              <div className="w-[1px] h-4 bg-slate-200" />
-
-                              {/* Assigned Indicator Label */}
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`text-[10px] font-black uppercase tracking-widest ${doc.reviewer_count > 0 ? "text-emerald-600" : "text-slate-300"}`}
-                                >
-                                  {doc.reviewer_count > 0
-                                    ? "Assigned"
-                                    : "Empty"}
-                                </span>
-                              </div>
-                            </div>
+                              <span className="text-[14px] font-black text-slate-700">
+                                {doc.reviewer_count || 0}
+                              </span>
+                            </button>
                           </div>
                         </td>
 
-                        <td className="px-8 py-5 text-right bg-white rounded-r-[24px] border-y border-r border-slate-100 shadow-sm group-hover:shadow-md transition-all">
-                          <div className="flex flex-col items-end gap-3">
-                            {/* Always Visible: Primary Action Pod */}
+                        {/* 4. Actions - Right "Pill" */}
+                        <td className="pl-6 pr-10 py-6 text-right bg-white border-y border-r border-slate-100 rounded-r-[32px] shadow-sm group-hover:shadow-md transition-all duration-500">
+                          <div className="flex flex-col items-end gap-3 min-w-[200px]">
+                            {/* Secondary Actions Row */}
                             <div className="flex justify-end gap-2">
-                              {/* View Docs - Ghost Style */}
-                              <button className="h-9 px-3 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all duration-300 flex items-center gap-2 group/docs">
-                                <FileText
-                                  size={15}
-                                  className="group-hover/docs:scale-110 transition-transform"
-                                />
-                                <span className="text-[10px] font-black uppercase tracking-widest">
-                                  Docs
-                                </span>
-                              </button>
-
-                              {/* View Reviews - Soft Emerald Style */}
-                              <button className="h-9 px-4 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all duration-300 flex items-center gap-2 group/rev border border-emerald-100/50 hover:border-emerald-600 shadow-sm hover:shadow-emerald-200">
-                                <Users
-                                  size={15}
-                                  className="group-hover/rev:rotate-12 transition-transform"
-                                />
-                                <span className="text-[10px] font-black uppercase tracking-widest">
-                                  Reviews
-                                </span>
-                              </button>
-                            </div>
-
-                            {/* Decision Pod: Appears only for "For Approval" */}
-                            {doc.status === "for_approval" && (
-                              <div className="flex items-center gap-3 animate-in slide-in-from-right-5 duration-500">
-                                {/* Subtle Divider Label */}
-                                <div className="flex items-center self-center mr-2">
-                                  <div className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                                  </div>
+                              <div className="relative group/tooltip flex items-center justify-center">
+                                {/* The Tooltip */}
+                                <div className="absolute bottom-full mb-3 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-[-4px] transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+                                  View Docs
+                                  {/* Tooltip Arrow */}
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
                                 </div>
 
-                                {/* Decisions Container */}
-                                <div className="flex gap-2 p-1 bg-slate-50 rounded-[14px] border border-slate-100">
-                                  <button className="h-8 px-4 rounded-lg bg-white text-emerald-600 border border-emerald-100 hover:bg-emerald-600 hover:text-white shadow-sm transition-all duration-300 flex items-center gap-2 group/app">
-                                    <Check
-                                      size={14}
-                                      className="group-hover/app:scale-125 transition-transform"
-                                    />
-                                    <span className="text-[10px] font-black uppercase">
+                                {/* The Button */}
+                                <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white hover:shadow-lg hover:shadow-slate-200 active:scale-90 transition-all duration-300">
+                                  <FileText size={18} />
+                                </button>
+                              </div>
+                              <div className="relative group/tooltip flex items-center justify-center">
+                                {/* The Tooltip */}
+                                <div className="absolute bottom-full mb-3 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-[-4px] transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
+                                  Review Details
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
+                                </div>
+
+                                {/* The Button */}
+                                <button className="h-10 px-5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-[10px] uppercase tracking-[0.15em] hover:bg-emerald-600 hover:text-white transition-all duration-300 border border-emerald-100/50 flex items-center gap-2 group/rev active:scale-95 shadow-sm hover:shadow-emerald-200">
+                                  <Users
+                                    size={16}
+                                    className="group-hover/rev:rotate-12 transition-transform duration-300"
+                                  />
+                                  <span className="whitespace-nowrap">
+                                    View Reviews
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {doc.status === "for_approval" && (
+                              <div className="flex items-center gap-3 mt-1 animate-in fade-in duration-500">
+                                {/* Subtle indicator text */}
+                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em] mr-1">
+                                  Action Required
+                                </span>
+
+                                <div className="flex gap-2">
+                                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all duration-300 group/app">
+                                    <Check size={12} strokeWidth={4} />
+                                    <span className="text-[9px] font-black uppercase">
                                       Approve
                                     </span>
                                   </button>
 
-                                  <button className="h-8 px-4 rounded-lg bg-white text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all duration-300 flex items-center gap-2 group/rej">
-                                    <XCircle
-                                      size={14}
-                                      className="group-hover/rej:rotate-90 transition-transform"
-                                    />
-                                    <span className="text-[10px] font-black uppercase">
+                                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all duration-300 group/rej">
+                                    <XCircle size={12} />
+                                    <span className="text-[9px] font-black uppercase">
                                       Reject
                                     </span>
                                   </button>
