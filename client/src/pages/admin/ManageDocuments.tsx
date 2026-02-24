@@ -49,19 +49,7 @@ const ManageDocuments = () => {
       try {
         setLoading(true);
         const proposals = await getProposals();
-        const staticProposals: ProgramProposal = {
-          id: 9999,
-          child_id: 0,
-          reviewer_count: 0,
-          title: "Sample Proposal for Approval",
-          file_path: null,
-          proposal_type: "Program",
-          status: "for_approval",
-          version_no: 1,
-          created_at: new Date().toISOString(),
-          user: 0,
-        };
-        setAllDocs([staticProposals, ...proposals]);
+        setAllDocs(proposals);
       } catch (error) {
         console.error("Failed to fetch proposals", error);
       } finally {
