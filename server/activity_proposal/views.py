@@ -27,11 +27,10 @@ class ActivityProposalList(APIView):
 class ActivityProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
-    def get_object(self, pk, user):
+    def get_object(self, pk):
         activity_proposal = get_object_or_404(
             ActivityProposal,
-            id=pk,
-            proposal__user=user
+            id=pk
         )
         return activity_proposal
 

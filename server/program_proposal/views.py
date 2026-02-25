@@ -56,18 +56,17 @@ class ProgramProposalList(APIView):
 class ProgramProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
-    def get_object(self, pk, user):
+    def get_object(self, pk):
         program_proposal = get_object_or_404(
             ProgramProposal,
-            id=pk,
-            proposal__user=user
+            id=pk
         )
         return program_proposal
 
     
     def get(self, request, pk):
         try:
-            program_proposal = self.get_object(pk, request.user)
+            program_proposal = self.get_object(pk)
         except ProgramProposal.DoesNotExist:
             return Response(
                 {"detail": "Program proposal not found."},
@@ -77,6 +76,7 @@ class ProgramProposalDetail(APIView):
         serializer = ProgramProposalSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    # update program proposal 
     def put(self, request, pk):
         program_proposal = self.get_object(pk, request.user)
         serializer = ProgramProposalSerializer(program_proposal, data=request.data)

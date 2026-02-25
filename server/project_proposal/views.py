@@ -41,17 +41,16 @@ class ProjectProposalList(APIView):
 class ProjectProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
-    def get_object(self, pk, user):
+    def get_object(self, pk):
         project_proposal = get_object_or_404(
             ProjectProposal,
-            id=pk,
-            proposal__user=user
+            id=pk
         )
         return project_proposal
     
     def get(self, request, pk):
         try:
-            project_proposal = self.get_object(pk, request.user)
+            project_proposal = self.get_object(pk)
         except ProjectProposal.DoesNotExist:
             return Response({"message": "Project proposal not found"}, status=status.HTTP_404_NOT_FOUND)
 
