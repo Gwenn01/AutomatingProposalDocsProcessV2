@@ -77,6 +77,17 @@ class ProgramProposalDetail(APIView):
         serializer = ProgramProposalSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    def put(self, request, pk):
+        program_proposal = self.get_object(pk, request.user)
+        serializer = ProgramProposalSerializer(program_proposal, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"detail": "Program proposal updated successfully"},
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 # list of project proposal under a program proposal
 class ProgramProjectsView(APIView):
     permission_classes = [IsAuthenticated]
