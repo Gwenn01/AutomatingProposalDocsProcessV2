@@ -16,6 +16,7 @@ from .serializers import (
     ReviewerAssignedProposalSerializer   
 )
 from .selectors import ReviewerProposalSelector
+from proposals_node.models import Proposal
 # ADMIN VIEWS assign reviewer and get the assigned 
 class AssignReviewerView(APIView):
     permission_classes = [IsAdminUser]
@@ -27,9 +28,13 @@ class AssignReviewerView(APIView):
 
     def post(self, request):
         serializer = ReviewerSerializer(data=request.data, context={'request': request})
-
+        proposal = get_object_or_404(Proposal, id=request.data.get('proposal'))
         if serializer.is_valid():
             reviewer = serializer.save()
+            # update the status when assign
+            proposal.status = "for_review"
+            proposal.save()
+            
             return Response(
                 {"message": "Reviewer assigned successfully", "data": ReviewerSerializer(reviewer).data},
                 status=status.HTTP_201_CREATED
