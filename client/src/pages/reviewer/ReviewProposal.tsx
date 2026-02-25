@@ -17,27 +17,22 @@ import ReviewerCommentModal from "@/components/reviewer/ReviewerCommentModal";
 import ReviewerList from "@/components/reviewer/ReviewerList";
 import NotificationBell from "../../components/NotificationBell";
 import { useToast } from "@/context/toast";
-import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
+import ViewDocument from "@/components/reviewer/ViewDocument";
 import {
   fetchReviewerProposals,
-  fetchReviewerNotifications,
-  markNotificationRead,
-  fetchProposalCoverPage,
-  fetchProposalContent,
-  fetchProposalHistory,
+  fetchProgramProposalDetail,
   type ReviewerProposal,
-  type ReviewerNotification,
-  type ProposalHistory,
 } from "@/utils/reviewer-api";
+import FormSkeleton from "@/components/skeletons/FormSkeleton";
 
 interface User {
   user_id: string;
   fullname: string;
 }
 
-// Map API shape → internal Proposal shape used by the UI
 interface Proposal {
   proposal_id: string;
+  child_id: number;
   assignment_id: string;
   status: string;
   decision: string;
@@ -54,31 +49,12 @@ interface Proposal {
   version_no: number;
 }
 
-interface Review {
-  review_id: string | number;
-  reviewer_id: string | number;
-  status: string;
-  [key: string]: any;
-}
-
-interface Document {
-  proposal_id: string | number;
-  child_id?: string | number;
-  reviewer_count: number;
-  title: string;
-  file_path: string;
-  status: string;
-  submitted_at: string | null;
-  reviews: Review[] | number;
-  reviews_per_docs?: any;
-}
-
-// ─── Helper: map API response to internal Proposal ─────────────────────────
 function mapApiProposal(p: ReviewerProposal): Proposal {
   return {
     proposal_id: String(p.proposal),
+    child_id: Number(p.program),
     assignment_id: String(p.assignment),
-    status: p.status, // raw status — getStatusStyle handles label + color
+    status: p.status,
     decision: p.is_reviewed ? "approved" : "",
     review_status: p.is_reviewed ? "Reviewed" : "Pending Review",
     is_reviewed: p.is_reviewed ? 1 : 0,
@@ -97,7 +73,6 @@ function mapApiProposal(p: ReviewerProposal): Proposal {
     version_no: p.version_no,
   };
 }
-// ───────────────────────────────────────────────────────────────────────────
 
 const ReviewProposal: React.FC = () => {
   const { showToast } = useToast();
@@ -111,13 +86,13 @@ const ReviewProposal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showViewerModal, setShowViewerModal] = useState<boolean>(false);
   const [showReviewerModal, setShowReviewerModal] = useState<boolean>(false);
-  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [selectedDoc, setSelectedDoc] = useState<Proposal | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [showReviewerList, setShowReviewerList] = useState<boolean>(false);
   const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
-  const [showNotif, setShowNotif] = useState<boolean>(false);
-  const [history, setHistory] = useState<ProposalHistory[]>([]);
-  const [notifications, setNotifications] = useState<ReviewerNotification[]>([]);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [proposalDetail, setProposalDetail] = useState<any | null>(null);
+  const [actionProgress, setActionProgress] = useState<number>(0);
 
   // ── Progress bar while loading ──────────────────────────────────────────
   useEffect(() => {
@@ -131,39 +106,52 @@ const ReviewProposal: React.FC = () => {
     return () => clearInterval(interval);
   }, [loading]);
 
+  // ── Progress bar for action loading (View button) ────────────────────────
+useEffect(() => {
+  if (!actionLoading) {
+    setActionProgress(0);
+    return;
+  }
+  setActionProgress(0);
+  let value = 0;
+  const interval = setInterval(() => {
+    value += Math.random() * 15 + 5;
+    setActionProgress(Math.min(value, 90));
+  }, 200);
+  return () => clearInterval(interval);
+}, [actionLoading]);
+
+// When done, snap to 100
+useEffect(() => {
+  if (!actionLoading && actionProgress > 0) {
+    setActionProgress(100);
+  }
+}, [actionLoading]);
+
   // ── Hydrate user from localStorage ─────────────────────────────────────
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
-      console.log("No user found, would redirect to login");
       setLoading(false);
       return;
     }
     try {
-      const parsedUser: User = JSON.parse(storedUser);
-      setUser(parsedUser);
+      setUser(JSON.parse(storedUser));
     } catch (err) {
       console.error("Error parsing user data:", err);
       setLoading(false);
     }
   }, []);
 
-  // ── Fetch proposals & notifications once user is available ──────────────
+  // ── Fetch proposals once user is available ──────────────────────────────
   useEffect(() => {
     if (!user) return;
-
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        const [apiProposals, apiNotifications] = await Promise.all([
-          fetchReviewerProposals(),
-          fetchReviewerNotifications().catch(() => [] as ReviewerNotification[]),
-        ]);
-
+        const apiProposals = await fetchReviewerProposals();
         setProposalsData(apiProposals.map(mapApiProposal));
-        setNotifications(apiNotifications);
       } catch (err: any) {
         console.error("[ReviewProposal] Failed to load data:", err);
         setError(err?.message ?? "Failed to load proposals.");
@@ -172,55 +160,17 @@ const ReviewProposal: React.FC = () => {
         setLoading(false);
       }
     };
-
     loadData();
   }, [user]);
-
-  // ── Derived counts ──────────────────────────────────────────────────────
-  const unreadCount = notifications.filter((n) => n.is_read === 0).length;
-
-  const handleRead = async (id: string) => {
-    const target = notifications.find((n) => n.id === id);
-    if (!target || target.is_read === 1) return;
-
-    setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, is_read: 1 } : notif)),
-    );
-
-    try {
-      await markNotificationRead(id);
-    } catch (err) {
-      console.error("[handleRead] Failed to mark notification read:", err);
-    }
-  };
-
-  const handleFetchCoverAndContent = async (proposalId: string) => {
-    const [cover, content] = await Promise.all([
-      fetchProposalCoverPage(proposalId).catch(() => null),
-      fetchProposalContent(proposalId).catch(() => null),
-    ]);
-    return { cover, content };
-  };
-
-  const handleFetchHistory = async (proposalId: string) => {
-    try {
-      const data = await fetchProposalHistory(proposalId);
-      setHistory(data);
-    } catch {
-      setHistory([]);
-    }
-  };
 
   // ── Filtering ───────────────────────────────────────────────────────────
   const filteredProposals = useMemo(() => {
     let filtered = proposalsData;
-
     if (activeFilter === "completed") {
       filtered = filtered.filter((p) => p.status === "approved");
     } else if (activeFilter === "pending") {
       filtered = filtered.filter((p) => p.status === "for_review");
     }
-
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -230,7 +180,6 @@ const ReviewProposal: React.FC = () => {
           (p.name && p.name.toLowerCase().includes(query)),
       );
     }
-
     return filtered;
   }, [searchQuery, activeFilter, proposalsData]);
 
@@ -243,46 +192,32 @@ const ReviewProposal: React.FC = () => {
     [proposalsData],
   );
 
-  const handleView = (proposal: Proposal) => setSelectedProposal(proposal);
   const handleReview = (proposal: Proposal) =>
     showToast(`Opening review form for: ${proposal.title}`, "info");
   const handleViewOthers = (proposal: Proposal) =>
     showToast(`Viewing other reviewers for: ${proposal.title}`, "info");
 
-    // ================= VIEW PROPOSAL — uses authFetch via implementor-api =================
-    const handleViewProposal = async (doc: Document): Promise<void> => {
-      setActionLoading(true);
-      setSelectedDoc(doc);
-      setProposalDetail(null);
-      try {
-        const childId = doc.child_id ?? doc.proposal_id;
-        const detail = await fetchProgramProposalDetail(childId);
-        setProposalDetail(detail);
-        setShowViewerModal(true);
-      } catch (err) {
-        console.error("[ViewProposal] Failed to fetch proposal detail:", err);
-      } finally {
-        setActionLoading(false);
-      }
-    };
+  // ── View Proposal ───────────────────────────────────────────────────────
+const handleViewProposal = async (doc: Proposal): Promise<void> => {
+  setActionLoading(true);
+  setProposalDetail(null);
+  try {
+    const detail = await fetchProgramProposalDetail(Number(doc.child_id)); // ← was doc.child_id
+    setSelectedDoc(doc);
+    setProposalDetail(detail);
+    setShowViewerModal(true);
+  } catch (err) {
+    console.error("[ViewProposal] Failed to fetch proposal detail:", err);
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   // ── Loading screen ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="w-full h-full bg-white/80 inset-0 z-[60] flex items-center justify-center backdrop-blur-md animate-fade-in">
-        <div className="relative bg-white/80 px-14 py-10 flex flex-col items-center animate-pop-out w-[380px]">
-          <p className="text-lg font-semibold shimmer-text mb-1">Loading Proposals</p>
-          <p className="text-sm text-gray-500 mb-4">Preparing documents…</p>
-          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-green-400 via-emerald-500 to-green-700 transition-all duration-500 ease-out relative"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse" />
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-gray-500 font-medium">{Math.round(progress)}%</p>
-        </div>
+      <div className="w-full h-full p-20 bg-white/80 inset-0 z-[60] backdrop-blur-md animate-fade-in">
+          <FormSkeleton lines={5} />
       </div>
     );
   }
@@ -309,16 +244,56 @@ const ReviewProposal: React.FC = () => {
         </div>
       ) : (
         <>
+{/* Action Loading Overlay */}
+{actionLoading && (
+  <div className="fixed w-full h-full z-[70] flex items-center justify-center">
+    {/* Blurred backdrop */}
+    <div className="absolute inset-0 bg-white/60 backdrop-blur-md" />
+
+    {/* Card */}
+    <div className="relative z-10 bg-white rounded-3xl shadow-2xl border border-gray-100 px-12 py-10 flex flex-col items-center w-[420px] gap-5">
+      
+      {/* Animated icon */}
+      <div className="relative w-16 h-16 flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-green-50 animate-ping opacity-30" />
+        <div className="absolute inset-0 rounded-full bg-green-100" />
+        <FileText className="relative w-7 h-7 text-green-600" />
+      </div>
+
+      {/* Text */}
+      <div className="text-center">
+        <p className="text-[17px] font-bold text-gray-900 mb-1">Opening Proposal</p>
+        <p className="text-sm text-gray-400">Fetching document details…</p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full">
+        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 transition-all duration-300 ease-out"
+            style={{ width: `${actionProgress}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-2">
+          <p className="text-[11px] text-gray-400 font-medium">Loading</p>
+          <p className="text-[11px] text-green-600 font-bold">{Math.round(actionProgress)}%</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
+
           {/* Header */}
           <div className="flex justify-between items-center mb-8 relative">
             <h1 className="text-[32px] font-bold text-gray-900">Review Proposal</h1>
             <NotificationBell
-              notifications={notifications}
-              unreadCount={unreadCount}
-              show={showNotif}
-              onToggle={() => setShowNotif((prev) => !prev)}
-              onClose={() => setShowNotif(false)}
-              onRead={handleRead}
+              notifications={[]}
+              unreadCount={0}
+              show={false}
+              onToggle={() => {}}
+              onClose={() => {}}
+              onRead={() => {}}
             />
           </div>
 
@@ -392,9 +367,7 @@ const ReviewProposal: React.FC = () => {
           {filteredProposals.length === 0 && (
             <div className="text-center py-16">
               <p className="text-gray-500 text-lg">No proposals found</p>
-              <p className="text-gray-400 text-sm mt-2">
-                Try adjusting your search or filter
-              </p>
+              <p className="text-gray-400 text-sm mt-2">Try adjusting your search or filter</p>
             </div>
           )}
 
@@ -419,7 +392,6 @@ const ReviewProposal: React.FC = () => {
                           <MoreVertical className="w-6 h-6" />
                         </button>
                       </div>
-
                       <h3
                         className="text-base font-bold text-gray-900 mb-3 leading-tight"
                         title={proposal.title}
@@ -450,45 +422,26 @@ const ReviewProposal: React.FC = () => {
                         </p>
                       )}
                     </div>
-
                     <div>
                       <p className="text-gray-400 text-xs font-bold mb-5">{proposal.date}</p>
                       <div className="flex space-x-3">
                         <button
-                          onClick={async () => {
-                            setLoading(true);
-                            const { cover, content } = await handleFetchCoverAndContent(
-                              proposal.proposal_id,
-                            );
-                            setSelectedDoc({
-                              ...proposal,
-                              cover_page: cover,
-                              full_content: content,
-                            });
-                            setShowViewerModal(true);
-                            setLoading(false);
-                          }}
+                          onClick={() => handleViewProposal(proposal)}
                           className="flex-1 flex items-center justify-center space-x-2 bg-[#16A34A] text-white py-2 rounded-md font-bold text-sm hover:bg-[#15803d] transition-colors"
                         >
                           <Eye className="w-[18px] h-[18px]" />
                           <span>View</span>
                         </button>
-
                         <button
-                          onClick={async () => {
-                            setLoading(true);
-                            await handleFetchCoverAndContent(proposal.proposal_id);
-                            await handleFetchHistory(proposal.proposal_id);
+                          onClick={() => {
                             setSelectedDoc({ ...proposal });
                             setShowReviewerModal(true);
-                            setLoading(false);
                           }}
                           className="flex-1 flex items-center justify-center space-x-2 bg-[#DC2626] text-white py-2 rounded-md font-bold text-sm hover:bg-[#b91c1c] transition-colors"
                         >
                           <FileText className="w-[18px] h-[18px]" />
                           <span>Review</span>
                         </button>
-
                         <button
                           onClick={() => {
                             setSelectedProposalId(proposal.proposal_id);
@@ -545,7 +498,7 @@ const ReviewProposal: React.FC = () => {
                         <td className="px-8 py-5">
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => }
+                              onClick={() => handleViewProposal(proposal)}
                               className="p-2 bg-[#16A34A] text-white rounded-lg hover:bg-[#15803d] transition-colors"
                               title="View"
                             >
@@ -628,10 +581,12 @@ const ReviewProposal: React.FC = () => {
         </>
       )}
 
-      <DocumentViewerModal
+      <ViewDocument
         isOpen={showViewerModal}
-        proposalData={selectedDoc}
-        onClose={() => setShowViewerModal(false)}
+        proposalData={proposalDetail}
+        proposalStatus={selectedDoc?.status ?? ""}
+        proposalTitle={selectedDoc?.title ?? ""}
+        onClose={() => { setShowViewerModal(false); setProposalDetail(null); }}
       />
 
       <ReviewerCommentModal

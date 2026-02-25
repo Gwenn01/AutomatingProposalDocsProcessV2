@@ -7,6 +7,37 @@ const BASE_URL = 'http://127.0.0.1:8000/api';
 // ─────────────────────────────────────────────
 // AUTH HELPERS
 // ─────────────────────────────────────────────
+// Add these type exports to reviewer-api.ts
+export type ApiProjectListResponse = {
+  id: number;
+  program_title: string;
+  projects: ApiProject[];
+};
+
+export type ApiActivityListResponse = {
+  id: number;
+  project_title: string;
+  activities: ApiActivity[];
+};
+
+export type ApiProject = {
+  id: number;
+  project_title: string;
+  project_leader: string;
+  members: string[];
+  duration_months: number;
+  start_date: string | null;
+  end_date: string | null;
+};
+
+export type ApiActivity = {
+  id: number;
+  activity_title: string;
+  project_leader: string;
+  members: string[];
+  activity_duration_hours: number;
+  activity_date: string | null;
+};
 
 function getAccessToken(): string | null {
   return localStorage.getItem('access_token');
@@ -208,4 +239,41 @@ export async function fetchProposalContent(proposalId: string): Promise<any> {
 export async function fetchProposalHistory(proposalId: string): Promise<ProposalHistory[]> {
   const res = await authFetch(`${BASE_URL}/proposals/${proposalId}/history/`);
   return handleResponse<ProposalHistory[]>(res);
+}
+
+export async function fetchProgramProposalDetail(childId: number | string): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/`);
+  return handleResponse<any>(res);
+}
+
+export async function fetchProposalNodeByChildId(childId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/proposals-node/Program`);
+  const list: any[] = await handleResponse<any[]>(res);
+  return list.find((p) => p.child_id === childId) ?? null;
+}
+
+// ─── Proposal Detail Fetchers (mirrored from implementor-api) ───────────────
+
+/** GET /api/project-proposal/{projectId}/ */
+export async function fetchProjectProposalDetail(projectId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/`);
+  return handleResponse<any>(res);
+}
+
+/** GET /api/activity-proposal/{activityId}/ */
+export async function fetchActivityProposalDetail(activityId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`);
+  return handleResponse<any>(res);
+}
+
+/** GET /api/program-proposal/{childId}/projects/ */
+export async function fetchProjectList(childId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/projects/`);
+  return handleResponse<any>(res);
+}
+
+/** GET /api/project-proposal/{projectId}/activities/ */
+export async function fetchActivityList(projectId: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/activities/`);
+  return handleResponse<any>(res);
 }
