@@ -24,6 +24,7 @@ import {
   type ReviewerProposal,
 } from "@/utils/reviewer-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
+import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 
 interface User {
   user_id: string;
@@ -581,7 +582,7 @@ const handleViewProposal = async (doc: Proposal): Promise<void> => {
         </>
       )}
 
-      <ViewDocument
+      <DocumentViewerModal
         isOpen={showViewerModal}
         proposalData={proposalDetail}
         proposalStatus={selectedDoc?.status ?? ""}
