@@ -88,3 +88,49 @@ class ProposalReview(models.Model):
 
     def __str__(self):
         return f"Review {self.review_round}"
+    
+
+
+class ProposalReviewHistory(models.Model):
+
+    proposal_node = models.ForeignKey(
+        Proposal,
+        on_delete=models.CASCADE,
+        related_name="review_history"
+    )
+
+    decision = models.CharField(
+        max_length=20,
+        choices=ProposalReview.DECISION_CHOICES,
+        null=True,
+        blank=True
+    )
+
+    review_round = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True
+    )
+
+    # copy all feedback fields
+    profile_feedback = models.TextField(null=True, blank=True)
+    implementing_agency_feedback = models.TextField(null=True, blank=True)
+    extension_site_feedback = models.TextField(null=True, blank=True)
+    tagging_cluster_extension_feedback = models.TextField(null=True, blank=True)
+    sdg_academic_program_feedback = models.TextField(null=True, blank=True)
+    rationale_feedback = models.TextField(null=True, blank=True)
+    significance_feedback = models.TextField(null=True, blank=True)
+    objectives_feedback = models.TextField(null=True, blank=True)
+    general_objectives_feedback = models.TextField(null=True, blank=True)
+    specific_objectives_feedback = models.TextField(null=True, blank=True)
+    methodology_feedback = models.TextField(null=True, blank=True)
+    expected_output_feedback = models.TextField(null=True, blank=True)
+    sustainability_plan_feedback = models.TextField(null=True, blank=True)
+    org_staffing_feedback = models.TextField(null=True, blank=True)
+    work_plan_feedback = models.TextField(null=True, blank=True)
+    budget_requirements_feedback = models.TextField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"History of Review {self.review_round}"
