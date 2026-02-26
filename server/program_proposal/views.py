@@ -38,10 +38,6 @@ class ProgramProposalList(APIView):
             data=request.data,
             context={"request": request}
         )
-        proposal = request.data.get('proposal')
-        if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
-            return Response({"message": "All reviewers should review this proposal before updating"}, status=status.HTTP_400_BAD_REQUEST)
-        
         if serializer.is_valid():
             serializer.save()
             # add notification to admin
@@ -85,6 +81,12 @@ class ProgramProposalDetail(APIView):
     def put(self, request, pk):
         program_proposal = self.get_object(pk)
         serializer = ProgramProposalSerializer(program_proposal, data=request.data)
+        
+        # check if all reviewers have reviewed the proposal
+        proposal = request.data.get('proposal')
+        if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
+            return Response({"message": "All reviewers should review this proposal before updating"}, status=status.HTTP_400_BAD_REQUEST)
+        
         if serializer.is_valid():
             serializer.save()
             return Response(
