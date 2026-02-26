@@ -115,7 +115,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
   (proposalData.workplan || []).forEach(({ month, activity }) => { workplanMap[month] = activity; });
 
   return (
-    <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-sans text-gray-900 leading-relaxed">
+    <section className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>
@@ -123,7 +123,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
       </div>
 
       <div className="border border-black">
-        <div className="p-2">
+        <div className="p-5">
           <h2 className="text-base font-bold ">I. PROFILE</h2>
 
           <div className="my-2">
@@ -174,12 +174,12 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
                   </React.Fragment>
                 ))}
                 <tr className="border-b border-t border-black">
-                  <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
+                  <p className="p-3 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
                   <p className="px-3 mb-2">{arrVal(proposalData.implementing_agency)}</p>
                   {/* <td className="px-4 py-3">{arrVal(proposalData.implementing_agency)}</td> */}
                 </tr>
                 <tr className="border-b border-black">
-                  <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
+                  <p className="p-3 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
                   <p className="   px-3 mb-2 font-normal">{arrVal(proposalData.cooperating_agencies)}</p>
                   {/* <td className="px-4 py-3"></td> */}
                 </tr>
@@ -187,7 +187,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
             </table>
           </div>
 
-          <p className="font-bold p-2 text-base">EXTENSION SITE/S OR VENUE/S</p>
+          <p className="font-bold p-3 text-base">EXTENSION SITE/S OR VENUE/S</p>
           <div className="overflow-x-auto">
             <table className="w-full border-t border-black text-sm">
               <tbody>
@@ -243,22 +243,22 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
         </div>
 
         <div className="text-gray-700 leading-relaxed">
-          <div className="p-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">II. RATIONALE <span className="text-base italic font-normal">(Include a brief result of the conducted needs assessment.)</span></h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.rationale)}</p>
           </div>
-          <div className="p-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">III. SIGNIFICANCE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.significance)}</p>
           </div>
-          <div className="p-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">IV. OBJECTIVES</h3>
             <p className="text-base font-semibold mb-2 mt-3">General:</p>
             <p className="p-5 bg-gray-100">{val(proposalData.general_objectives)}</p>
             <p className="text-base font-semibold mb-2 mt-3">Specific:</p>
             <p className="p-5 bg-gray-100">{val(proposalData.specific_objectives)}</p>
           </div>
-          <div className="p-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">V. METHODOLOGY</h3>
             {(proposalData.methodology || []).length > 0 ? (
               proposalData.methodology.map((phase, pi) => (
@@ -272,7 +272,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
             ) : <p className="text-base">{NA}</p>}
           </div>
           <div className="">
-            <h3 className="font-bold text-gray-900 text-base p-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
+            <h3 className="font-bold text-gray-900 text-base p-3">VI. EXPECTED OUTPUT/OUTCOME</h3>
             <table className="w-full border-t border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
@@ -289,13 +289,13 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
             </table>
           </div>
 
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">VII. SUSTAINABILITY PLAN</h3>
+          <div className="p-3 border-b border-black">
+            <h3 className="font-bold text-gray-900 text-base mb-3">VII. SUSTAINABILITY PLAN</h3>
             <p className="text-base whitespace-pre-line">{val(proposalData.sustainability_plan)}</p>
           </div>
 
           <div>
-            <h3 className="font-bold text-gray-900 p-2 text-base">VIII. ORGANIZATION AND STAFFING <span className="text-base italic font-normal">(Persons involved and responsibility)</span></h3>
+            <h3 className="font-bold text-gray-900 p-3 text-base">VIII. ORGANIZATION AND STAFFING <span className="text-base italic font-normal">(Persons involved and responsibility)</span></h3>
             <table className="w-full border-t border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
@@ -319,7 +319,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
             </table>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 p-2 text-base">IX. WORKPLAN</h3>
+            <h3 className="font-bold text-gray-900 p-3 text-base">IX. WORKPLAN</h3>
             <div className="overflow-x-auto">
               <table className="border-t border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
                 <tbody>
@@ -347,7 +347,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
             </div>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-base p-2">X. BUDGETARY REQUIREMENT</h3>
+            <h3 className="font-bold text-gray-900 text-base p-3">X. BUDGETARY REQUIREMENT</h3>
             <table className="w-full border-t border-black text-sm">
               <tbody>
                 <tr className="border-b border-black bg-gray-100">
@@ -378,7 +378,7 @@ const ProgramForm: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalDa
 
       </div>
           {/* Signatories */}
-          <div className="py-4 px-5">
+          <div className="py-4">
             <p className="italic my-3">Prepared by:</p>
             <p className="py-1 mb-2">Proponent / Project Leader</p>
             <p className="italic">Noted by:</p>
@@ -417,7 +417,7 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
   (projectData.workplan || []).forEach(({ month, activity }: WorkplanItem) => { workplanMap[month] = activity; });
 
   return (
-    <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-sans text-gray-900 leading-relaxed">
+    <section className="max-w-5xl mx-auto py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>
@@ -456,26 +456,13 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
                     <tr className="border-b border-black">
                       <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
                       <p className="   px-3 mb-2 font-normal">{arrVal(projectData.cooperating_agencies)}</p>
-                      {/* <td className="px-4 py-3"></td> */}
                     </tr>
-                  {/* <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Implementing Agency / College / Mandated Program:</td>
-                    <td className="px-4 py-3">{arrVal(projectData.implementing_agency)}</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Address / Telephone / Email:</td>
-                    <td className="px-4 py-3">{val(projectData.address)}</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Cooperating Agency/ies / Program / College:</td>
-                    <td className="px-4 py-3">{arrVal(projectData.cooperating_agencies)}</td>
-                  </tr> */}
                 </tbody>
               </table>
             </div>
 
 
-        <p className="font-bold mt-2 mb-2 px-2">Extension Site/s or Venue/s</p>
+        <p className="font-bold mt-2 mb-2 px-3">Extension Site/s or Venue/s</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
@@ -532,16 +519,16 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
         </div>
 
         <div className=" text-gray-700 leading-relaxed">
-          <div className="px-2 py-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900  text-base">II. RATIONALE <span className="text-base italic font-normal">(Include a brief result of the conducted needs assessment.)</span></h3>
             <p className="text-base mt-3 whitespace-pre-line text-wrap">{val(projectData.rationale)}</p>
           </div>
-          <div className="p-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">III. SIGNIFICANCE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.significance)}</p>
           </div>
 
-          <div className="border-b border-black p-2">
+          <div className="border-b border-black p-3">
             <h3 className="font-bold text-gray-900 text-base">IV. OBJECTIVES</h3>
             <p className="text-base font-semibold mb-2 mt-3 ml-2">General:</p>
             <p className="p-5 bg-gray-100">{val(projectData.general_objectives)}</p>
@@ -549,7 +536,7 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
             <p className="p-5 bg-gray-100">{val(projectData.specific_objectives)}</p>
           </div>
 
-          <div className="border-b border-black p-2">
+          <div className="border-b border-black p-3">
             <h3 className="font-bold text-gray-900 text-base mb-5">V. METHODOLOGY</h3>
             {(projectData.methodology || []).length > 0 ? (
               projectData.methodology.map((phase: MethodologyPhase, pi: number) => (
@@ -564,7 +551,7 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
           </div>
 
           <div className="">
-            <h3 className="font-bold text-gray-900 p-2 text-base my-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
+            <h3 className="font-bold text-gray-900 p-3 text-base my-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
             <table className="w-full text-sm">
               <tbody>
                 <tr className="border-b border-t border-black">
@@ -581,12 +568,12 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
             </table>
           </div>
 
-          <div className="p-2 border-b border-black">
+          <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">VII. SUSTAINABILITY PLAN</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.sustainability_plan)}</p>
           </div>
           <div className="">
-            <h3 className="font-bold text-gray-900 text-base p-2">VIII. ORGANIZATION AND STAFFING</h3>
+            <h3 className="font-bold text-gray-900 text-base p-3">VIII. ORGANIZATION AND STAFFING</h3>
             <table className="w-full text-sm">
               <tbody>
                 <tr className="border-b border-t border-black">
@@ -638,7 +625,7 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
             </div>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 text-base p-2">X. BUDGETARY REQUIREMENT</h3>
+            <h3 className="font-bold text-gray-900 text-base p-3">X. BUDGETARY REQUIREMENT</h3>
             <table className="w-full text-sm">
               <tbody>
                 <tr className="border-b border-t border-black bg-gray-100">
@@ -664,8 +651,11 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
             </table>
           </div>
 
+        </div>
+
+      </div>
           {/* Signatories */}
-          <div className="py-2 px-6">
+          <div className="py-4">
             <p className="italic my-3">Prepared by:</p>
             <p className="py-1 mb-2">Proponent / Project Leader</p>
             <p className="italic">Noted by:</p>
@@ -690,9 +680,6 @@ const ProjectForm: React.FC<{ projectData: any; programTitle: string }> = ({ pro
             <p className="pt-5 font-bold text-[16px] text-center">ROY N. VILLALOBOS, DPA</p>
             <p className="pt-1 text-center">University President</p>
           </div>
-        </div>
-
-      </div>
     </section>
   );
 };
@@ -739,26 +726,11 @@ const ActivityForm: React.FC<{ activityData: any; programTitle: string; projectT
                 <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
                 <p className="px-3 mb-4">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
                 <p className="px-3 mb-2">{arrVal(activityData.implementing_agency)}</p>
-                {/* <td className="px-4 py-3">{arrVal(proposalData.implementing_agency)}</td> */}
               </tr>
               <tr className="border-b border-black">
                 <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
                 <p className="   px-3 mb-2 font-normal">{arrVal(activityData.cooperating_agencies)}</p>
-                {/* <td className="px-4 py-3"></td> */}
               </tr>
-
-              {/* <tr className="border-b border-black">
-                <td className=" px-4 py-3 font-bold">Implementing Agency / College / Mandated Program:</td>
-                <td className="px-4 py-3">{arrVal(activityData.implementing_agency)}</td>
-              </tr>
-              <tr className="border-b border-black">
-                <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Address / Telephone / Email:</td>
-                <td className="px-4 py-3">{val(activityData.address)}</td>
-              </tr>
-              <tr className="border-b border-black">
-                <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Cooperating Agency/ies:</td>
-                <td className="px-4 py-3">{arrVal(activityData.cooperating_agencies)}</td>
-              </tr> */}
             </tbody>
           </table>
         </div>
