@@ -78,7 +78,7 @@ class ProgramProposalDetail(APIView):
     
     # update program proposal 
     def put(self, request, pk):
-        program_proposal = self.get_object(pk, request.user)
+        program_proposal = self.get_object(pk)
         serializer = ProgramProposalSerializer(program_proposal, data=request.data)
         if serializer.is_valid():
             serializer.save()

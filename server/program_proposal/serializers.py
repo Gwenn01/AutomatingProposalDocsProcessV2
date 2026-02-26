@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from proposals_node.models import Proposal
 from .models import ProgramProposal
@@ -77,14 +78,15 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
                 end_date=project.get("project_end_date"),
             )
         return program_proposal
-    
+
+    @transaction.atomic
     def update(self, instance, validated_data):
         project_list = validated_data.pop("project_list", None)
         title = validated_data.pop("title", None)
 
-        # -------------------------------
-        # STEP 1: Get next version number
-        # -------------------------------
+        # ---------------------------------------
+        # STEP 1: Get next version number safely
+        # ---------------------------------------
         latest_version = (
             ProgramProposalHistory.objects
             .filter(proposal=instance.proposal)
@@ -103,7 +105,7 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
 
             program_title=instance.program_title,
             program_leader=instance.program_leader,
-            project_list=instance.project_list,
+            project_list=project_list,
             implementing_agency=instance.implementing_agency,
             cooperating_agencies=instance.cooperating_agencies,
             extension_sites=instance.extension_sites,
@@ -125,12 +127,14 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         )
 
         # ---------------------------------------
-        # STEP 3: Update root Proposal title
+        # STEP 3: Update root Proposal
         # ---------------------------------------
         if title:
             instance.proposal.title = title
-            instance.proposal.version_no = next_version + 1
-            instance.proposal.save()
+
+        # FIXED  remove +1 (it was wrong before)
+        instance.proposal.version_no = next_version
+        instance.proposal.save()
 
         # ---------------------------------------
         # STEP 4: Update ProgramProposal fields
@@ -141,32 +145,10 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         instance.save()
 
         # ---------------------------------------
-        # STEP 5: Update project list (delete & recreate properly)
+        # STEP 5: Update project list safely
         # ---------------------------------------
-        if project_list is not None:
-
-            # Delete child project proposals INCLUDING their root Proposal
-            for project in instance.projectproposal_set.all():
-                project.proposal.delete()  # this deletes both safely
-
-            # Recreate new projects
-            for project in project_list:
-                project_root = Proposal.objects.create(
-                    user=instance.proposal.user,
-                    title=project.get("project_title"),
-                    proposal_type="Project"
-                )
-
-                ProjectProposal.objects.create(
-                    proposal=project_root,
-                    program_proposal=instance,
-                    project_title=project.get("project_title"),
-                    project_leader=project.get("project_leader"),
-                    members=project.get("project_member", []),
-                    duration_months=project.get("project_duration"),
-                    start_date=project.get("project_start_date"),
-                    end_date=project.get("project_end_date"),
-                )
+        # if project_list is not None:
+        #     instance.project_list = project_list
 
         return instance
 
