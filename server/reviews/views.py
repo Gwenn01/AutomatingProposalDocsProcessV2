@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import ProposalReview
 from .serializers import ProposalReviewSerializer
 from .selectors import ProposalReviewSelectors
-from proposals_node.models import Proposal
+from reviewer.models import ProposalReviewer
 # Create your views here.
 
 class ProposalReviewList(APIView):
@@ -16,9 +16,28 @@ class ProposalReviewList(APIView):
 
     def post(self, request, format=None):
         serializer = ProposalReviewSerializer(data=request.data)
+
+        proposal_reviewer_id = request.data.get('proposal_reviewer')
+        reviewer = get_object_or_404(ProposalReviewer, id=proposal_reviewer_id)
+
+        # Check if already reviewed
+        if reviewer.is_review:
+            return Response(
+                {"detail": "This reviewer has already submitted a review."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if serializer.is_valid():
             review = serializer.save()
-            return Response(ProposalReviewSerializer(review).data, status=status.HTTP_201_CREATED)
+
+            reviewer.is_review = True
+            reviewer.save()
+
+            return Response(
+                ProposalReviewSerializer(review).data,
+                status=status.HTTP_201_CREATED
+            )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProposalReviewDetail(APIView):

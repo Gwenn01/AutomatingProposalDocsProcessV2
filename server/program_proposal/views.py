@@ -14,6 +14,7 @@ from .serializers import (
 )
 
 from notifications.services import NotificationService
+from reviewer.services import ProposalReviewerServices
 # Create your views here.
 
 # IMPLEMENTOR VIEWS CREATE proposal
@@ -37,6 +38,10 @@ class ProgramProposalList(APIView):
             data=request.data,
             context={"request": request}
         )
+        proposal = request.data.get('proposal')
+        if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
+            return Response({"message": "All reviewers should review this proposal before updating"}, status=status.HTTP_400_BAD_REQUEST)
+        
         if serializer.is_valid():
             serializer.save()
             # add notification to admin
