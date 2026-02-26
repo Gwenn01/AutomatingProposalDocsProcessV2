@@ -214,6 +214,22 @@ const handleViewProposal = async (doc: Proposal): Promise<void> => {
   }
 };
 
+const handleViewReview = async (doc: Proposal): Promise<void> => {
+  setActionLoading(true);
+  setProposalDetail(null);
+
+  try {
+    const detail = await fetchProgramProposalDetail(Number(doc.child_id)); // ← was doc.child_id
+    setSelectedDoc(doc);
+    setProposalDetail(detail);
+    setShowReviewerModal(true);
+  } catch (err) {
+    console.error("[ViewProposal] Failed to fetch proposal detail:", err);
+  } finally {
+    setActionLoading(false);
+  }
+};
+
   // ── Loading screen ──────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -434,10 +450,7 @@ const handleViewProposal = async (doc: Proposal): Promise<void> => {
                           <span>View</span>
                         </button>
                         <button
-                          onClick={() => {
-                            setSelectedDoc({ ...proposal });
-                            setShowReviewerModal(true);
-                          }}
+                          onClick={() => handleViewReview(proposal)}
                           className="flex-1 flex items-center justify-center space-x-2 bg-[#DC2626] text-white py-2 rounded-md font-bold text-sm hover:bg-[#b91c1c] transition-colors"
                         >
                           <FileText className="w-[18px] h-[18px]" />
@@ -590,14 +603,16 @@ const handleViewProposal = async (doc: Proposal): Promise<void> => {
         onClose={() => { setShowViewerModal(false); setProposalDetail(null); }}
       />
 
+
       <ReviewerCommentModal
         isOpen={showReviewerModal}
-        proposalData={selectedDoc}
-        onClose={() => setShowReviewerModal(false)}
+        proposalData={selectedDoc}           
+        proposalDetail={proposalDetail}  
+        onClose={() => { setShowReviewerModal(false); setProposalDetail(null); }}
         reviewe={user?.user_id}
-        review_id={proposalsData[0]?.review_id}
+        review_id={selectedDoc?.review_id}
       />
-
+      
       <ReviewerList
         isOpen={showReviewerList}
         proposalId={selectedProposalId}

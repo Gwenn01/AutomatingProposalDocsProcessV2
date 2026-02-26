@@ -22,13 +22,12 @@ import {
   type ApiProject,
   type ApiActivity,
 } from "@/utils/reviewer-api";
-
+import { ActivityForm } from "../view-review/activity-form";
+import { ProjectForm } from "../view-review/project-form";
+import { ProgramForm } from "../view-review/program-form";
+import { ProjectTreeNode } from "../view-review/project-tree-node";
 // ================= TYPES =================
 
-interface User {
-  user_id: string;
-  fullname: string;
-}
 
 interface History {
   history_id: string;
@@ -45,7 +44,7 @@ interface Review {
   created_at?: string;
 }
 
-interface MethodologyPhase {
+export interface MethodologyPhase {
   phase: string;
   activities: string[];
 }
@@ -55,17 +54,17 @@ interface OrgStaffingItem {
   role: string;
 }
 
-interface WorkplanItem {
+export interface WorkplanItem {
   month: string;
   activity: string;
 }
 
-interface BudgetItem {
+export interface BudgetItem {
   item: string;
   amount: number | string;
 }
 
-interface ApiProposalDetail {
+export interface ApiProposalDetail {
   id: number;
   proposal: number;
   program_title: string;
@@ -96,758 +95,19 @@ type ProjectItem = ApiProject;
 type ActivityItem = ApiActivity;
 type TabType = "program" | "project" | "activity";
 
-interface Comments {
+export interface Comments {
   [key: string]: string;
 }
 
 interface ReviewerCommentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  proposalData: any | null;        // Proposal from ReviewProposal (has child_id, title, status)
+  proposalData: any | null;           // Shallow proposal from ReviewProposal (has child_id, title, status)
   proposalDetail: ApiProposalDetail | null; // Full detail already fetched
   reviewe?: string;
   review_id?: string;
 }
 
-// ================= HELPERS =================
-
-const NA = "N/A";
-const val = (v: any) => (v !== undefined && v !== null && v !== "" ? v : NA);
-const arrVal = (arr: string[] | undefined) =>
-  arr && arr.length > 0 ? arr.join(", ") : NA;
-
-const SIX_PS_LABELS = [
-  "Publications", "Patents/IP", "Products", "People Services",
-  "Places and Partnerships", "Policy", "Social Impact", "Economic Impact",
-];
-
-const QUARTERS = [
-  "Year 1 Q1", "Year 1 Q2", "Year 1 Q3", "Year 1 Q4",
-  "Year 2 Q1", "Year 2 Q2", "Year 2 Q3", "Year 2 Q4",
-  "Year 3 Q1", "Year 3 Q2", "Year 3 Q3", "Year 3 Q4",
-];
-
-// ================= CHECKBOX LIST =================
-
-const CheckboxList = ({
-  items,
-  checked,
-}: {
-  items: string[];
-  checked: (item: string) => boolean;
-}) => (
-  <div className="space-y-1">
-    {items.map((label) => (
-      <div key={label} className="flex items-start gap-2 py-0.5">
-        <span className="mt-0.5 text-sm shrink-0">{checked(label) ? "☑" : "☐"}</span>
-        <span className="text-sm">{label}</span>
-      </div>
-    ))}
-  </div>
-);
-
-// ================= PROGRAM FORM =================
-
-const ProgramForm: React.FC<{
-  proposalData: ApiProposalDetail;
-  comments: Comments;
-  onCommentChange: (key: string, val: string) => void;
-  alreadyReviewed: boolean;
-  showCommentInputs: boolean;
-}> = ({ proposalData, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
-  const workplanMap: Record<string, string> = {};
-  (proposalData.workplan || []).forEach(({ month, activity }) => {
-    workplanMap[month] = activity;
-  });
-
-  return (
-    <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-sans text-gray-900 leading-relaxed">
-      <div className="text-center mb-8 space-y-1">
-        <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
-        <p className="font-bold">Iba, Zambales</p>
-        <p className="font-bold text-xl mt-3 uppercase tracking-widest">Extension Program Proposal</p>
-      </div>
-
-      <div className="border border-black">
-        <div className="p-2">
-          <h2 className="text-base font-bold">I. PROFILE</h2>
-          <div className="my-2">
-            <p className="font-bold">Program Title: <span className="font-normal">{val(proposalData.program_title)}</span></p>
-            <p className="font-bold">Program Leader: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto mt-4">
-          <table className="w-full text-sm">
-            <tbody>
-              {(proposalData.projects_list || []).map((proj: any, i: number) => (
-                <React.Fragment key={i}>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Title {i + 1}:</td>
-                    <td className="px-4 py-3 font-medium">{val(proj.title)}</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Leader:</td>
-                    <td className="px-4 py-3">{val(proj.leader)}</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Duration (months):</td>
-                    <td className="px-4 py-3">{val(proj.duration_months)}</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Start Date:</td>
-                    <td className="px-4 py-3">{val(proj.start_date)}</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    <td className="w-1/4 border-r border-black px-4 py-3 font-bold">End Date:</td>
-                    <td className="px-4 py-3">{val(proj.end_date)}</td>
-                  </tr>
-                </React.Fragment>
-              ))}
-              <tr className="border-b border-t border-black">
-                <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
-                <p className="px-3 mb-2">{arrVal(proposalData.implementing_agency)}</p>
-              </tr>
-              <tr className="border-b border-black">
-                <p className="px-3 py-2 font-bold">COOPERATING AGENCY/IES <span className="font-normal">(Name/s and Address/es)</span></p>
-                <p className="px-3 mb-2 font-normal">{arrVal(proposalData.cooperating_agencies)}</p>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <p className="font-bold p-2 text-base">EXTENSION SITE/S OR VENUE/S</p>
-        <div className="overflow-x-auto">
-          <table className="w-full border-t border-black text-sm">
-            <tbody>
-              <tr className="border-b border-black">
-                <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-                <td className="px-4 py-3 font-bold">Site / Venue</td>
-              </tr>
-              {(proposalData.extension_sites?.length ? proposalData.extension_sites : ["—", "—"]).map((site, i) => (
-                <tr key={i} className="border-b border-black">
-                  <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="px-4 py-3">{site || ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full border-b border-black text-sm">
-            <tbody>
-              <tr className="border-b border-black">
-                <td className="border-r border-black px-4 py-4 align-top w-1/2">
-                  <p className="font-bold mb-3 text-base">TAGGING</p>
-                  <CheckboxList
-                    items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]}
-                    checked={(label) => proposalData.tags?.some((t) => t.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
-                  <p className="font-bold mt-5 mb-3 text-base">CLUSTER</p>
-                  <CheckboxList
-                    items={["Health, Education, and Social Sciences", "Engineering, Industry, Information Technology", "Environment and Natural Resources", "Tourism, Hospitality Management, Entrepreneurship, Criminal Justice", "Graduate Studies", "Fisheries", "Agriculture, Forestry"]}
-                    checked={(label) => proposalData.clusters?.some((c) => c.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
-                </td>
-                <td className="px-4 py-4 align-top w-1/2">
-                  <p className="font-bold mb-3 text-base">EXTENSION AGENDA</p>
-                  <CheckboxList
-                    items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]}
-                    checked={(label) => proposalData.agendas?.some((a) => a.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
-                </td>
-              </tr>
-              <tr className="border-b border-black">
-                <td className="border-r border-black px-4 py-3 font-bold">Sustainable Development Goal (SDG) Addressed</td>
-                <td className="border-r border-black px-4 py-3 font-bold">College/Campus/Mandated Academic Program:</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 border-r border-black">{val(proposalData.sdg_addressed)}</td>
-                <td className="px-4 py-3">{val(proposalData.mandated_academic_program)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="text-gray-700 leading-relaxed">
-          {/* II. RATIONALE */}
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">II. RATIONALE</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.rationale)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Rationale" onCommentChange={onCommentChange}
-              InputValue="rationale_feedback" value={comments["rationale_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* III. SIGNIFICANCE */}
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">III. SIGNIFICANCE</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.significance)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Significance" onCommentChange={onCommentChange}
-              InputValue="significance_feedback" value={comments["significance_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* IV. OBJECTIVES */}
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">IV. OBJECTIVES</h3>
-            <p className="text-base font-semibold mb-2 mt-3">General:</p>
-            <p className="p-5 bg-gray-100">{val(proposalData.general_objectives)}</p>
-            <p className="text-base font-semibold mb-2 mt-3">Specific:</p>
-            <p className="p-5 bg-gray-100">{val(proposalData.specific_objectives)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Objectives" onCommentChange={onCommentChange}
-              InputValue="objectives_feedback" value={comments["objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* V. METHODOLOGY */}
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">V. METHODOLOGY</h3>
-            {(proposalData.methodology || []).length > 0 ? (
-              proposalData.methodology.map((phase, pi) => (
-                <div key={pi} className="mb-4">
-                  <p className="font-semibold text-gray-800 mb-2">{phase.phase}</p>
-                  <ul className="list-disc list-inside space-y-1 pl-4">
-                    {(phase.activities || []).map((act, ai) => <li key={ai} className="text-base">{act}</li>)}
-                  </ul>
-                </div>
-              ))
-            ) : <p className="text-base">{NA}</p>}
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Methodology" onCommentChange={onCommentChange}
-              InputValue="methodology_feedback" value={comments["methodology_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* VI. EXPECTED OUTPUT */}
-          <div>
-            <h3 className="font-bold text-gray-900 text-base p-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full border-t border-black text-sm">
-              <tbody>
-                <tr className="border-b border-black">
-                  <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
-                  <td className="px-4 py-3 text-center font-bold">OUTPUT</td>
-                </tr>
-                {SIX_PS_LABELS.map((label, idx) => (
-                  <tr key={label} className="border-b border-black">
-                    <td className="border-r border-black px-4 py-3 font-bold">{label}</td>
-                    <td className="px-4 py-3">{val(proposalData.expected_output_6ps?.[idx])}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Expected Output" onCommentChange={onCommentChange}
-              InputValue="expected_output_feedback" value={comments["expected_output_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* VII. SUSTAINABILITY PLAN */}
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">VII. SUSTAINABILITY PLAN</h3>
-            <p className="text-base whitespace-pre-line">{val(proposalData.sustainability_plan)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Sustainability Plan" onCommentChange={onCommentChange}
-              InputValue="sustainability_feedback" value={comments["sustainability_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* VIII. ORG & STAFFING */}
-          <div>
-            <h3 className="font-bold text-gray-900 p-2 text-base">VIII. ORGANIZATION AND STAFFING</h3>
-            <table className="w-full border-t border-black text-sm">
-              <tbody>
-                <tr className="border-b border-black">
-                  <td className="w-1/2 border-r border-black px-4 py-3 text-center font-bold">Name</td>
-                  <td className="px-4 py-3 text-center font-bold">Role / Responsibility</td>
-                </tr>
-                {(proposalData.org_and_staffing || []).length > 0
-                  ? proposalData.org_and_staffing.map((item, index) => (
-                    <tr key={index} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3">{val(item.name)}</td>
-                      <td className="px-4 py-3 whitespace-pre-line">{val(item.role)}</td>
-                    </tr>
-                  ))
-                  : Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3 text-gray-400 italic">Name here</td>
-                      <td className="px-4 py-3"></td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Organization & Staffing" onCommentChange={onCommentChange}
-              InputValue="org_staffing_feedback" value={comments["org_staffing_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          {/* IX. WORKPLAN */}
-          <div>
-            <h3 className="font-bold text-gray-900 p-2 text-base">IX. WORKPLAN</h3>
-            <div className="overflow-x-auto">
-              <table className="border-t border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
-                <tbody>
-                  <tr className="border-b border-black">
-                    <td className="border-r border-black px-4 py-3 font-bold text-center" colSpan={4}>Year 1</td>
-                    <td className="border-r border-black px-4 py-3 font-bold text-center" colSpan={4}>Year 2</td>
-                    <td className="px-4 py-3 font-bold text-center" colSpan={4}>Year 3</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    {QUARTERS.map((q, i) => (
-                      <td key={q} className={`px-2 py-2 font-bold text-center text-xs ${i < 11 ? "border-r border-black" : ""}`}>
-                        {q.split(" ").slice(-1)[0]}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-black">
-                    {QUARTERS.map((q, i) => (
-                      <td key={q} className={`px-2 py-3 text-center text-xs align-top ${i < 11 ? "border-r border-black" : ""}`}>
-                        {workplanMap[q] || ""}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* X. BUDGET */}
-          <div>
-            <h3 className="font-bold text-gray-900 text-base p-2">X. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full border-t border-black text-sm">
-              <tbody>
-                <tr className="border-b border-black bg-gray-100">
-                  <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>
-                  <td className="px-4 py-3 font-bold text-center">Amount (PhP)</td>
-                </tr>
-                {(proposalData.budget_requirements || []).length > 0
-                  ? proposalData.budget_requirements.map((row, i) => (
-                    <tr key={i} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3">{val(row.item)}</td>
-                      <td className="px-4 py-3 text-right">₱ {row.amount}</td>
-                    </tr>
-                  ))
-                  : <tr><td colSpan={2} className="text-center px-4 py-3 text-gray-500">No budget data available</td></tr>}
-                <tr className="font-bold bg-gray-100">
-                  <td className="border-r border-black px-4 py-3 text-right font-bold">Total</td>
-                  <td className="px-4 py-3 text-right">
-                    ₱ {(proposalData.budget_requirements || []).reduce((sum, r) => sum + Number(r.amount || 0), 0).toLocaleString()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Budget" onCommentChange={onCommentChange}
-              InputValue="budget_feedback" value={comments["budget_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ================= PROJECT FORM =================
-
-const ProjectForm: React.FC<{
-  projectData: any;
-  programTitle: string;
-  comments: Comments;
-  onCommentChange: (key: string, val: string) => void;
-  alreadyReviewed: boolean;
-  showCommentInputs: boolean;
-}> = ({ projectData, programTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
-  if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
-
-  const workplanMap: Record<string, string> = {};
-  (projectData.workplan || []).forEach(({ month, activity }: WorkplanItem) => { workplanMap[month] = activity; });
-
-  return (
-    <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-sans text-gray-900 leading-relaxed">
-      <div className="text-center mb-8 space-y-1">
-        <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
-        <p className="font-bold">Iba, Zambales</p>
-        <p className="font-bold text-xl mt-3 uppercase tracking-widest">Extension Project Proposal</p>
-      </div>
-
-      <div className="border border-black">
-        <div className="p-5">
-          <h2 className="text-base font-bold my-2">I. PROFILE</h2>
-          <div className="my-4">
-            <p className="font-bold">Program Title: <span className="font-normal">{val(programTitle)}</span></p>
-            <p className="font-bold">Project Title: <span className="font-normal">{val(projectData.project_title)}</span></p>
-            <p className="font-bold">Project Leader: <span className="font-normal">{val(projectData.project_leader)}</span></p>
-            <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members)}</span></p>
-            <br />
-            <p className="font-bold">Project Duration: <span className="font-normal">{val(projectData.duration_months)}</span></p>
-            <p className="font-bold">Start Date: <span className="font-normal">{val(projectData.start_date)}</span></p>
-            <p className="font-bold">End Date: <span className="font-normal">{val(projectData.end_date)}</span></p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <tbody>
-              <tr className="border-b border-t border-black">
-                <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
-                <p className="px-3 mb-2">{arrVal(projectData.implementing_agency)}</p>
-              </tr>
-              <tr className="border-b border-black">
-                <p className="px-3 py-2 font-bold">COOPERATING AGENCY/IES <span className="font-normal">(Name/s and Address/es)</span></p>
-                <p className="px-3 mb-2 font-normal">{arrVal(projectData.cooperating_agencies)}</p>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <p className="font-bold mt-2 mb-2 px-2">Extension Site/s or Venue/s</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <tbody>
-              <tr className="border-b border-t border-black">
-                <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-                <td className="px-4 py-3 font-bold">Site / Venue</td>
-              </tr>
-              {(projectData.extension_sites?.length ? projectData.extension_sites : ["—", "—"]).map((site: string, i: number) => (
-                <tr key={i} className="border-b border-black">
-                  <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="px-4 py-3">{site || ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="text-gray-700 leading-relaxed">
-          <div className="px-2 py-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">II. RATIONALE</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(projectData.rationale)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Rationale" onCommentChange={onCommentChange}
-              InputValue="proj_rationale_feedback" value={comments["proj_rationale_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div className="p-2 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">III. SIGNIFICANCE</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(projectData.significance)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Significance" onCommentChange={onCommentChange}
-              InputValue="proj_significance_feedback" value={comments["proj_significance_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div className="border-b border-black p-2">
-            <h3 className="font-bold text-gray-900 text-base">IV. OBJECTIVES</h3>
-            <p className="text-base font-semibold mb-2 mt-3 ml-2">General:</p>
-            <p className="p-5 bg-gray-100">{val(projectData.general_objectives)}</p>
-            <p className="text-base font-semibold mb-2 mt-3 ml-2">Specific:</p>
-            <p className="p-5 bg-gray-100">{val(projectData.specific_objectives)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Objectives" onCommentChange={onCommentChange}
-              InputValue="proj_objectives_feedback" value={comments["proj_objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div className="border-b border-black p-2">
-            <h3 className="font-bold text-gray-900 text-base mb-5">V. METHODOLOGY</h3>
-            {(projectData.methodology || []).length > 0 ? (
-              projectData.methodology.map((phase: MethodologyPhase, pi: number) => (
-                <div key={pi} className="mb-4">
-                  <p className="font-semibold text-gray-800 mb-2">{phase.phase}</p>
-                  <ul className="list-disc list-inside space-y-1 pl-4">
-                    {(phase.activities || []).map((act, ai) => <li key={ai} className="text-base">{act}</li>)}
-                  </ul>
-                </div>
-              ))
-            ) : <p className="text-base">{NA}</p>}
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Methodology" onCommentChange={onCommentChange}
-              InputValue="proj_methodology_feedback" value={comments["proj_methodology_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div>
-            <h3 className="font-bold text-gray-900 p-2 text-base my-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full text-sm">
-              <tbody>
-                <tr className="border-b border-t border-black">
-                  <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
-                  <td className="px-4 py-3 text-center font-bold">OUTPUT</td>
-                </tr>
-                {SIX_PS_LABELS.map((label, idx) => (
-                  <tr key={label} className="border-b border-black">
-                    <td className="border-r border-black px-4 py-3 font-bold">{label}</td>
-                    <td className="px-4 py-3">{val(projectData.expected_output_6ps?.[idx])}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-gray-900 text-base p-2">VII. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full text-sm">
-              <tbody>
-                <tr className="border-b border-t border-black bg-gray-100">
-                  <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>
-                  <td className="px-4 py-3 font-bold text-center">Amount (PhP)</td>
-                </tr>
-                {(projectData.budget_requirements || []).length > 0
-                  ? projectData.budget_requirements.map((row: BudgetItem, i: number) => (
-                    <tr key={i} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3">{val(row.item)}</td>
-                      <td className="px-4 py-3 text-right">₱ {row.amount}</td>
-                    </tr>
-                  ))
-                  : <tr><td colSpan={2} className="text-center px-4 py-3 text-gray-500">No budget data available</td></tr>}
-                <tr className="font-bold bg-gray-100 border-t border-b border-black">
-                  <td className="border-r border-black px-4 py-3 text-right font-bold">Total</td>
-                  <td className="px-4 py-3 text-right">
-                    ₱ {(projectData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Budget" onCommentChange={onCommentChange}
-              InputValue="proj_budget_feedback" value={comments["proj_budget_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ================= ACTIVITY FORM =================
-
-const ActivityForm: React.FC<{
-  activityData: any;
-  programTitle: string;
-  projectTitle: string;
-  comments: Comments;
-  onCommentChange: (key: string, val: string) => void;
-  alreadyReviewed: boolean;
-  showCommentInputs: boolean;
-}> = ({ activityData, programTitle, projectTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
-  if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
-
-  return (
-    <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed">
-      <div className="text-center mb-8 space-y-1">
-        <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
-        <p className="font-bold">Iba, Zambales</p>
-        <p className="font-bold text-xl mt-3 uppercase tracking-widest">Extension Activity Proposal</p>
-      </div>
-
-      <div className="border border-black">
-        <div className="p-5">
-          <h2 className="text-base font-bold my-2">I. PROFILE</h2>
-          <div className="my-4">
-            <p className="font-bold">Program Title: <span className="font-normal">{val(programTitle)}</span></p>
-            <p className="font-bold">Project Title: <span className="font-normal">{val(projectTitle)}</span></p>
-            <p className="font-bold">Activity Title: <span className="font-normal">{val(activityData.activity_title)}</span></p>
-            <p className="font-normal">Project Leader: <span className="font-normal">{val(activityData.project_leader)}</span></p>
-            <p className="font-normal">Members: <span className="font-normal">{val(activityData.members?.join(", ") || NA)}</span></p>
-            <br />
-            <p className="font-bold">Activity Duration: <span className="font-normal">{val(activityData.activity_duration_hours)} hours</span></p>
-            <p className="font-normal">Date: <span className="font-normal">{val(activityData.activity_date)}</span></p>
-          </div>
-        </div>
-
-        <div className="text-gray-700 leading-relaxed">
-          <div className="p-4 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">II. RATIONALE</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(activityData.rationale)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Rationale" onCommentChange={onCommentChange}
-              InputValue="act_rationale_feedback" value={comments["act_rationale_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div className="p-4 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">III. OBJECTIVES OF THE ACTIVITY</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(activityData.objectives)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Objectives" onCommentChange={onCommentChange}
-              InputValue="act_objectives_feedback" value={comments["act_objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div className="p-4 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">IV. METHODOLOGY</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(activityData.methodology)}</p>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Methodology" onCommentChange={onCommentChange}
-              InputValue="act_methodology_feedback" value={comments["act_methodology_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">V. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full border-t border-black text-sm">
-              <tbody>
-                <tr className="border-b border-black">
-                  <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
-                  <td className="px-4 py-3 text-center font-bold">OUTPUT</td>
-                </tr>
-                {SIX_PS_LABELS.map((label, idx) => (
-                  <tr key={label} className="border-b border-black">
-                    <td className="border-r border-black px-4 py-3 font-bold">{label}</td>
-                    <td className="px-4 py-3">{val(activityData.expected_output_6ps?.[idx])}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">VI. PLAN OF ACTIVITY</h3>
-            <table className="w-full border-t border-black text-sm">
-              <tbody>
-                <tr className="border-b border-black bg-gray-100">
-                  <td className="border-r border-black px-4 py-3 font-bold text-center w-1/4">Time</td>
-                  <td className="border-r border-black px-4 py-3 font-bold text-center">Activity</td>
-                  <td className="px-4 py-3 font-bold text-center">Person/s Responsible</td>
-                </tr>
-                {(activityData.plan_of_activity || []).length > 0 ? (
-                  activityData.plan_of_activity.map((item: any, i: number) => (
-                    <tr key={i} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3 text-xs">{val(item.time)}</td>
-                      <td className="border-r border-black px-4 py-3">{val(item.activity)}</td>
-                      <td className="px-4 py-3">{val(item.person_responsible)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="text-center px-4 py-6 text-gray-400 italic">No plan of activity data available</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base">VII. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full border-t border-black text-sm mt-6">
-              <tbody>
-                <tr className="border-b border-black bg-gray-100">
-                  <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>
-                  <td className="px-4 py-3 font-bold text-center">Amount (PhP)</td>
-                </tr>
-                {(activityData.budget_requirements || []).length > 0
-                  ? activityData.budget_requirements.map((row: BudgetItem, i: number) => (
-                    <tr key={i} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3">{val(row.item)}</td>
-                      <td className="px-4 py-3 text-right">₱ {row.amount}</td>
-                    </tr>
-                  ))
-                  : <tr><td colSpan={2} className="text-center px-4 py-3 text-gray-500">No budget data available</td></tr>}
-                <tr className="font-bold bg-gray-100 border-t border-black">
-                  <td className="border-r border-black px-4 py-3 text-right font-bold">Total</td>
-                  <td className="px-4 py-3 text-right">
-                    ₱ {(activityData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Budget" onCommentChange={onCommentChange}
-              InputValue="act_budget_feedback" value={comments["act_budget_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ================= PROJECT TREE NODE =================
-
-interface ProjectTreeNodeProps {
-  project: ProjectItem;
-  activeTab: TabType;
-  selectedProject: ProjectItem | null;
-  selectedActivity: ActivityItem | null;
-  onSelectProject: (project: ProjectItem) => void;
-  onSelectActivity: (project: ProjectItem, activity: ActivityItem) => void;
-  activitiesCache: Record<number, ActivityItem[]>;
-  loadingCache: Record<number, boolean>;
-  onExpandProject: (project: ProjectItem) => void;
-}
-
-const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
-  project, activeTab, selectedProject, selectedActivity,
-  onSelectProject, onSelectActivity, activitiesCache, loadingCache, onExpandProject,
-}) => {
-  const isProjectSelected = selectedProject?.id === project.id;
-  const activities = activitiesCache[project.id] ?? [];
-  const isLoadingActivities = loadingCache[project.id] ?? false;
-
-  return (
-    <div className="border-b border-gray-100 last:border-b-0">
-      <button
-        onClick={() => activeTab === "project" ? onSelectProject(project) : onExpandProject(project)}
-        className={`w-full text-left px-4 py-3 transition-colors flex items-start gap-2 border-l-2 ${
-          isProjectSelected ? "bg-green-50 border-primaryGreen" : "border-transparent hover:bg-gray-100 hover:border-gray-300"
-        }`}
-      >
-        <FolderOpen size={13} className={`mt-0.5 shrink-0 ${isProjectSelected ? "text-primaryGreen" : "text-gray-400"}`} />
-        <div className="flex-1 min-w-0">
-          <p className={`truncate text-xs font-semibold leading-relaxed text-wrap ${isProjectSelected ? "text-primaryGreen" : "text-gray-700"}`}>
-            {project.project_title}
-          </p>
-          {project.project_leader && (
-            <p className="text-[10px] text-gray-400 mt-0.5 truncate">{project.project_leader}</p>
-          )}
-        </div>
-        {activeTab === "activity" && (
-          <ChevronRight size={12} className={`shrink-0 mt-0.5 transition-transform text-gray-400 ${isProjectSelected ? "rotate-90" : ""}`} />
-        )}
-      </button>
-
-      {activeTab === "activity" && isProjectSelected && (
-        <div className="bg-white">
-          {isLoadingActivities ? (
-            <div className="flex items-center justify-center py-4 pl-8">
-              <div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-          ) : activities.length === 0 ? (
-            <p className="text-[10px] text-gray-400 py-2 pl-10 italic">No activities</p>
-          ) : (
-            activities.map((act) => {
-              const isActSelected = selectedActivity?.id === act.id;
-              return (
-                <button
-                  key={act.id}
-                  onClick={() => onSelectActivity(project, act)}
-                  className={`w-full text-left pl-10 pr-4 py-2.5 transition-colors flex items-start gap-2 border-l-2 ${
-                    isActSelected ? "bg-blue-50 border-blue-500" : "border-transparent hover:bg-gray-50 hover:border-gray-200"
-                  }`}
-                >
-                  <Activity size={11} className={`mt-0.5 shrink-0 ${isActSelected ? "text-blue-500" : "text-gray-300"}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className={`truncate text-[11px] font-medium leading-relaxed text-wrap ${isActSelected ? "text-blue-700" : "text-gray-600"}`}>
-                      {act.activity_title}
-                    </p>
-                    {act.activity_date && <p className="text-[9px] text-gray-400 mt-0.5">{act.activity_date}</p>}
-                    {act.activity_duration_hours > 0 && <p className="text-[9px] text-gray-400">{act.activity_duration_hours}h</p>}
-                  </div>
-                </button>
-              );
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ================= MAIN MODAL =================
 
@@ -856,44 +116,39 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 }) => {
   const { showToast } = useToast();
 
-  // ── Tab & navigation state ───────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabType>("program");
 
-  // Project list
   const [projectList, setProjectList] = useState<ProjectItem[]>([]);
   const [projectListLoading, setProjectListLoading] = useState(false);
 
-  // Selected project & detail
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
   const [projectDetail, setProjectDetail] = useState<any | null>(null);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
 
-  // Activity cache
   const [activitiesCache, setActivitiesCache] = useState<Record<number, ActivityItem[]>>({});
   const [activitiesLoadingCache, setActivitiesLoadingCache] = useState<Record<number, boolean>>({});
 
-  // Selected activity & detail
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [activityDetail, setActivityDetail] = useState<any | null>(null);
   const [activityDetailLoading, setActivityDetailLoading] = useState(false);
 
-  // ── Review state ─────────────────────────────────────────────────────────
   const [comments, setComments] = useState<Comments>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [decision, setDecision] = useState<"needs_revision" | "approved">("needs_revision");
+  const [reviewRound, setReviewRound] = useState<string>("1");
   const [user, setUser] = useState<{ user_id: string; fullname: string } | null>(null);
 
-  // ── History state ─────────────────────────────────────────────────────────
   const [history, setHistory] = useState<History[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
 
-  const childId = proposalDetail?.id;
-  const statusStyle = proposalData ? getStatusStyle(proposalData.status ?? "") : { className: "", label: "" };
+  // ── FIX: derive childId from proposalDetail.id OR proposalData.child_id ──
+  const childId = proposalDetail?.id ?? proposalData?.child_id;
 
-  // Show comment inputs only for current version (no history selected or current selected)
+  const statusStyle = proposalData ? getStatusStyle(proposalData.status ?? "") : { className: "", label: "" };
   const showCommentInputs = !selectedHistoryVersion || selectedHistoryVersion.status === "current";
 
   useEffect(() => {
@@ -924,10 +179,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     const load = async () => {
       setHistoryLoading(true);
       try {
-        // Replace with your actual history fetch API call
-        // const data = await fetchProposalHistory(proposalData.proposal_id);
-        // setHistory(data);
-        setHistory([]); // placeholder
+        setHistory([]);
       } catch (err) {
         console.error("[History] Failed:", err);
       } finally {
@@ -948,6 +200,8 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
       setSelectedActivity(null);
       setActivityDetail(null);
       setComments({});
+      setDecision("needs_revision");
+      setReviewRound("1");
       setHistory([]);
       setSelectedHistoryVersion(null);
     }
@@ -1022,35 +276,137 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     setActivityDetail(null);
   };
 
-  // ── Review actions ────────────────────────────────────────────────────────
   const handleCommentChange = (inputValue: string, commentValue: string) => {
     setComments((prev) => ({ ...prev, [inputValue]: commentValue }));
   };
 
   const hasAnyComment = Object.values(comments).some((c) => c && c.trim() !== "");
 
+  // ── Derive proposal_type from active tab ──────────────────────────────────
+  const getProposalType = (): "Program" | "Project" | "Activity" => {
+    if (activeTab === "project") return "Project";
+    if (activeTab === "activity") return "Activity";
+    return "Program";
+  };
+
+  // ── Build the node ID for the currently-viewed proposal ──────────────────
+  // Program  → proposalDetail.proposal  (the proposal FK on the program node)
+  // Project  → projectDetail?.proposal  or selectedProject?.id
+  // Activity → activityDetail?.proposal or selectedActivity?.id
+  const getProposalNode = (): number | null => {
+    if (activeTab === "project") return projectDetail?.proposal ?? selectedProject?.id ?? null;
+    if (activeTab === "activity") return activityDetail?.proposal ?? selectedActivity?.id ?? null;
+    return proposalDetail?.proposal ?? null;
+  };
+
+  // ── Build submit payload matching the API contract ────────────────────────
+  const buildPayload = (overrideDecision?: "needs_revision" | "approved") => {
+    const proposalType = getProposalType();
+    const proposalNode = getProposalNode();
+
+    const base = {
+      proposal_reviewer: user?.user_id ? Number(user.user_id) : undefined,
+      proposal_node: proposalNode,
+      decision: overrideDecision ?? decision,
+      review_round: reviewRound,
+      proposal_type: proposalType,
+    };
+
+    if (proposalType === "Program") {
+      return {
+        ...base,
+        profile_feedback:                  comments["profile_feedback"]                  || "",
+        implementing_agency_feedback:      comments["implementing_agency_feedback"]      || "",
+        extension_site_feedback:           comments["extension_site_feedback"]           || "",
+        tagging_cluster_extension_feedback:comments["tagging_cluster_extension_feedback"]|| "",
+        sdg_academic_program_feedback:     comments["sdg_academic_program_feedback"]     || "",
+        rationale_feedback:                comments["rationale_feedback"]                || "",
+        significance_feedback:             comments["significance_feedback"]             || "",
+        objectives_feedback:               comments["objectives_feedback"]               || "",
+        general_objectives_feedback:       comments["general_objectives_feedback"]       || "",
+        specific_objectives_feedback:      comments["specific_objectives_feedback"]      || "",
+        methodology_feedback:              comments["methodology_feedback"]              || "",
+        expected_output_feedback:          comments["expected_output_feedback"]          || "",
+        sustainability_plan_feedback:      comments["sustainability_feedback"]           || "",
+        org_staffing_feedback:             comments["org_staffing_feedback"]             || "",
+        work_plan_feedback:                comments["work_plan_feedback"]                || "",
+        budget_requirements_feedback:      comments["budget_feedback"]                   || "",
+      };
+    }
+
+    if (proposalType === "Project") {
+      return {
+        ...base,
+        profile_feedback:                  comments["proj_profile_feedback"]                  || "",
+        implementing_agency_feedback:      comments["proj_implementing_agency_feedback"]      || "",
+        extension_site_feedback:           comments["proj_extension_site_feedback"]           || "",
+        tagging_cluster_extension_feedback:comments["proj_tagging_cluster_extension_feedback"]|| "",
+        sdg_academic_program_feedback:     comments["proj_sdg_academic_program_feedback"]     || "",
+        rationale_feedback:                comments["proj_rationale_feedback"]                || "",
+        significance_feedback:             comments["proj_significance_feedback"]             || "",
+        objectives_feedback:               comments["proj_objectives_feedback"]               || "",
+        general_objectives_feedback:       comments["proj_general_objectives_feedback"]       || "",
+        specific_objectives_feedback:      comments["proj_specific_objectives_feedback"]      || "",
+        methodology_feedback:              comments["proj_methodology_feedback"]              || "",
+        expected_output_feedback:          comments["proj_expected_output_feedback"]          || "",
+        sustainability_plan_feedback:      comments["proj_sustainability_feedback"]           || "",
+        org_staffing_feedback:             comments["proj_org_staffing_feedback"]             || "",
+        work_plan_feedback:                comments["proj_work_plan_feedback"]                || "",
+        budget_requirements_feedback:      comments["proj_budget_feedback"]                   || "",
+      };
+    }
+
+    // Activity
+    return {
+      ...base,
+      implementing_agency_feedback:      comments["act_implementing_agency_feedback"]        || "",
+      extension_site_feedback:           comments["act_extension_site_feedback"]             || "",
+      tagging_cluster_extension_feedback:comments["act_tagging_cluster_extension_feedback"]  || "",
+      sdg_academic_program_feedback:     comments["act_sdg_academic_program_feedback"]       || "",
+      rationale_feedback:                comments["act_rationale_feedback"]                  || "",
+      objectives_feedback:               comments["act_objectives_feedback"]                 || "",
+      methodology_feedback:              comments["act_methodology_feedback"]                || "",
+      expected_output_feedback:          comments["act_expected_output_feedback"]            || "",
+      plan_of_activities:                comments["act_plan_of_activities"]                  || "",
+      budget_requirements_feedback:      comments["act_budget_feedback"]                     || "",
+    };
+  };
+  
+
   const handleSubmitReview = async () => {
+    const proposalNode = getProposalNode();
+    if (!proposalNode) {
+      showToast("Could not determine proposal node. Please try again.", "error");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      console.log("Submitting review:", comments);
+      const payload = buildPayload("needs_revision");
+      console.log("[Submit Review] Payload:", payload);
       showToast("Review submitted successfully!", "success");
       setComments({});
       onClose();
-    } catch (err) {
-      showToast("Failed to submit review.", "error");
+    } catch (err: any) {
+      showToast(err?.message ?? "Failed to submit review.", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleApprove = async () => {
+    const proposalNode = getProposalNode();
+    if (!proposalNode) {
+      showToast("Could not determine proposal node. Please try again.", "error");
+      return;
+    }
     setIsApproving(true);
     try {
-      console.log("Approving proposal:", proposalData?.proposal_id);
+      const payload = buildPayload("approved");
+      console.log("[Approve] Payload:", payload);
       showToast("Proposal approved successfully!", "success");
       onClose();
-    } catch (err) {
-      showToast("Failed to approve proposal.", "error");
+    } catch (err: any) {
+      showToast(err?.message ?? "Failed to approve proposal.", "error");
     } finally {
       setIsApproving(false);
     }
@@ -1058,18 +414,19 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
   if (!isOpen || !proposalData) return null;
 
+  // ── FIX: show loading skeleton if proposalDetail hasn't arrived yet ──
+  const isProgramDetailReady = !!proposalDetail;
+
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-overlay-enter">
-        {/* ── Main Modal Card ── */}
         <div className="bg-white flex-1 h-[100vh] flex flex-col overflow-hidden animate-modal-enter">
 
-          {/* ── Header (mirrors ViewDocument) ── */}
+          {/* ── Header ── */}
           <div className="flex-shrink-0 flex items-center justify-between px-10 py-6 bg-primaryGreen border-b border-white/10 relative">
 
-            {/* Left: title + status */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
                 <span className="font-semibold text-[11px] tracking-[0.15em] uppercase text-white/70">
@@ -1123,7 +480,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
               </button>
             </div>
 
-            {/* Close */}
             <button
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/90 text-gray-600 shadow-sm border border-white/40
@@ -1186,19 +542,21 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
               <div className="p-10">
 
                 {/* PROGRAM TAB */}
-                {activeTab === "program" && proposalDetail && (
-                  <ProgramForm
-                    proposalData={proposalDetail}
-                    comments={comments}
-                    onCommentChange={handleCommentChange}
-                    alreadyReviewed={alreadyReviewed}
-                    showCommentInputs={showCommentInputs}
-                  />
-                )}
-                {activeTab === "program" && !proposalDetail && (
-                  <div className="bg-white rounded-2xl border border-gray-100 p-8">
-                    <FormSkeleton lines={6} />
-                  </div>
+                {activeTab === "program" && (
+                  isProgramDetailReady ? (
+                    // ── FIX: pass proposalDetail (full data) instead of proposalData (shallow) ──
+                    <ProgramForm
+                      proposalData={proposalDetail}
+                      comments={comments}
+                      onCommentChange={handleCommentChange}
+                      alreadyReviewed={alreadyReviewed}
+                      showCommentInputs={showCommentInputs}
+                    />
+                  ) : (
+                    <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                      <FormSkeleton lines={6} />
+                    </div>
+                  )
                 )}
 
                 {/* PROJECT TAB */}
@@ -1216,7 +574,8 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                     ) : (
                       <ProjectForm
                         projectData={projectDetail || selectedProject}
-                        programTitle={proposalDetail?.program_title ?? ""}
+                        // ── FIX: use proposalDetail.program_title for the program title ──
+                        programTitle={proposalDetail?.program_title ?? proposalData?.title ?? ""}
                         comments={comments}
                         onCommentChange={handleCommentChange}
                         alreadyReviewed={alreadyReviewed}
@@ -1247,7 +606,8 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                     ) : (
                       <ActivityForm
                         activityData={activityDetail || selectedActivity}
-                        programTitle={proposalDetail?.program_title ?? ""}
+                        // ── FIX: use proposalDetail.program_title for the program title ──
+                        programTitle={proposalDetail?.program_title ?? proposalData?.title ?? ""}
                         projectTitle={selectedProject.project_title}
                         comments={comments}
                         onCommentChange={handleCommentChange}
@@ -1261,6 +621,40 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                 {/* ── Action Buttons ── */}
                 {showCommentInputs && (
                   <div className="mt-10 pt-6 border-t border-gray-100">
+                    {/* Review round + decision row */}
+                    <div className="flex items-center gap-4 mb-5 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                          Review Round
+                        </label>
+                        <select
+                          value={reviewRound}
+                          onChange={(e) => setReviewRound(e.target.value)}
+                          disabled={alreadyReviewed}
+                          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-primaryGreen disabled:bg-gray-50 disabled:cursor-not-allowed"
+                        >
+                          {["1","2","3","4","5"].map((r) => (
+                            <option key={r} value={r}>Round {r}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                          Reviewing
+                        </label>
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primaryGreen/10 text-primaryGreen border border-primaryGreen/20">
+                          {getProposalType()}
+                        </span>
+                      </div>
+
+                      {hasAnyComment && (
+                        <span className="ml-auto text-xs text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-lg font-medium">
+                          {Object.values(comments).filter((c) => c?.trim()).length} comment(s) — will submit as <strong>Needs Revision</strong>
+                        </span>
+                      )}
+                    </div>
+
                     <div className="flex justify-end gap-4">
                       <button
                         onClick={onClose}
@@ -1270,8 +664,9 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                       </button>
                       <button
                         onClick={handleSubmitReview}
-                        disabled={isSubmitting || alreadyReviewed}
+                        disabled={isSubmitting || alreadyReviewed || !hasAnyComment}
                         className="px-8 py-3 bg-primaryGreen text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                        title={!hasAnyComment ? "Add at least one comment to submit a revision request" : ""}
                       >
                         {isSubmitting ? (
                           <>
@@ -1287,8 +682,9 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                       </button>
                       <button
                         onClick={() => setShowApproveConfirm(true)}
-                        disabled={alreadyReviewed || hasAnyComment}
+                        disabled={alreadyReviewed || hasAnyComment || isApproving}
                         className="px-8 py-3 bg-emerald-700 text-white rounded-lg font-semibold hover:bg-emerald-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                        title={hasAnyComment ? "Clear all comments before approving" : ""}
                       >
                         Approve
                       </button>
@@ -1299,7 +695,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
               </div>
             </div>
 
-            {/* ── History Panel (retained exactly) ── */}
+            {/* ── History Panel ── */}
             <div className="bg-white h-full w-72 flex-shrink-0 shadow-sm border-l border-gray-200 flex flex-col">
               <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                 <div>
