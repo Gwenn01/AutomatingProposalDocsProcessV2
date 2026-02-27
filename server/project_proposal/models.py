@@ -63,6 +63,7 @@ class ProjectProposal(models.Model):
 class ProjectProposalHistory(models.Model):
    ...
    proposal = models.ForeignKey(Proposal, on_delete=models.CASCADE, related_name="project_history")
+   version = models.IntegerField(default=1)
    #profile
    project_title = models.CharField(max_length=255, null=True, blank=True)
    project_leader = models.CharField(max_length=255, null=True, blank=True)

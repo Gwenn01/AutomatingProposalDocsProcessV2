@@ -106,7 +106,7 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
 
             program_title=instance.program_title,
             program_leader=instance.program_leader,
-            project_list=project_list,
+            project_list=instance.project_list,
             implementing_agency=instance.implementing_agency,
             cooperating_agencies=instance.cooperating_agencies,
             extension_sites=instance.extension_sites,
@@ -133,7 +133,6 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         if title:
             instance.proposal.title = title
 
-        # FIXED  remove +1 (it was wrong before)
         instance.proposal.version_no = next_version
         instance.proposal.save()
 
@@ -148,8 +147,8 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         # ---------------------------------------
         # STEP 5: Update project list safely
         # ---------------------------------------
-        # if project_list is not None:
-        #     instance.project_list = project_list
+        if project_list is not None:
+            instance.project_list = project_list
 
         return instance
 
