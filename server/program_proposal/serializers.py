@@ -159,6 +159,15 @@ class ProgramProjectsSerializer(serializers.ModelSerializer):
         model = ProgramProposal
         fields = ["id", "program_title", "projects"]
 
-    
 
+# proposal history list
+class ProgramProposalHistoryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgramProposal
+        fields = ["version", "program_title", "program_leader"]
+    
+class ProgramProposalHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProgramProposal
+        fields = "__all__"
         

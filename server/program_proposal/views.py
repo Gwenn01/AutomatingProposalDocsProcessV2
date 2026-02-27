@@ -6,13 +6,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny 
 # app
-from .models import ProgramProposal
+from .models import ProgramProposal, ProgramProposalHistory
 from django.contrib.auth.models import User
 from .serializers import (
     ProgramProposalSerializer,
-    ProgramProjectsSerializer
+    ProgramProjectsSerializer,
+    ProgramProposalHistoryListSerializer,
+    ProgramProposalHistorySerializer
 )
-
+from proposals_node.models import Proposal
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
 # Create your views here.
@@ -109,4 +111,26 @@ class ProgramProjectsView(APIView):
             )
         serializer = ProgramProjectsSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+# get the list of proposal history under a program proposal
+class ProgramListHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, proposal_id):
+        proposal = get_object_or_404(Proposal, id=proposal_id)
+        history = proposal.program_history.all()
+        serializer = ProgramProposalHistoryListSerializer(history, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+class ProgramProposalHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, request, pk):
+        return get_object_or_404(ProgramProposalHistory, pk=pk)
+    
+    def get(self, request, pk):
+        ...
+        program_history = self.get_object(request, pk)
+        serializer = ProgramProposalHistorySerializer(program_history)
+        return Response(serializer.data, status=status.HTTP_200_OK)
