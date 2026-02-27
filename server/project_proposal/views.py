@@ -63,7 +63,7 @@ class ProjectProposalDetail(APIView):
     
     def put(self, request, pk):
         try:
-            project_proposal = self.get_object(pk, request.user)
+            project_proposal = self.get_object(pk)
         except ProjectProposal.DoesNotExist:
             return Response({"message": "Project proposal not found"}, status=status.HTTP_404_NOT_FOUND)
 
