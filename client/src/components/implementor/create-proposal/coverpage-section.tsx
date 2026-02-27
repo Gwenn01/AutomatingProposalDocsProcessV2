@@ -22,7 +22,7 @@ interface CoverPageData {
 }
 
 import InlineInput from "../InlineInput";
-import { SectionHeader } from "./section-header";
+import { SectionHeader } from "./ui/section-header";
 
 export const CoverPageSection: React.FC<{
   cover: CoverPageData;

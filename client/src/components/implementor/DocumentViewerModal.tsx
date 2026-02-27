@@ -71,7 +71,6 @@ interface ApiProposalDetail {
 // Re-export for local use with clearer names
 type ProjectItem = ApiProject;
 type ActivityItem = ApiActivity;
-
 interface DocumentViewerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -80,27 +79,7 @@ interface DocumentViewerModalProps {
   proposalTitle: string;
 }
 
-// ================= HELPERS =================
-
-
-
 type TabType = "program" | "project" | "activity";
-
-// ================= SHARED PROFILE FIELDS (Project & Activity) =================
-
-const CheckboxList = ({ items, checked }: { items: string[]; checked: (item: string) => boolean }) => (
-  <div className="space-y-1">
-    {items.map((label) => (
-      <div key={label} className="flex items-start gap-2 py-0.5">
-        <span className="mt-0.5 text-sm shrink-0">{checked(label) ? "☑" : "☐"}</span>
-        <span className="text-sm">{label}</span>
-      </div>
-    ))}
-  </div>
-);
-
-
-
 
 
 // ================= MAIN MODAL =================

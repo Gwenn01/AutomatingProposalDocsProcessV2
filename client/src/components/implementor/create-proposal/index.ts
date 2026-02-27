@@ -1,7 +1,7 @@
-import { SectionCard } from "./section-card";
-import { SectionHeader } from "./section-header";
-import { TextAreaField } from "./text-area-field";
+
+import { SectionHeader } from "./ui/section-header";
+
 
 export {
-    SectionCard, SectionHeader, TextAreaField
+ SectionHeader, 
 }
