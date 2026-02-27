@@ -64,9 +64,17 @@ class ProposalReviewDetail(APIView):
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# get reviews by proposal node     
+# get the proposal with reviews  
 class ProposalReviewListByProposal(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, proposal_id, proposal_type, format=None):
         data = ProposalReviewSelectors.proposal_reviews_mapper(proposal_id, proposal_type)
+        return Response(data, status=status.HTTP_200_OK)
+    
+# get the proposal with reviews detail of history
+class ProposalReviewListByProposalHistory(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, proposal_id, proposal_type, format=None):
+        data = ProposalReviewSelectors.proposal_reviews_detail_mapper(proposal_id, proposal_type)
         return Response(data, status=status.HTTP_200_OK)
