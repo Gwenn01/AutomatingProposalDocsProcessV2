@@ -1,14 +1,15 @@
 from django.db import transaction
 from rest_framework import serializers
 from proposals_node.models import Proposal
-from .models import ProgramProposal
+from .models import (
+    ProgramProposal,
+    ProgramProposalHistory
+)
 from project_proposal.models import ProjectProposal
-
 from proposals_node.serializers import ProposalSerializer
 from project_proposal.serializers import (
     ProjectsListDataSerializer
 )
-from .models import ProgramProposalHistory
 
 class ProgramProposalSerializer(serializers.ModelSerializer):
      # fields that belong to Proposal
@@ -163,11 +164,11 @@ class ProgramProjectsSerializer(serializers.ModelSerializer):
 # proposal history list
 class ProgramProposalHistoryListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProgramProposal
-        fields = ["version", "program_title", "program_leader"]
+        model = ProgramProposalHistory
+        fields = ["id", "version", "program_title", "program_leader"]
     
 class ProgramProposalHistorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProgramProposal
+        model = ProgramProposalHistory
         fields = "__all__"
         

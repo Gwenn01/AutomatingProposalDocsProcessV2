@@ -14,6 +14,7 @@ from .serializers import (
     ProgramProposalHistoryListSerializer,
     ProgramProposalHistorySerializer
 )
+from .mapper import ProgramHistoryMapper
 from proposals_node.models import Proposal
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
@@ -116,14 +117,19 @@ class ProgramProjectsView(APIView):
 # get the list of proposal history under a program proposal
 class ProgramListHistoryView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request, proposal_id):
+        # serialize the object
         proposal = get_object_or_404(Proposal, id=proposal_id)
+        program_proposal = get_object_or_404(ProgramProposal, proposal=proposal)
         history = proposal.program_history.all()
-        serializer = ProgramProposalHistoryListSerializer(history, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
         
-class ProgramProposalHistoryView(APIView):
+        # serialize the object
+        program_serializer = ProgramProposalSerializer(program_proposal)
+        history_serializer = ProgramProposalHistoryListSerializer(history, many=True)
+        return Response(ProgramHistoryMapper.history_list_mapper(program_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
+        
+class ProgramProposalHistoryDetails(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self, request, pk):
