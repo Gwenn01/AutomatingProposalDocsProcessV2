@@ -128,7 +128,8 @@ class ProgramListHistoryView(APIView):
         program_serializer = ProgramProposalSerializer(program_proposal)
         history_serializer = ProgramProposalHistoryListSerializer(history, many=True)
         return Response(ProgramHistoryMapper.history_list_mapper(program_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
-        
+
+# get the history including the details
 class ProgramProposalHistoryDetails(APIView):
     permission_classes = [IsAuthenticated]
 

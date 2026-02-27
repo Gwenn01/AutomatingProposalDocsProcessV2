@@ -38,6 +38,3 @@ class ProposalTest(TestCase):
         data = ProgramHistoryMapper.history_list_mapper(proposal_serializers.data, history_serializers.data)
         print(data)
         self.assertEqual(history.count(), 2)
-        
-    def test_history_detail(self):
-        pass
