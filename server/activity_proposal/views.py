@@ -36,7 +36,7 @@ class ActivityProposalDetail(APIView):
 
     def get(self, request, pk):
         try:
-            activity_proposal = self.get_object(pk, request.user)
+            activity_proposal = self.get_object(pk)
         except ActivityProposal.DoesNotExist:
             return Response({"message": "Activity proposal not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ActivityProposalSerializer(activity_proposal)
@@ -44,7 +44,7 @@ class ActivityProposalDetail(APIView):
     
     def put(self, request, pk):
         try:
-            activity_proposal = self.get_object(pk, request.user)
+            activity_proposal = self.get_object(pk)
         except ActivityProposal.DoesNotExist:
             return Response({"message": "Activity proposal not found"}, status=status.HTTP_404_NOT_FOUND)
 
