@@ -8,6 +8,7 @@ import NotFound from "./pages/not-found";
 import Home from "./pages/Home";
 import HomePage from "./pages/Landing/Home";
 import AboutPage from "./pages/Landing/Abou";
+import FeaturePage from "./pages/Landing/Features";
 
 const App: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ const App: React.FC = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/feature" element={<FeaturePage />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/admin" element={<Overview />} />
       </Routes>
