@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   submitProgramProposal,
   fetchProjectList,
@@ -21,6 +21,10 @@ import {
   type ApiProject,
   type ApiActivity,
 } from '@/utils/implementor-api';
+
+interface CreateProposalProps {
+  onDirtyChange?: (isDirty: boolean) => void;
+}
 
 // ─────────────────────────────────────────────
 // CONSTANTS
@@ -724,7 +728,8 @@ const ActivityProposalForm = ({ data, onChange, onSave, isSaving }: ActivityForm
 // MAIN COMPONENT
 // ─────────────────────────────────────────────
 
-export default function CreateProposal() {
+export default function CreateProposal({ onDirtyChange }: CreateProposalProps = {}) {
+  const [isDirty, setIsDirty] = useState(false);
   const [step, setStep] = useState(1);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -745,6 +750,36 @@ export default function CreateProposal() {
   const [activeActivityKey, setActiveActivityKey] = useState<{ projectId: number; activityIdx: number } | null>(null);
   const [activitySaving, setActivitySaving] = useState<Record<string, boolean>>({});
   const [loadingActivities, setLoadingActivities] = useState<Record<number, boolean>>({});
+
+  const markDirty = useCallback(() => {
+    setIsDirty((prev) => {
+      if (!prev) onDirtyChange?.(true);
+      return true;
+    });
+  }, [onDirtyChange]);
+
+  const markClean = useCallback(() => {
+    setIsDirty(false);
+    onDirtyChange?.(false);
+  }, [onDirtyChange]);
+
+  // Warn on browser reload / tab close
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+
+
+  useEffect(() => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [step]);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -792,6 +827,7 @@ export default function CreateProposal() {
       await saveProjectProposal(form.apiProjectId, form);
       setProjectForms((prev) => { const u = [...prev]; u[projectIndex] = { ...u[projectIndex], saved: true }; return u; });
       showToast(`Project "${form.project_title}" saved!`);
+      scrollToTop();
     } catch (err: any) {
       showToast(`Failed to save project: ${err.message}`, 'error');
     } finally {
@@ -817,12 +853,14 @@ export default function CreateProposal() {
       try {
         const actData = await fetchActivityList(pf.apiProjectId);
         newActivityForms[pf.apiProjectId] = actData.activities.map((a) => defaultActivityFormData(a));
+        scrollToTop();
       } catch (err: any) {
         showToast(`Failed to load activities for "${pf.project_title}": ${err.message}`, 'error');
         return;
       } finally {
         loadingMap[pf.apiProjectId] = false;
         setLoadingActivities({ ...loadingMap });
+        scrollToTop();
       }
     }
 
@@ -871,6 +909,7 @@ export default function CreateProposal() {
       return;
     }
     showToast('All proposals submitted successfully! 🎉');
+    markClean();
     // Reset everything
     setProgramData(defaultProgramFormData());
     setProgramChildId(null);
@@ -932,7 +971,8 @@ export default function CreateProposal() {
         {/* ══════════════ STEP 1 ══════════════ */}
         {step === 1 && (
           <ProgramProposalForm
-            data={programData} onChange={setProgramData}
+            data={programData}
+            onChange={(v) => { setProgramData(v); markDirty(); }}
             onNext={handleProgramNext} isSubmitting={isSubmittingProgram}
           />
         )}

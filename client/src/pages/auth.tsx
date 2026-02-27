@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { prmsuLogo } from "../assets";
+import { extensionLogo, prmsuLogo } from "../assets";
 import { BarChart3, Globe, ShieldCheck, Zap } from "lucide-react";
 import { CustomButton, FormInput } from "../components";
 import { useNavigate } from "react-router-dom";
@@ -165,7 +165,7 @@ const Auth: React.FC = () => {
           >
             <div className="relative group">
               <div className="relative z-10 transition-transform duration-500 group-hover:scale-110">
-                <img src={prmsuLogo} alt="PRMSU Logo" className="w-12 h-12 object-contain" />
+                <img src={extensionLogo} alt="PRMSU Logo" className="w-12 h-12 object-contain" />
               </div>
               <div className="absolute inset-0 bg-emerald-400/10 blur-2xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-[0_2px_5px_rgba(0,0,0,0.05)] border border-slate-50">

@@ -37,6 +37,7 @@ type ActiveMenu =
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [isProposalDirty, setIsProposalDirty] = useState(false);
 
   const [active, setActive] = useState<ActiveMenu>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -78,6 +79,21 @@ const Home: React.FC = () => {
     }
   }, [navigate]);
 
+  // Add a guarded navigation handler:
+const handleSetActive = (menu: ActiveMenu) => {
+  if (
+    active === 'Create Proposal' &&
+    isProposalDirty &&
+    menu !== 'Create Proposal'
+  ) {
+    const confirmed = window.confirm(
+      'You have unsaved changes in your proposal. If you leave, your progress will be lost.\n\nAre you sure you want to leave?'
+    );
+    if (!confirmed) return;
+  }
+  setActive(menu);
+};
+
   // Optional loading guard
   if (!user || !active) return null;
 
@@ -86,7 +102,7 @@ const Home: React.FC = () => {
       <Sidebar
         role={user.role}
         active={active}
-        setActive={setActive}
+        setActive={handleSetActive}
         isOpen={isOpen}
         toggleSidebar={toggleSidebar}
         user={user}
@@ -95,7 +111,7 @@ const Home: React.FC = () => {
       <main className="flex-1 flex flex-col overflow-y-auto relative">
         {active === "Profile Overview" && <ProfileOverview />}
         {/* IMPLEMENTOR / INSTRUCTOR */}
-        {active === "Create Proposal" && <CreateProposal />}
+        {active === "Create Proposal" && <CreateProposal  onDirtyChange={setIsProposalDirty} />}
         {active === "View Proposal" && <ViewProposal />}
 
         {/* ADMIN */}

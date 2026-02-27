@@ -8,6 +8,7 @@ import {
   Table,
   Search,
   X,
+  FileX,
 } from "lucide-react";
 
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
@@ -337,7 +338,7 @@ const ViewProposal: React.FC = () => {
 
       {/* ================= GRID VIEW ================= */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 place-items-start h-[78%]">
           {currentDocuments.map((doc) => {
             const status = getStatusStyle(doc.status);
             return (
@@ -390,13 +391,33 @@ const ViewProposal: React.FC = () => {
           })}
 
           {currentDocuments.length === 0 && (
-            <div className="col-span-full text-center py-16">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <Eye className="w-8 h-8 text-gray-400" />
+            <div className="col-span-full flex items-center justify-center py-24">
+              <div className="relative flex flex-col items-center text-center gap-4 max-w-sm">
+                
+                {/* Glow Background */}
+                <div className="absolute -top-10 -z-10 w-40 h-40 bg-gradient-to-tr from-indigo-200 via-purple-200 to-pink-200 rounded-full blur-3xl opacity-60" />
+
+                {/* Icon Container */}
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-inner flex items-center justify-center">
+                  <FileX className="w-9 h-9 text-gray-500" />
                 </div>
-                <p className="text-gray-500 font-medium">No proposals found</p>
-                <p className="text-sm text-gray-400">Create your first proposal to get started</p>
+
+                {/* Title */}
+                <h3 className="text-lg font-semibold text-gray-700">
+                  No proposals yet
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  You haven’t created any proposals yet. Once you do, they’ll show up right here.
+                </p>
+
+                {/* CTA Button (optional)
+                <button 
+                  //onClick={() => } 
+                  className="mt-4 px-5 py-2.5 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition">
+                  Create Proposal
+                </button> */}
               </div>
             </div>
           )}
@@ -475,12 +496,34 @@ const ViewProposal: React.FC = () => {
               {currentDocuments.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center py-16">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                        <Eye className="w-8 h-8 text-gray-400" />
+                    <div className="col-span-full flex items-center justify-center py-24">
+                      <div className="relative flex flex-col items-center text-center gap-4 max-w-sm">
+                        
+                        {/* Glow Background */}
+                        <div className="absolute -top-10 -z-10 w-40 h-40 bg-gradient-to-tr from-indigo-200 via-purple-200 to-pink-200 rounded-full blur-3xl opacity-60" />
+
+                        {/* Icon Container */}
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-inner flex items-center justify-center">
+                          <FileX className="w-9 h-9 text-gray-500" />
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-lg font-semibold text-gray-700">
+                          No proposals yet
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-sm text-gray-500 leading-relaxed">
+                          You haven’t created any proposals yet. Once you do, they’ll show up right here.
+                        </p>
+
+                        {/* CTA Button (optional)
+                        <button 
+                          //onClick={() => } 
+                          className="mt-4 px-5 py-2.5 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition">
+                          Create Proposal
+                        </button> */}
                       </div>
-                      <p className="text-gray-500 font-medium">No proposals found</p>
-                      <p className="text-sm text-gray-400">Create your first proposal to get started</p>
                     </div>
                   </td>
                 </tr>
