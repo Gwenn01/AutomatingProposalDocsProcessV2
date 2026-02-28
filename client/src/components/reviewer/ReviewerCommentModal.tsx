@@ -69,7 +69,7 @@ export interface ApiProposalDetail {
   proposal: number;
   program_title: string;
   program_leader: string;
-  projects_list: any[];
+  project_list: any[];
   implementing_agency: string[];
   cooperating_agencies: string[];
   extension_sites: string[];

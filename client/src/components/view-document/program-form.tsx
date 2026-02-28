@@ -7,6 +7,7 @@ import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
 export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalData }) => {
   const workplanMap: Record<string, string> = {};
   (proposalData.workplan || []).forEach(({ month, activity }) => { workplanMap[month] = activity; });
+  console.log("proposalData", proposalData.project_list);
 
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
@@ -24,57 +25,34 @@ export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> 
             <p className="font-bold">Program Title 1: <span className="font-normal">{val(proposalData.program_title)}</span></p>
             <p className="font-bold">Program Leader: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
           </div>
-
-          <div>
-            <p className="font-bold">Project Title 1: <span className="font-normal">{val(proposalData.program_title)}</span></p>
-            <p className="font-bold">Project Leader: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
-            <p className="font-bold">Project Members: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
-            <br />
-            <p className="font-bold">Project Duration: <span className="font-normal">{val(proposalData.program_title)}</span></p>
-            <p className="font-bold">Project Start Date: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
-            <p className="font-bold">Project End Date: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
-          </div>
+          {(proposalData.project_list || []).map((proj: any, i: number) => (
+            <React.Fragment key={i}>
+              <div >
+                <p className="font-bold">Project Title {i + 1}: <span className="font-normal">{val(proj.project_title)}</span></p>
+                <p className="font-bold">Project Leader: <span className="font-normal">{val(proj.project_leader)}</span></p>
+                <p className="font-bold">Project Members: <span className="font-normal">{val(proj.project_member.map((m: any) => m).join(", "))}</span></p>
+                <br />
+                <p className="font-bold">Project Duration: <span className="font-normal">{val(proj.project_duration)}</span></p>
+                <p className="font-bold">Project Start Date: <span className="font-normal">{val(proj.project_start_date)}</span></p>
+                <p className="font-bold">Project End Date: <span className="font-normal">{val(proj.project_end_date)}</span></p>
+                <br />
+              </div>
+            </React.Fragment>
+          ))}
         </div>
-          <div className="overflow-x-auto mt-4">
+          <div className="">
             <table className="w-full text-sm">
               <tbody>
 
-                {(proposalData.projects_list || []).map((proj: any, i: number) => (
-                  <React.Fragment key={i}>
-                    <tr className="border-b border-black">
-                      <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Title {i + 1}:</td>
-                      <td className="px-4 py-3 font-medium">{val(proj.title)}</td>
-                    </tr>
-                    <tr className="border-b border-black">
-                      <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Leader {i + 1}:</td>
-                      <td className="px-4 py-3">{val(proj.leader)}</td>
-                    </tr>
-                    <tr className="border-b border-black">
-                      <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Members:</td>
-                      <td className="px-4 py-3">{val(proj.members)}</td>
-                    </tr>
-                    <tr className="border-b border-black">
-                      <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Duration (months):</td>
-                      <td className="px-4 py-3">{val(proj.duration_months)}</td>
-                    </tr>
-                    <tr className="border-b border-black">
-                      <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project Start Date:</td>
-                      <td className="px-4 py-3">{val(proj.start_date)}</td>
-                    </tr>
-                    <tr className="border-b border-black">
-                      <td className="w-1/4 border-r border-black px-4 py-3 font-bold">Project End Date:</td>
-                      <td className="px-4 py-3">{val(proj.end_date)}</td>
-                    </tr>
-                  </React.Fragment>
-                ))}
                 <tr className="border-b border-t border-black">
-                  <p className="p-3 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
-                  <p className="px-3 mb-2">{arrVal(proposalData.implementing_agency)}</p>
+                  <p className="px-3 mt-3 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
+                  <p className="px-3 mb-3">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
+                  <p className="px-3 mb-2 text-base">{arrVal(proposalData.implementing_agency)}</p>
                   {/* <td className="px-4 py-3">{arrVal(proposalData.implementing_agency)}</td> */}
                 </tr>
                 <tr className="border-b border-black">
                   <p className="p-3 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
-                  <p className="   px-3 mb-2 font-normal">{arrVal(proposalData.cooperating_agencies)}</p>
+                  <p className="px-3 mb-2 font-normal text-base">{arrVal(proposalData.cooperating_agencies)}</p>
                   {/* <td className="px-4 py-3"></td> */}
                 </tr>
               </tbody>
