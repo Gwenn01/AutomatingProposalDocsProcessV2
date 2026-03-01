@@ -31,31 +31,33 @@ const CommentInput: React.FC<CommentInputProps> = ({
     onCommentChange(InputValue, newValue);
   };
 
+  // Smaller, tighter layout for narrow screens
+  // Outer container uses compact padding and border radius
   return (
     <div
-      className={`my-6 border rounded-2xl p-5 transition-all ${
+      className={`my-4 border rounded-xl p-4 transition-all ${
         disabled ? "border-gray-300 bg-gray-50" : "border-green-200 bg-green-50"
       }`}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <div className="mt-1">
           {disabled ? (
-            <Lock className="w-6 h-6 text-gray-500" />
+            <Lock className="w-5 h-5 text-gray-500" />
           ) : (
-            <MessageSquare className="w-6 h-6 text-green-600" />
+            <MessageSquare className="w-5 h-5 text-green-600" />
           )}
         </div>
 
         <div className="flex-1">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-2">
-            <label
-              className={`text-sm font-semibold ${
+          {/* Header (tighter) */}
+          <div className="flex items-center justify-between mb-1 text-sm">
+            <span
+              className={`font-semibold ${
                 disabled ? "text-gray-700" : "text-green-900"
               }`}
             >
               Reviewer's Comment - {sectionName}
-            </label>
+            </span>
 
             {disabled && (
               <span className="flex items-center gap-1 text-xs font-medium bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
@@ -67,13 +69,12 @@ const CommentInput: React.FC<CommentInputProps> = ({
 
           {/* Info message when locked */}
           {disabled && (
-            <div className="mb-3 text-xs text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2 rounded-lg">
-              You have already reviewed, Please wait for the proponent to submit
-              a revision before making further comments.
+            <div className="mb-2 text-xs text-gray-600 bg-gray-100 border border-gray-200 px-3 py-2 rounded-md">
+              You have already reviewed, Please wait for the proponent to submit a revision before making further comments.
             </div>
           )}
 
-          {/* Textarea */}
+          {/* Textarea (smaller) */}
           <textarea
             value={comment}
             disabled={disabled}
@@ -85,23 +86,22 @@ const CommentInput: React.FC<CommentInputProps> = ({
                 ? "Review submitted. Waiting for revision..."
                 : "Enter your review comments here..."
             }
-            className={`w-full px-4 py-3 border rounded-xl resize-none transition-all focus:outline-none ${
+            className={`w-full px-3 py-2 border rounded-md resize-none transition-all focus:outline-none text-sm ${
               disabled
                 ? "bg-gray-100 border-gray-300 cursor-not-allowed text-gray-600"
                 : isFocused
                   ? "border-green-500 ring-2 ring-green-200 bg-white"
                   : "border-gray-300 bg-white"
             }`}
-            rows={4}
+            rows={3}
+            aria-label={`Comment for ${sectionName}`}
           />
 
-          <div className="flex justify-between items-center mt-2">
-            <p className="text-xs text-gray-500">{comment.length} characters</p>
+          <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+            <span>{comment.length} characters</span>
 
             {!disabled && (
-              <span className="text-xs text-green-600">
-                You can edit this comment
-              </span>
+              <span className="text-green-600">You can edit this comment</span>
             )}
           </div>
         </div>

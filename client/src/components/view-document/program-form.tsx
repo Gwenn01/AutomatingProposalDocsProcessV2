@@ -7,7 +7,6 @@ import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
 export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalData }) => {
   const workplanMap: Record<string, string> = {};
   (proposalData.workplan || []).forEach(({ month, activity }) => { workplanMap[month] = activity; });
-  console.log("proposalData", proposalData.project_list);
 
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">

@@ -2,6 +2,7 @@ import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
 import CommentInput from "../reviewer/CommentInput";
 import { type BudgetItem } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
+import { VerticalLine } from "./program-form";
 
 interface Comments {
   [key: string]: string;
@@ -19,17 +20,17 @@ export const ActivityForm: React.FC<{
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
   return (
-    <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed">
+    <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>
         <p className="font-bold text-xl mt-3 uppercase tracking-widest">Extension Activity Proposal</p>
       </div>
 
-      <div className="border border-black">
+      <div className="">
         {/* I. PROFILE */}
         <div className="p-5">
-          <h2 className="text-base font-bold my-2">I. PROFILE</h2>
+          <h2 className="text-base font-bold my-2 flex"><VerticalLine />I. PROFILE</h2>
           <div className="my-4">
             <p className="font-bold">Program Title: <span className="font-normal">{val(programTitle)}</span></p>
             <p className="font-bold">Project Title: <span className="font-normal">{val(projectTitle)}</span></p>
@@ -47,26 +48,28 @@ export const ActivityForm: React.FC<{
           <table className="w-full text-sm">
             <tbody>
               <tr className="border-b border-t border-black">
-                <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
+                <p className="px-3 py-2 font-bold flex"><VerticalLine />IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
                 <p className="px-3 pb-1 text-xs text-gray-500 italic">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
                 <p className="px-3 mb-2">{arrVal(activityData.implementing_agency)}</p>
               </tr>
+
               <tr className="border-b border-black">
-                <p className="px-3 py-2 font-bold">COOPERATING AGENCY/IES <span className="font-normal">/Program/College (Name/s and Address/es)</span></p>
+                <p className="px-3 py-2 font-bold flex"><VerticalLine />COOPERATING AGENCY/IES <span className="font-normal">/Program/College (Name/s and Address/es)</span></p>
                 <p className="px-3 mb-2 font-normal">{arrVal(activityData.cooperating_agencies)}</p>
               </tr>
+                {showCommentInputs && (
+                  <CommentInput sectionName="Implementing & Cooperating Agency" onCommentChange={onCommentChange}
+                    InputValue="act_implementing_agency_feedback" value={comments["act_implementing_agency_feedback"] || ""} disabled={alreadyReviewed} />
+                )}
             </tbody>
           </table>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Implementing Agency" onCommentChange={onCommentChange}
-            InputValue="act_implementing_agency_feedback" value={comments["act_implementing_agency_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+
 
         {/* EXTENSION SITES */}
-        <p className="font-bold text-base p-3 mb-2">EXTENSION SITE/S OR VENUE/S</p>
+        <p className="font-bold text-base p-3 mb-2 flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
         <div className="overflow-x-auto">
-          <table className="w-full border-t border-black text-sm">
+          <table className="w-full border border-black text-sm">
             <tbody>
               <tr className="border-b border-black">
                 <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
@@ -92,40 +95,49 @@ export const ActivityForm: React.FC<{
             <tbody>
               <tr className="border-b border-black">
                 <td className="border-r border-black px-4 py-4 align-top w-1/2">
-                  <p className="font-bold mb-3 text-base">TAGGING</p>
+                  <p className="font-bold mb-3 text-base flex"><VerticalLine />TAGGING</p>
                   <CheckboxList
                     items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]}
                     checked={(label) => activityData.tags?.some((t: string) => t.toLowerCase() === label.toLowerCase()) ?? false}
                   />
-                  <p className="font-bold mt-5 mb-3 text-base">CLUSTER</p>
+                  <p className="font-bold mt-5 mb-3 text-base flex"><VerticalLine />CLUSTER</p>
                   <CheckboxList
                     items={["Health, Education, and Social Sciences", "Engineering, Industry, Information Technology", "Environment and Natural Resources", "Tourism, Hospitality Management, Entrepreneurship, Criminal Justice", "Graduate Studies", "Fisheries", "Agriculture, Forestry"]}
                     checked={(label) => activityData.clusters?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false}
                   />
                 </td>
                 <td className="px-4 py-4 align-top w-1/2">
-                  <p className="font-bold mb-3 text-base">EXTENSION AGENDA</p>
+                  <p className="font-bold mb-3 text-base flex"><VerticalLine />EXTENSION AGENDA</p>
                   <CheckboxList
                     items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]}
                     checked={(label) => activityData.agendas?.some((a: string) => a.toLowerCase() === label.toLowerCase()) ?? false}
                   />
                 </td>
               </tr>
-              <tr className="border-b border-black">
+              {showCommentInputs && (
+                    <tr>
+                      <td colSpan={2} className="p-0">
+                        <CommentInput
+                          sectionName="Tagging, Cluster & Extension Agenda"
+                          onCommentChange={onCommentChange}
+                          InputValue="act_tagging_cluster_extension_feedback"
+                          value={comments["act_tagging_cluster_extension_feedback"] || ""}
+                          disabled={alreadyReviewed}
+                        />
+                      </td>
+                    </tr>
+                  )}
+              <tr className="border border-black">
                 <td className="border-r border-black px-4 py-3 font-bold">Sustainable Development Goal (SDG) Addressed:</td>
                 <td className="border-r border-black px-4 py-3 font-bold">College / Campus / Mandated Academic Program:</td>
               </tr>
-              <tr>
+              <tr className="border border-black">
                 <td className="px-4 py-3 border-r border-black">{val(activityData.sdg_addressed)}</td>
                 <td className="px-4 py-3">{val(activityData.mandated_academic_program)}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Tagging, Cluster & Extension Agenda" onCommentChange={onCommentChange}
-            InputValue="act_tagging_cluster_extension_feedback" value={comments["act_tagging_cluster_extension_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
         {showCommentInputs && (
           <CommentInput sectionName="SDG & Academic Program" onCommentChange={onCommentChange}
             InputValue="act_sdg_academic_program_feedback" value={comments["act_sdg_academic_program_feedback"] || ""} disabled={alreadyReviewed} />
