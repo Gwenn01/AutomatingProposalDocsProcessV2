@@ -94,7 +94,7 @@ export const ActivityForm: React.FC<{
           <table className="w-full border-b border-black text-sm">
             <tbody>
               <tr className="border-b border-black">
-                <td className="border-r border-black px-4 py-4 align-top w-1/2">
+                <td className="border border-black px-4 py-4 align-top w-1/2">
                   <p className="font-bold mb-3 text-base flex"><VerticalLine />TAGGING</p>
                   <CheckboxList
                     items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]}
@@ -106,7 +106,7 @@ export const ActivityForm: React.FC<{
                     checked={(label) => activityData.clusters?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false}
                   />
                 </td>
-                <td className="px-4 py-4 align-top w-1/2">
+                <td className="border border-black px-4 py-4 align-top w-1/2">
                   <p className="font-bold mb-3 text-base flex"><VerticalLine />EXTENSION AGENDA</p>
                   <CheckboxList
                     items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]}
@@ -146,7 +146,7 @@ export const ActivityForm: React.FC<{
         <div className="text-gray-700 leading-relaxed">
           {/* II. RATIONALE */}
           <div className="p-4 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">II. RATIONALE</h3>
+            <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.rationale)}</p>
           </div>
           {showCommentInputs && (
@@ -156,7 +156,7 @@ export const ActivityForm: React.FC<{
 
           {/* III. OBJECTIVES */}
           <div className="p-4 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">III. OBJECTIVES OF THE ACTIVITY</h3>
+            <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. OBJECTIVES OF THE ACTIVITY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.objectives)}</p>
           </div>
           {showCommentInputs && (
@@ -166,7 +166,7 @@ export const ActivityForm: React.FC<{
 
           {/* IV. METHODOLOGY */}
           <div className="p-4 border-b border-black">
-            <h3 className="font-bold text-gray-900 text-base">IV. METHODOLOGY</h3>
+            <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />IV. METHODOLOGY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.methodology)}</p>
           </div>
           {showCommentInputs && (
@@ -176,8 +176,8 @@ export const ActivityForm: React.FC<{
 
           {/* V. EXPECTED OUTPUT */}
           <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">V. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full border-t border-black text-sm">
+            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5 flex"><VerticalLine />V. EXPECTED OUTPUT/OUTCOME</h3>
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
                   <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
@@ -199,8 +199,8 @@ export const ActivityForm: React.FC<{
 
           {/* VI. PLAN OF ACTIVITY */}
           <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">VI. PLAN OF ACTIVITY</h3>
-            <table className="w-full border-t border-black text-sm">
+            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5 flex"><VerticalLine />VI. PLAN OF ACTIVITY</h3>
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black bg-gray-100">
                   <td className="border-r border-black px-4 py-3 font-bold text-center w-1/4">Time</td>
@@ -225,13 +225,13 @@ export const ActivityForm: React.FC<{
           </div>
           {showCommentInputs && (
             <CommentInput sectionName="Plan of Activities" onCommentChange={onCommentChange}
-              InputValue="act_plan_of_activities" value={comments["act_plan_of_activities"] || ""} disabled={alreadyReviewed} />
+              InputValue="act_work_plan_feedback" value={comments["act_work_plan_feedback"] || ""} disabled={alreadyReviewed} />
           )}
 
           {/* VII. BUDGET */}
           <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base">VII. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full border-t border-black text-sm mt-6">
+            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base flex"><VerticalLine />VII. BUDGETARY REQUIREMENT</h3>
+            <table className="w-full border border-black text-sm mt-6">
               <tbody>
                 <tr className="border-b border-black bg-gray-100">
                   <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>

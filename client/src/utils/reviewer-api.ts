@@ -7,7 +7,6 @@ const BASE_URL = 'http://127.0.0.1:8000/api';
 // ─────────────────────────────────────────────
 // AUTH HELPERS
 // ─────────────────────────────────────────────
-// Add these type exports to reviewer-api.ts
 export type ApiProjectListResponse = {
   id: number;
   program_title: string;
@@ -178,6 +177,90 @@ export interface ProposalHistory {
 }
 
 // ─────────────────────────────────────────────
+// PROPOSAL REVIEW TYPES
+// ─────────────────────────────────────────────
+
+export type ProposalReviewDecision = 'needs_revision' | 'approved';
+export type ProposalReviewType = 'program' | 'project' | 'activity';
+
+export interface ProposalReviewBasePayload {
+  proposal_reviewer?: number;
+  proposal_node: number;
+  decision: ProposalReviewDecision;
+  review_round: string | number;   // API expects a string e.g. "1"
+  proposal_type: ProposalReviewType;
+}
+
+export interface ProgramReviewPayload extends ProposalReviewBasePayload {
+  proposal_type: 'program';
+  profile_feedback?: string;
+  implementing_agency_feedback?: string;
+  extension_site_feedback?: string;
+  tagging_cluster_extension_feedback?: string;
+  sdg_academic_program_feedback?: string;
+  rationale_feedback?: string;
+  significance_feedback?: string;
+  objectives_feedback?: string;
+  general_objectives_feedback?: string;
+  specific_objectives_feedback?: string;
+  methodology_feedback?: string;
+  expected_output_feedback?: string;
+  sustainability_plan_feedback?: string;
+  org_staffing_feedback?: string;
+  work_plan_feedback?: string;
+  budget_requirements_feedback?: string;
+}
+
+export interface ProjectReviewPayload extends ProposalReviewBasePayload {
+  proposal_type: 'project';
+  profile_feedback?: string;
+  implementing_agency_feedback?: string;
+  extension_site_feedback?: string;
+  tagging_cluster_extension_feedback?: string;
+  sdg_academic_program_feedback?: string;
+  rationale_feedback?: string;
+  significance_feedback?: string;
+  objectives_feedback?: string;
+  general_objectives_feedback?: string;
+  specific_objectives_feedback?: string;
+  methodology_feedback?: string;
+  expected_output_feedback?: string;
+  sustainability_plan_feedback?: string;
+  org_staffing_feedback?: string;
+  work_plan_feedback?: string;
+  budget_requirements_feedback?: string;
+}
+
+export interface ActivityReviewPayload extends ProposalReviewBasePayload {
+  proposal_type: 'activity';
+  implementing_agency_feedback?: string;
+  extension_site_feedback?: string;
+  tagging_cluster_extension_feedback?: string;
+  sdg_academic_program_feedback?: string;
+  rationale_feedback?: string;
+  objectives_feedback?: string;
+  methodology_feedback?: string;
+  expected_output_feedback?: string;
+  work_plan_feedback?: string;
+  budget_requirements_feedback?: string;
+}
+
+export type ProposalReviewPayload =
+  | ProgramReviewPayload
+  | ProjectReviewPayload
+  | ActivityReviewPayload;
+
+export interface ProposalReviewResponse {
+  id?: number;
+  proposal_node?: number;
+  decision?: ProposalReviewDecision;
+  review_round?: number;
+  proposal_type?: ProposalReviewType;
+  created_at?: string;
+  [key: string]: any; // allow additional fields from the API
+}
+
+// ─────────────────────────────────────────────
 // API FUNCTIONS
 // ─────────────────────────────────────────────
 
@@ -252,7 +335,7 @@ export async function fetchProposalNodeByChildId(childId: number): Promise<any> 
   return list.find((p) => p.child_id === childId) ?? null;
 }
 
-// ─── Proposal Detail Fetchers (mirrored from implementor-api) ───────────────
+// ─── Proposal Detail Fetchers ────────────────────────────────────────────────
 
 /** GET /api/project-proposal/{projectId}/ */
 export async function fetchProjectProposalDetail(projectId: number): Promise<any> {
@@ -276,4 +359,38 @@ export async function fetchProjectList(childId: number): Promise<any> {
 export async function fetchActivityList(projectId: number): Promise<any> {
   const res = await authFetch(`${BASE_URL}/project-proposal/${projectId}/activities/`);
   return handleResponse<any>(res);
+}
+
+// ─────────────────────────────────────────────
+// PROPOSAL REVIEW — POST /api/proposal-review/
+// ─────────────────────────────────────────────
+
+/**
+ * POST /api/proposal-review/
+ *
+ * Submits a review (needs_revision or approved) for a Program, Project,
+ * or Activity proposal node.
+ *
+ * @param payload  - Built by `buildPayload()` in ReviewerCommentModal
+ * @returns        - The created review record from the API
+ */
+export async function submitProposalReview(
+  payload: ProposalReviewPayload,
+): Promise<ProposalReviewResponse> {
+  if (import.meta.env.DEV) {
+    console.log('[submitProposalReview] POST /api/proposal-review/', JSON.stringify(payload, null, 2));
+  }
+
+  const res = await authFetch(`${BASE_URL}/proposal-review/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+  const data = await handleResponse<ProposalReviewResponse>(res);
+
+  if (import.meta.env.DEV) {
+    console.log('[submitProposalReview] Response:', JSON.stringify(data, null, 2));
+  }
+
+  return data;
 }

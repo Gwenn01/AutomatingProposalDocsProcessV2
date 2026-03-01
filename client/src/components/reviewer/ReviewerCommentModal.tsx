@@ -17,15 +17,18 @@ import {
   fetchActivityList,
   fetchProjectProposalDetail,
   fetchActivityProposalDetail,
+  submitProposalReview,          // ← NEW
   type ApiProjectListResponse,
   type ApiActivityListResponse,
   type ApiProject,
   type ApiActivity,
+  type ProposalReviewPayload,    // ← NEW (optional, for type safety)
 } from "@/utils/reviewer-api";
 import { ActivityForm } from "../view-review/activity-form";
 import { ProjectForm } from "../view-review/project-form";
 import { ProgramForm } from "../view-review/program-form";
 import { ProjectTreeNode } from "../view-review/project-tree-node";
+import { useAuth } from "@/context/auth-context";
 // ================= TYPES =================
 
 
@@ -138,12 +141,14 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   const [isApproving, setIsApproving] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [decision, setDecision] = useState<"needs_revision" | "approved">("needs_revision");
-  const [reviewRound, setReviewRound] = useState<string>("1");
-  const [user, setUser] = useState<{ user_id: string; fullname: string } | null>(null);
+  const [reviewRound, setReviewRound] = useState<number>(1);
+
 
   const [history, setHistory] = useState<History[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
+
+  const { user } = useAuth();
 
   // ── FIX: derive childId from proposalDetail.id OR proposalData.child_id ──
   const childId = proposalDetail?.id ?? proposalData?.child_id;
@@ -151,10 +156,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   const statusStyle = proposalData ? getStatusStyle(proposalData.status ?? "") : { className: "", label: "" };
   const showCommentInputs = !selectedHistoryVersion || selectedHistoryVersion.status === "current";
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
 
   // ── Fetch project list when modal opens ──────────────────────────────────
   useEffect(() => {
@@ -201,7 +202,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
       setActivityDetail(null);
       setComments({});
       setDecision("needs_revision");
-      setReviewRound("1");
+      setReviewRound(1);
       setHistory([]);
       setSelectedHistoryVersion(null);
     }
@@ -267,11 +268,13 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
   const goToProjectTab = () => {
     setActiveTab("project");
+    setComments({});
     if (!selectedProject && projectList.length > 0) handleSelectProject(projectList[0]);
   };
 
   const goToActivityTab = () => {
     setActiveTab("activity");
+    setComments({});
     setSelectedActivity(null);
     setActivityDetail(null);
   };
@@ -283,96 +286,110 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   const hasAnyComment = Object.values(comments).some((c) => c && c.trim() !== "");
 
   // ── Derive proposal_type from active tab ──────────────────────────────────
-  const getProposalType = (): "Program" | "Project" | "Activity" => {
-    if (activeTab === "project") return "Project";
-    if (activeTab === "activity") return "Activity";
-    return "Program";
+  const getProposalType = (): "program" | "project" | "activity" => {
+    if (activeTab === "project") return "project";
+    if (activeTab === "activity") return "activity";
+    return "program";
   };
 
   // ── Build the node ID for the currently-viewed proposal ──────────────────
-  // Program  → proposalDetail.proposal  (the proposal FK on the program node)
-  // Project  → projectDetail?.proposal  or selectedProject?.id
-  // Activity → activityDetail?.proposal or selectedActivity?.id
+  // proposal_node must be the child-node PK the backend uses for lookup:
+  //   Program  → proposalData.proposal  (the proposal FK on the ReviewerProposal row)
+  //   Project  → projectDetail.id  (the project-proposal node PK)
+  //   Activity → activityDetail.id (the activity-proposal node PK)
   const getProposalNode = (): number | null => {
-    if (activeTab === "project") return projectDetail?.proposal ?? selectedProject?.id ?? null;
-    if (activeTab === "activity") return activityDetail?.proposal ?? selectedActivity?.id ?? null;
-    return proposalDetail?.proposal ?? null;
+    if (activeTab === "project")  return projectDetail?.id  ?? selectedProject?.id  ?? null;
+    if (activeTab === "activity") return activityDetail?.id ?? selectedActivity?.id ?? null;
+    // Program: use the proposal field from the ReviewerProposal row (proposalData)
+    return proposalData?.proposal_id ? Number(proposalData.proposal_id) : (proposalDetail?.proposal ?? null);
   };
 
+
   // ── Build submit payload matching the API contract ────────────────────────
-  const buildPayload = (overrideDecision?: "needs_revision" | "approved") => {
+  const buildPayload = (overrideDecision?: "needs_revision" | "approved"): ProposalReviewPayload => {
     const proposalType = getProposalType();
-    const proposalNode = getProposalNode();
+    const proposalNode = getProposalNode()!;
+
+    if (import.meta.env.DEV) {
+      console.log("[buildPayload] activeTab:", activeTab, "| proposalType:", proposalType, "| proposalNode:", proposalNode);
+      console.log("[buildPayload] proposalData:", proposalData);
+      console.log("[buildPayload] comments:", comments);
+    }
 
     const base = {
-      proposal_reviewer: user?.user_id ? Number(user.user_id) : undefined,
+      // proposal_reviewer comes from the assignment row, not the auth user id
+      proposal_reviewer: proposalData?.assignment_id ? Number(proposalData.assignment_id) : (user?.user_id ? Number(user.user_id) : undefined),
       proposal_node: proposalNode,
       decision: overrideDecision ?? decision,
-      review_round: reviewRound,
+      review_round: String(reviewRound),   // API expects a string e.g. "1"
       proposal_type: proposalType,
     };
 
-    if (proposalType === "Program") {
+    if (proposalType === "program") {
       return {
         ...base,
-        profile_feedback:                  comments["profile_feedback"]                  || "",
-        implementing_agency_feedback:      comments["implementing_agency_feedback"]      || "",
-        extension_site_feedback:           comments["extension_site_feedback"]           || "",
-        tagging_cluster_extension_feedback:comments["tagging_cluster_extension_feedback"]|| "",
-        sdg_academic_program_feedback:     comments["sdg_academic_program_feedback"]     || "",
-        rationale_feedback:                comments["rationale_feedback"]                || "",
-        significance_feedback:             comments["significance_feedback"]             || "",
-        objectives_feedback:               comments["objectives_feedback"]               || "",
-        general_objectives_feedback:       comments["general_objectives_feedback"]       || "",
-        specific_objectives_feedback:      comments["specific_objectives_feedback"]      || "",
-        methodology_feedback:              comments["methodology_feedback"]              || "",
-        expected_output_feedback:          comments["expected_output_feedback"]          || "",
-        sustainability_plan_feedback:      comments["sustainability_feedback"]           || "",
-        org_staffing_feedback:             comments["org_staffing_feedback"]             || "",
-        work_plan_feedback:                comments["work_plan_feedback"]                || "",
-        budget_requirements_feedback:      comments["budget_feedback"]                   || "",
+        proposal_type: "program",
+        profile_feedback:                   comments["profile_feedback"]                   || "",
+        implementing_agency_feedback:       comments["implementing_agency_feedback"]       || "",
+        extension_site_feedback:            comments["extension_site_feedback"]            || "",
+        tagging_cluster_extension_feedback: comments["tagging_cluster_extension_feedback"] || "",
+        sdg_academic_program_feedback:      comments["sdg_academic_program_feedback"]      || "",
+        rationale_feedback:                 comments["rationale_feedback"]                 || "",
+        significance_feedback:              comments["significance_feedback"]              || "",
+        objectives_feedback:                comments["objectives_feedback"]                || "",
+        general_objectives_feedback:        comments["general_objectives_feedback"]        || "",
+        specific_objectives_feedback:       comments["specific_objectives_feedback"]       || "",
+        methodology_feedback:               comments["methodology_feedback"]               || "",
+        expected_output_feedback:           comments["expected_output_feedback"]           || "",
+        sustainability_plan_feedback:       comments["sustainability_feedback"]            || "",
+        org_staffing_feedback:              comments["org_staffing_feedback"]              || "",
+        work_plan_feedback:                 comments["work_plan_feedback"]                 || "",
+        budget_requirements_feedback:       comments["budget_feedback"]                    || "",
       };
     }
 
-    if (proposalType === "Project") {
+    if (proposalType === "project") {
       return {
         ...base,
-        profile_feedback:                  comments["proj_profile_feedback"]                  || "",
-        implementing_agency_feedback:      comments["proj_implementing_agency_feedback"]      || "",
-        extension_site_feedback:           comments["proj_extension_site_feedback"]           || "",
-        tagging_cluster_extension_feedback:comments["proj_tagging_cluster_extension_feedback"]|| "",
-        sdg_academic_program_feedback:     comments["proj_sdg_academic_program_feedback"]     || "",
-        rationale_feedback:                comments["proj_rationale_feedback"]                || "",
-        significance_feedback:             comments["proj_significance_feedback"]             || "",
-        objectives_feedback:               comments["proj_objectives_feedback"]               || "",
-        general_objectives_feedback:       comments["proj_general_objectives_feedback"]       || "",
-        specific_objectives_feedback:      comments["proj_specific_objectives_feedback"]      || "",
-        methodology_feedback:              comments["proj_methodology_feedback"]              || "",
-        expected_output_feedback:          comments["proj_expected_output_feedback"]          || "",
-        sustainability_plan_feedback:      comments["proj_sustainability_feedback"]           || "",
-        org_staffing_feedback:             comments["proj_org_staffing_feedback"]             || "",
-        work_plan_feedback:                comments["proj_work_plan_feedback"]                || "",
-        budget_requirements_feedback:      comments["proj_budget_feedback"]                   || "",
+        proposal_type: "project",
+        profile_feedback:                   comments["proj_profile_feedback"]                   || "",
+        implementing_agency_feedback:       comments["proj_implementing_agency_feedback"]       || "",
+        extension_site_feedback:            comments["proj_extension_site_feedback"]            || "",
+        tagging_cluster_extension_feedback: comments["proj_tagging_cluster_extension_feedback"] || "",
+        sdg_academic_program_feedback:      comments["proj_sdg_academic_program_feedback"]      || "",
+        rationale_feedback:                 comments["proj_rationale_feedback"]                 || "",
+        significance_feedback:              comments["proj_significance_feedback"]              || "",
+        objectives_feedback:                comments["proj_objectives_feedback"]                || "",
+        general_objectives_feedback:        comments["proj_general_objectives_feedback"]        || "",
+        specific_objectives_feedback:       comments["proj_specific_objectives_feedback"]       || "",
+        methodology_feedback:               comments["proj_methodology_feedback"]               || "",
+        expected_output_feedback:           comments["proj_expected_output_feedback"]           || "",
+        sustainability_plan_feedback:       comments["proj_sustainability_feedback"]            || "",
+        org_staffing_feedback:              comments["proj_org_staffing_feedback"]              || "",
+        work_plan_feedback:                 comments["proj_work_plan_feedback"]                 || "",
+        budget_requirements_feedback:       comments["proj_budget_feedback"]                    || "",
       };
     }
 
     // Activity
     return {
       ...base,
-      implementing_agency_feedback:      comments["act_implementing_agency_feedback"]        || "",
-      extension_site_feedback:           comments["act_extension_site_feedback"]             || "",
-      tagging_cluster_extension_feedback:comments["act_tagging_cluster_extension_feedback"]  || "",
-      sdg_academic_program_feedback:     comments["act_sdg_academic_program_feedback"]       || "",
-      rationale_feedback:                comments["act_rationale_feedback"]                  || "",
-      objectives_feedback:               comments["act_objectives_feedback"]                 || "",
-      methodology_feedback:              comments["act_methodology_feedback"]                || "",
-      expected_output_feedback:          comments["act_expected_output_feedback"]            || "",
-      plan_of_activities:                comments["act_plan_of_activities"]                  || "",
-      budget_requirements_feedback:      comments["act_budget_feedback"]                     || "",
+      proposal_type: "activity",
+      implementing_agency_feedback:       comments["act_implementing_agency_feedback"]        || "",
+      extension_site_feedback:            comments["act_extension_site_feedback"]             || "",
+      tagging_cluster_extension_feedback: comments["act_tagging_cluster_extension_feedback"]  || "",
+      sdg_academic_program_feedback:      comments["act_sdg_academic_program_feedback"]       || "",
+      rationale_feedback:                 comments["act_rationale_feedback"]                  || "",
+      objectives_feedback:                comments["act_objectives_feedback"]                 || "",
+      methodology_feedback:               comments["act_methodology_feedback"]                || "",
+      expected_output_feedback:           comments["act_expected_output_feedback"]            || "",
+      work_plan_feedback:                 comments["act_work_plan_feedback"]                  || "",
+      budget_requirements_feedback:       comments["act_budget_feedback"]                     || "",
     };
   };
-  
 
+
+  // ── Submit review (needs_revision) ────────────────────────────────────────
   const handleSubmitReview = async () => {
     const proposalNode = getProposalNode();
     if (!proposalNode) {
@@ -382,7 +399,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     setIsSubmitting(true);
     try {
       const payload = buildPayload("needs_revision");
-      console.log("[Submit Review] Payload:", payload);
+      await submitProposalReview(payload);
       showToast("Review submitted successfully!", "success");
       setComments({});
       onClose();
@@ -393,6 +410,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     }
   };
 
+  // ── Approve proposal ──────────────────────────────────────────────────────
   const handleApprove = async () => {
     const proposalNode = getProposalNode();
     if (!proposalNode) {
@@ -402,7 +420,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     setIsApproving(true);
     try {
       const payload = buildPayload("approved");
-      console.log("[Approve] Payload:", payload);
+      await submitProposalReview(payload);
       showToast("Proposal approved successfully!", "success");
       onClose();
     } catch (err: any) {
@@ -414,7 +432,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
   if (!isOpen || !proposalData) return null;
 
-  // ── FIX: show loading skeleton if proposalDetail hasn't arrived yet ──
   const isProgramDetailReady = !!proposalDetail;
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
@@ -445,7 +462,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
             {/* Tabs */}
             <div className="flex items-center gap-2 mr-6 bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/15 shadow-inner">
               <button
-                onClick={() => setActiveTab("program")}
+                onClick={() => { setActiveTab("program"); setComments({}); }}
                 className={`group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   activeTab === "program" ? "bg-white text-primaryGreen shadow-md" : "text-white hover:bg-white/20"
                 }`}
@@ -544,7 +561,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                 {/* PROGRAM TAB */}
                 {activeTab === "program" && (
                   isProgramDetailReady ? (
-                    // ── FIX: pass proposalDetail (full data) instead of proposalData (shallow) ──
                     <ProgramForm
                       proposalData={proposalDetail}
                       comments={comments}
@@ -574,7 +590,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                     ) : (
                       <ProjectForm
                         projectData={projectDetail || selectedProject}
-                        // ── FIX: use proposalDetail.program_title for the program title ──
                         programTitle={proposalDetail?.program_title ?? proposalData?.title ?? ""}
                         comments={comments}
                         onCommentChange={handleCommentChange}
@@ -606,7 +621,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                     ) : (
                       <ActivityForm
                         activityData={activityDetail || selectedActivity}
-                        // ── FIX: use proposalDetail.program_title for the program title ──
                         programTitle={proposalDetail?.program_title ?? proposalData?.title ?? ""}
                         projectTitle={selectedProject.project_title}
                         comments={comments}
@@ -629,7 +643,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                         </label>
                         <select
                           value={reviewRound}
-                          onChange={(e) => setReviewRound(e.target.value)}
+                          onChange={(e) => setReviewRound(parseInt(e.target.value))}
                           disabled={alreadyReviewed}
                           className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-primaryGreen disabled:bg-gray-50 disabled:cursor-not-allowed"
                         >
@@ -644,7 +658,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                           Reviewing
                         </label>
                         <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primaryGreen/10 text-primaryGreen border border-primaryGreen/20">
-                          {getProposalType()}
+                          {getProposalType().charAt(0).toUpperCase() + getProposalType().slice(1)}
                         </span>
                       </div>
 
