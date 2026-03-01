@@ -66,17 +66,9 @@ class ProgramProposalDetail(APIView):
             id=pk
         )
         return program_proposal
-
     
     def get(self, request, pk):
-        try:
-            program_proposal = self.get_object(pk)
-        except ProgramProposal.DoesNotExist:
-            return Response(
-                {"detail": "Program proposal not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
+        program_proposal = self.get_object(pk) 
         serializer = ProgramProposalSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -101,15 +93,8 @@ class ProgramProposalDetail(APIView):
 # list of project proposal under a program proposal
 class ProgramProjectsView(APIView):
     permission_classes = [IsAuthenticated]
-    
     def get(self, request, program_proposal_id):
-        try:
-            program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
-        except ProgramProposal.DoesNotExist:
-            return Response(
-                {"detail": "Program proposal not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
         serializer = ProgramProjectsSerializer(program_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -117,7 +102,6 @@ class ProgramProjectsView(APIView):
 # get the list of proposal history under a program proposal
 class ProgramListHistoryView(APIView):
     permission_classes = [IsAuthenticated]
-    
     def get(self, request, proposal_id):
         # serialize the object
         proposal = get_object_or_404(Proposal, id=proposal_id)
@@ -130,14 +114,13 @@ class ProgramListHistoryView(APIView):
         return Response(ProgramHistoryMapper.history_list_mapper(program_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
 
 # get the history including the details
-class ProgramProposalHistoryDetails(APIView):
-    permission_classes = [IsAuthenticated]
+# class ProgramProposalHistoryDetails(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def get_object(self, request, pk):
-        return get_object_or_404(ProgramProposalHistory, pk=pk)
-    
-    def get(self, request, pk):
-        ...
-        program_history = self.get_object(request, pk)
-        serializer = ProgramProposalHistorySerializer(program_history)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+#     def get_object(self, request, pk):
+#         return get_object_or_404(ProgramProposalHistory, id=pk)
+#     def get(self, request, pk):
+#         ...
+#         program_history = self.get_object(request, pk)
+#         serializer = ProgramProposalHistorySerializer(program_history)
+#         return Response(serializer.data, status=status.HTTP_200_OK)

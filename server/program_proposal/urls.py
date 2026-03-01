@@ -5,7 +5,7 @@ from .views import (
     ProgramProposalDetail,
     ProgramProjectsView,
     ProgramListHistoryView,
-    ProgramProposalHistoryDetails,
+    #ProgramProposalHistoryDetails,
 )
 
 urlpatterns = [

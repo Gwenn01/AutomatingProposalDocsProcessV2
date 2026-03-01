@@ -5,7 +5,7 @@ from django.utils import timezone
 from proposals_node.models import Proposal
 from reviews.models import ProposalReview, ProposalReviewHistory
 
-
+# this general signal that when the implementor update either program, project or activity it will update the review too
 @receiver(post_save, sender=Proposal)
 def move_reviews_to_history(sender, instance, created, **kwargs):
 
@@ -45,7 +45,7 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
 
         new_round = history_count + 1
 
-        # 1️⃣ Create history record
+        # 1️ Create history record
         ProposalReviewHistory.objects.create(
             proposal_node=review.proposal_node,
             review_round=new_round,
@@ -66,7 +66,7 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
             budget_requirements_feedback=review.budget_requirements_feedback,
         )
 
-        # 2️⃣ Clear current review fields
+        # 2️ Clear current review fields
         review.profile_feedback = None
         review.implementing_agency_feedback = None
         review.extension_site_feedback = None
