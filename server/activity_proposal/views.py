@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny 
 from .models import ActivityProposal
-from .serializers import ActivityProposalSerializer
+from .serializers import ActivityProposalSerializer, ActivityProposalUpdateSaveHistorySerializer
 from notifications.services import NotificationService
 
 class ActivityProposalList(APIView):
@@ -23,7 +23,7 @@ class ActivityProposalList(APIView):
     #         )
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+# get the activity proposal and update the activity proposal that created during project creation
 class ActivityProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -35,19 +35,12 @@ class ActivityProposalDetail(APIView):
         return activity_proposal
 
     def get(self, request, pk):
-        try:
-            activity_proposal = self.get_object(pk)
-        except ActivityProposal.DoesNotExist:
-            return Response({"message": "Activity proposal not found"}, status=status.HTTP_404_NOT_FOUND)
+        activity_proposal = self.get_object(pk)
         serializer = ActivityProposalSerializer(activity_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, pk):
-        try:
-            activity_proposal = self.get_object(pk)
-        except ActivityProposal.DoesNotExist:
-            return Response({"message": "Activity proposal not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        activity_proposal = self.get_object(pk)
         serializer = ActivityProposalSerializer(
             activity_proposal,
             data=request.data,
@@ -63,5 +56,33 @@ class ActivityProposalDetail(APIView):
                              "data": serializer.data}, status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+#update activity and save the history view 
+class UpdateActivitySaveHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
 
-   
+    def get_object(self, pk):
+        activity_proposal = get_object_or_404(
+            ActivityProposal,
+            id=pk
+        )
+        return activity_proposal
+
+    def put(self, request, pk):
+        ...
+        activity_proposal = self.get_object(pk)
+        serializer =  ActivityProposalUpdateSaveHistorySerializer(
+            activity_proposal,
+            data=request.data,
+            partial=True,
+            context={"request": request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            NotificationService.admin_notifications(
+                f"Activity proposal updated by {request.user.username}"
+            )
+            return Response({"message": "Activity proposal updated successfully",  
+                             "data": serializer.data}, status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

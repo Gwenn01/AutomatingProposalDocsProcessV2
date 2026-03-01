@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import ProjectProposal
 from .serializers import (
     ProjectProposalSerializer,
+    ProjectProposalUpdateSaveHistorySerializer,
     ProjectActivitiesSerializer,
 )
 from notifications.services import NotificationService
@@ -49,21 +50,15 @@ class ProjectProposalDetail(APIView):
         return project_proposal
     
     def get(self, request, pk):
-        try:
-            project_proposal = self.get_object(pk)
-        except ProjectProposal.DoesNotExist:
-            return Response({"message": "Project proposal not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        project_proposal = self.get_object(pk)
         serializer = ProjectProposalSerializer(
             project_proposal,
             context={"request": request}
         )
-
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, pk):
         project_proposal = self.get_object(pk)
-
         serializer = ProjectProposalSerializer(
             project_proposal,
             data=request.data,
@@ -74,6 +69,34 @@ class ProjectProposalDetail(APIView):
             serializer.save()
             NotificationService.admin_notifications(
                 f"Project proposal already created by {request.user.username}"
+            )
+            return Response({"message": "Project proposal updated successfully",
+                         "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# views for update proposal and save the history of it
+class UpdateProjectSaveHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, pk):
+        project_proposal = get_object_or_404(
+            ProjectProposal,
+            id=pk
+        )
+        return project_proposal
+    
+    def put(self, request, pk):
+        project_proposal = self.get_object(pk)
+        serializer = ProjectProposalUpdateSaveHistorySerializer(
+            project_proposal,
+            data=request.data,
+            context={"request": request},
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            NotificationService.admin_notifications(
+                f"Project proposal updated by {request.user.username}"
             )
             return Response({"message": "Project proposal updated successfully",
                          "data": serializer.data}, status=status.HTTP_200_OK)
