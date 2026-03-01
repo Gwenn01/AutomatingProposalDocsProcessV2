@@ -28,7 +28,7 @@ class ProposalReviewer(models.Model):
         related_name="reviewers_assigned"
     )
     is_review = models.BooleanField(default=False)
-    proposal_type = models.CharField(max_length=100, choices=DECISION_CHOICES, default='program')
+    proposal_type = models.CharField(max_length=100, choices=PROPOSAL_TYPE_CHOICES, default='program')
     decision = models.CharField(choices=DECISION_CHOICES, default='pending', max_length=20)
     assigned_at = models.DateTimeField(auto_now_add=True)
 

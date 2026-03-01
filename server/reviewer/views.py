@@ -27,20 +27,23 @@ class AssignReviewerView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = ReviewerSerializer(data=request.data, context={'request': request})
-        proposal = get_object_or_404(Proposal, id=request.data.get('proposal'))
+        serializer = ReviewerSerializer(
+            data=request.data,
+            context={'request': request}
+        )
         if serializer.is_valid():
             reviewer = serializer.save()
-            # update the status when assign
-            proposal.status = "for_review"
-            proposal.save()
-            
+            # use reviewer.proposal instead of querying again
+            reviewer.proposal.status = "for_review"
+            reviewer.proposal.save()
             return Response(
-                {"message": "Reviewer assigned successfully", "data": ReviewerSerializer(reviewer).data},
+                {
+                    "message": "Reviewer assigned successfully",
+                    "data": ReviewerSerializer(reviewer).data
+                },
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # get the list assigned to a proposal
 class GetAssignedReviewerView(APIView):
     permission_classes = [IsAdminUser]
@@ -67,7 +70,6 @@ class UnassignReviewerView(APIView):
 # get all reviewers  
 class ReviewerListView(APIView):
     permission_classes = [IsAdminUser]
-
     def get(self, request):
         reviewers = User.objects.all()
         reviewers = reviewers.filter(profile__role='reviewer')
