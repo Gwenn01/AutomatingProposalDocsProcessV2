@@ -17,10 +17,10 @@ from .serializers import (
 )
 from .selectors import ReviewerProposalSelector
 from proposals_node.models import Proposal
+# ====================================================================================================
 # ADMIN VIEWS assign reviewer and get the assigned 
 class AssignReviewerView(APIView):
     permission_classes = [IsAdminUser]
-    
     def get(self, request):
         proposal_reviewers = ProposalReviewer.objects.filter(assigned_by=request.user)
         serializer = ReviewerSerializer(proposal_reviewers, many=True)
@@ -40,33 +40,27 @@ class AssignReviewerView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class AssignedReviewerDetailView(APIView):
+
+# get the list assigned to a proposal
+class GetAssignedReviewerView(APIView):
     permission_classes = [IsAdminUser]
-    
-    def get_object(self, proposal, user):
-        try:
-            return ProposalReviewer.objects.filter(proposal=proposal, assigned_by=user)
-        except ProposalReviewer.DoesNotExist:
-            raise PermissionDenied("Reviewer assignment not found or you do not have permission to access it.")
-
     def get(self, request, proposal):
-        try:
-            proposal_reviewer = self.get_object(proposal, request.user)
-        except ProposalReviewer.DoesNotExist:
-            return Response({"message": "Reviewer assignment not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = ReviewerSerializer(proposal_reviewer, many=True)
+        proposal_reviewers = ProposalReviewer.objects.filter(
+            proposal=proposal,
+            assigned_by=request.user
+        )
+        serializer = ReviewerSerializer(proposal_reviewers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# remove the assigned reviewer
 class UnassignReviewerView(APIView):
     permission_classes = [IsAdminUser]
     def delete(self, request, pk):
-        try:
-            proposal_reviewer = ProposalReviewer.objects.get(pk=pk, assigned_by=request.user)
-        except ProposalReviewer.DoesNotExist:
-            return Response({"message": "Reviewer assignment not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        proposal_reviewer = get_object_or_404(
+            ProposalReviewer,
+            id=pk,
+            assigned_by=request.user
+        )
         proposal_reviewer.delete()
         return Response({"message": "Reviewer unassigned successfully"}, status=status.HTTP_204_NO_CONTENT)
     
@@ -80,14 +74,16 @@ class ReviewerListView(APIView):
         serializer = UserSerializer(reviewers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
+# ====================================================================================================
 # REVIEWER VIEWS get the assigned proposal for the reviewer
 class MyAssignedProposalsView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, format=None):
         return Response(ReviewerProposalSelector.get_reviewer_assigned_proposals(request.user), status=status.HTTP_200_OK)
-    
-#GENERAL VIEWS get the assigned reviewers for a proposal
+ 
+ 
+  # ====================================================================================================   
+#GENERAL VIEWS get the assigned reviewers proposal
 class AssignedReviewerProposalView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, proposal_id, format=None):

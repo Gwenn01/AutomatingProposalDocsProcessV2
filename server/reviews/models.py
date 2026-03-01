@@ -12,9 +12,9 @@ class ProposalReview(models.Model):
     ]
 
     PROPOSAL_TYPE_CHOICES = [
-        ('Program', 'Program'),
-        ('Project', 'Project'),
-        ('Activity', 'Activity'),
+        ('program', 'Program'),
+        ('project', 'Project'),
+        ('activity', 'Activity'),
     ]
 
     # ---------- Relations ----------

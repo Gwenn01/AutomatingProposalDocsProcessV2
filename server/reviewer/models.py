@@ -9,16 +9,18 @@ class ProposalReviewer(models.Model):
         ('rejected', 'Rejected'),
         ('revision', 'Revision Required'),
     ]
-    
+    PROPOSAL_TYPE_CHOICES = [
+        ('program', 'Program'),
+        ('project', 'Project'),
+        ('activity', 'Activity'),
+    ]
     
     proposal = models.ForeignKey(
         Proposal,
         on_delete=models.CASCADE,
         related_name="assigned_reviewers"
     )
-
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="assigned_proposals")
-
     assigned_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -26,9 +28,8 @@ class ProposalReviewer(models.Model):
         related_name="reviewers_assigned"
     )
     is_review = models.BooleanField(default=False)
-    
-    decision = models.CharField(null=True, blank=True, choices=DECISION_CHOICES, default='pending', max_length=20)
-    
+    proposal_type = models.CharField(max_length=100, choices=DECISION_CHOICES, default='program')
+    decision = models.CharField(choices=DECISION_CHOICES, default='pending', max_length=20)
     assigned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
