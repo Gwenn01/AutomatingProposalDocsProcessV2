@@ -58,14 +58,53 @@ class GetAssignedReviewerView(APIView):
 # remove the assigned reviewer
 class UnassignReviewerView(APIView):
     permission_classes = [IsAdminUser]
+
     def delete(self, request, pk):
         proposal_reviewer = get_object_or_404(
             ProposalReviewer,
             id=pk,
             assigned_by=request.user
         )
+
+        proposal = proposal_reviewer.proposal
+        reviewer = proposal_reviewer.reviewer
+        proposal_type = proposal_reviewer.proposal_type
+
+        # If PROGRAM → delete everything under it
+        if proposal_type == "program":
+
+            program = proposal.program_details
+
+            # delete project reviewers
+            project_proposals = program.projects.all()
+            ProposalReviewer.objects.filter(
+                reviewer=reviewer,
+                proposal__project_details__in=project_proposals
+            ).delete()
+
+            # delete activity reviewers
+            ProposalReviewer.objects.filter(
+                reviewer=reviewer,
+                proposal__activity_details__project_proposal__in=project_proposals
+            ).delete()
+
+        # If PROJECT → delete activities under it
+        elif proposal_type == "project":
+
+            project = proposal.project_details
+
+            ProposalReviewer.objects.filter(
+                reviewer=reviewer,
+                proposal__activity_details__project_proposal=project
+            ).delete()
+
+        # Finally delete the selected one itself
         proposal_reviewer.delete()
-        return Response({"message": "Reviewer unassigned successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            {"message": "Reviewer unassigned successfully"},
+            status=status.HTTP_204_NO_CONTENT
+        )
     
 # get all reviewers  
 class ReviewerListView(APIView):
