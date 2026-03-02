@@ -78,11 +78,20 @@ class ReviewerListView(APIView):
     
 # ====================================================================================================
 # REVIEWER VIEWS get the assigned proposal for the reviewer
-class MyAssignedProposalsView(APIView):
+class MyAssignedProgramProposalsView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, format=None):
-        return Response(ReviewerProposalSelector.get_reviewer_assigned_proposals(request.user), status=status.HTTP_200_OK)
+        return Response(ReviewerProposalSelector.get_reviewer_assigned_program_proposals(request.user), status=status.HTTP_200_OK)
  
+class MyAssignedProjectProposalsView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, program_id, format=None):
+        return Response(ReviewerProposalSelector.get_reviewer_assigned_project_proposals(request.user, program_id=program_id), status=status.HTTP_200_OK)
+    
+class MyAssignedActivityProposalsView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, project_id, format=None):
+        return Response(ReviewerProposalSelector.get_reviewer_assigned_activity_proposal(request.user, project_id=project_id), status=status.HTTP_200_OK)
  
   # ====================================================================================================   
 #GENERAL VIEWS get the assigned reviewers proposal

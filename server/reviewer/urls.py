@@ -5,7 +5,9 @@ from .views import (
     GetAssignedReviewerView,
     UnassignReviewerView,
     ReviewerListView,
-    MyAssignedProposalsView,
+    MyAssignedProgramProposalsView,
+    MyAssignedProjectProposalsView,
+    MyAssignedActivityProposalsView,
     AssignedReviewerProposalView
 )
 
@@ -17,7 +19,9 @@ urlpatterns = [
     path('reviewers/', ReviewerListView.as_view(), name='reviewer-list'),
     
     # reviewer get the proposal 
-    path('reviewer-proposals/', MyAssignedProposalsView.as_view(), name='reviewer-proposal-list'),
+    path('reviewer-proposals/program/', MyAssignedProgramProposalsView.as_view(), name='reviewer-program-proposal-list'),
+    path('reviewer-proposals/project/<int:program_id>/', MyAssignedProjectProposalsView.as_view(), name='reviewer-project-proposal-list'),
+    path('reviewer-proposals/activity/<int:project_id>/', MyAssignedActivityProposalsView.as_view(), name='reviewer-activity-proposal-list'),
     
     # general get the list of assigned reviewers for a proposal
     path('reviewer-proposal-list/<int:proposal_id>/', AssignedReviewerProposalView.as_view(), name='assigned-reviewer-proposal-list'),

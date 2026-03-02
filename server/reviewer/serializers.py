@@ -54,6 +54,7 @@ class ReviewerSerializer(serializers.ModelSerializer):
                 ProposalReviewer.objects.get_or_create(
                     proposal=project.proposal,
                     reviewer=reviewer,
+                    proposal_type='project',
                     defaults={'assigned_by': assigned_by}
                 )
 
@@ -63,6 +64,7 @@ class ReviewerSerializer(serializers.ModelSerializer):
                     ProposalReviewer.objects.get_or_create(
                         proposal=activity.proposal,
                         reviewer=reviewer,
+                        proposal_type='activity',
                         defaults={'assigned_by': assigned_by}
                     )
             return
@@ -76,7 +78,7 @@ class ReviewerSerializer(serializers.ModelSerializer):
         
          # Create reviewer for parent proposal
         with transaction.atomic():
-            parent_assignment = ProposalReviewer.objects.create(**validated_data)
+            parent_assignment = ProposalReviewer.objects.create(proposal_type='program' ,**validated_data)
             self.assign_reviewer_to_child(proposal, reviewer, request.user)
 
         return parent_assignment
