@@ -302,6 +302,14 @@ export async function fetchReviewerProjectProposal(child_id: number): Promise<Re
   }
   return data;
 }
+export async function fetchReviewerActivityProposal(child_id: number): Promise<ReviewerProjectList[]> {
+  const res = await authFetch(`${BASE_URL}/reviewer-proposals/activity/${child_id}`);
+  const data = await handleResponse<ReviewerProposal[]>(res);
+  if (import.meta.env.DEV){
+    console.log('[fetchReviewerProjectProposal', JSON.stringify(data, null,2))
+  }
+  return data;
+}
 
 
 /**

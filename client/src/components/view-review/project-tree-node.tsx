@@ -38,9 +38,9 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
           <p className={`truncate text-xs font-semibold leading-relaxed text-wrap ${isProjectSelected ? "text-primaryGreen" : "text-gray-700"}`}>
             {project.title}
           </p>
-          {project.project_leader && (
+          {/* {project.project_leader && (
             <p className="text-[10px] text-gray-400 mt-0.5 truncate">{project.project_leader}</p>
-          )}
+          )} */}
         </div>
         {activeTab === "activity" && (
           <ChevronRight size={12} className={`shrink-0 mt-0.5 transition-transform text-gray-400 ${isProjectSelected ? "rotate-90" : ""}`} />

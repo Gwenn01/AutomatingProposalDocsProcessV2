@@ -443,8 +443,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
-  console.log("ProjectDetail", projectDetail)
-  console.log("SelectedProject", selectedProject)
 
   return (
     <>
