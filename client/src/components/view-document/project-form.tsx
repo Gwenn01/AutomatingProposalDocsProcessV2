@@ -29,7 +29,7 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             <div>
               <p className="font-bold">Project Title: <span className="font-normal">{val(projectData.project_title)}</span></p>
               <p className="font-bold">Project Leader: <span className="font-normal">{val(projectData.project_leader)}</span></p>
-              <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members)}</span></p>
+              <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members.map((m: any) => m).join(", "))}</span></p>
               <br />
               <p className="font-bold">Project Duration: <span className="font-normal">{val(projectData.duration_months)}</span></p>
               <p className="font-bold">Project Start Date: <span className="font-normal">{val(projectData.start_date)}</span></p>

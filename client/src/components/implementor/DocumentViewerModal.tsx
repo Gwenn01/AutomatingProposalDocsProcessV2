@@ -13,11 +13,12 @@ import {
   type ApiActivity,
 } from "@/utils/implementor-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
-import { ProjectTreeNode } from "../view-review/project-tree-node";
+
 import { ProgramFormDocument } from "../view-document/program-form";
 import { ProjectFormDocument } from "../view-document/project-form";
 import { ActivityFormDocument } from "../view-document/activity-form";
 import { val } from "@/constants";
+import { ProjectTreeNode } from "../view-document/ptn-view-docs";
 
 // ================= TYPE DEFINITIONS =================
 
