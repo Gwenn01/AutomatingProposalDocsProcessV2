@@ -42,6 +42,10 @@ export const ActivityForm: React.FC<{
             <p className="font-normal">Date: <span className="font-normal">{val(activityData.activity_date)}</span></p>
           </div>
         </div>
+        {showCommentInputs && (
+          <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
+            InputValue="act_extension_site_feedback" value={comments["act_extension_site_feedback"] || ""} disabled={alreadyReviewed} />
+        )}
 
         {/* IMPLEMENTING / COOPERATING AGENCY */}
         <div className="overflow-x-auto">

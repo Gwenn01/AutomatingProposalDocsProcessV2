@@ -150,7 +150,7 @@ async function authFetch(
 export interface ReviewerProposal {
   assignment: number;
   proposal: number;
-  program: number;
+  child_id: number;
   implementor: number;
   title: string;
   type: 'Program' | 'Project' | 'Activity';
@@ -233,6 +233,7 @@ export interface ProjectReviewPayload extends ProposalReviewBasePayload {
 
 export interface ActivityReviewPayload extends ProposalReviewBasePayload {
   proposal_type: 'activity';
+  profile_feedback?: string;
   implementing_agency_feedback?: string;
   extension_site_feedback?: string;
   tagging_cluster_extension_feedback?: string;
@@ -269,7 +270,7 @@ export interface ProposalReviewResponse {
  * Returns all proposals assigned to the current reviewer.
  */
 export async function fetchReviewerProposals(): Promise<ReviewerProposal[]> {
-  const res = await authFetch(`${BASE_URL}/reviewer-proposals/`);
+  const res = await authFetch(`${BASE_URL}/reviewer-proposals/program`);
   const data = await handleResponse<ReviewerProposal[]>(res);
   if (import.meta.env.DEV) {
     console.log('[fetchReviewerProposals]', JSON.stringify(data, null, 2));

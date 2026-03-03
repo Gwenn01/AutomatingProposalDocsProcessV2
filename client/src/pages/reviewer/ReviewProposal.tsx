@@ -34,7 +34,7 @@ interface User {
 interface Proposal {
   proposal_id: string;
   child_id: number;
-  assignment_id: string;
+  assignment_id: number;
   status: string;
   decision: string;
   review_status: string;
@@ -53,8 +53,8 @@ interface Proposal {
 function mapApiProposal(p: ReviewerProposal): Proposal {
   return {
     proposal_id: String(p.proposal),
-    child_id: Number(p.program),
-    assignment_id: String(p.assignment),
+    child_id: Number(p.child_id),
+    assignment_id: Number(p.assignment),
     status: p.status,
     decision: p.is_reviewed ? "approved" : "",
     review_status: p.is_reviewed ? "Reviewed" : "Pending Review",
@@ -193,6 +193,7 @@ useEffect(() => {
     [proposalsData],
   );
 
+  console.log("filtered",filteredProposals)
   const handleReview = (proposal: Proposal) =>
     showToast(`Opening review form for: ${proposal.title}`, "info");
   const handleViewOthers = (proposal: Proposal) =>
@@ -202,6 +203,7 @@ useEffect(() => {
 const handleViewProposal = async (doc: Proposal): Promise<void> => {
   setActionLoading(true);
   setProposalDetail(null);
+  console.log(Number(doc.child_id))
   try {
     const detail = await fetchProgramProposalDetail(Number(doc.child_id)); // ← was doc.child_id
     setSelectedDoc(doc);

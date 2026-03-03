@@ -50,6 +50,10 @@ export const ProgramForm: React.FC<{
             ))}
           </div>
         </div>
+        {showCommentInputs && (
+          <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
+            InputValue="profile_feedback" value={comments["profile_feedback"] || ""} disabled={alreadyReviewed} />
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -156,10 +160,7 @@ export const ProgramForm: React.FC<{
             InputValue="sdg_academic_program_feedback" value={comments["sdg_academic_program_feedback"] || ""} disabled={alreadyReviewed} />
         )}
 
-        {/* {showCommentInputs && (
-          <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
-            InputValue="profile_feedback" value={comments["profile_feedback"] || ""} disabled={alreadyReviewed} />
-        )} */}
+
 
         <div className="text-gray-700 leading-relaxed">
           {/* II. RATIONALE */}

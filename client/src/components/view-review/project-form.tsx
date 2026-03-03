@@ -39,7 +39,10 @@ export const ProjectForm: React.FC<{
             <p className="font-bold">End Date: <span className="font-normal">{val(projectData.end_date)}</span></p>
           </div>
         </div>
-
+          {showCommentInputs && (
+            <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
+              InputValue="proj_profile_feedback" value={comments["proj_profile_feedback"] || ""} disabled={alreadyReviewed} />
+          )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>

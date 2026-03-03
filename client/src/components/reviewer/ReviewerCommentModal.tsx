@@ -319,7 +319,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     const base = {
       // proposal_reviewer comes from the assignment row, not the auth user id
       proposal_reviewer: proposalData?.assignment_id ? Number(proposalData.assignment_id) : (user?.user_id ? Number(user.user_id) : undefined),
-      proposal_node: proposalNode,
+      proposal_node: Number(proposalData?.proposal_id),
       decision: overrideDecision ?? decision,
       review_round: String(reviewRound),   // API expects a string e.g. "1"
       proposal_type: proposalType,
@@ -375,6 +375,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     return {
       ...base,
       proposal_type: "activity",
+      profile_feedback:                   comments["act_profile_feedback"]        || "",
       implementing_agency_feedback:       comments["act_implementing_agency_feedback"]        || "",
       extension_site_feedback:            comments["act_extension_site_feedback"]             || "",
       tagging_cluster_extension_feedback: comments["act_tagging_cluster_extension_feedback"]  || "",
