@@ -2,7 +2,7 @@ import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/utils/revie
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
 type ProjectItem = ReviewerProjectList;
-type ActivityItem = ApiActivity;
+type ActivityItem = ReviewerProjectList;
 type TabType = "program" | "project" | "activity";
 
 interface ProjectTreeNodeProps {
@@ -57,10 +57,10 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
             <p className="text-[10px] text-gray-400 py-2 pl-10 italic">No activities</p>
           ) : (
             activities.map((act) => {
-              const isActSelected = selectedActivity?.id === act.id;
+              const isActSelected = selectedActivity?.child_id === act.child_id;
               return (
                 <button
-                  key={act.id}
+                  key={act.child_id}
                   onClick={() => onSelectActivity(project, act)}
                   className={`w-full text-left pl-10 pr-4 py-2.5 transition-colors flex items-start gap-2 border-l-2 ${
                     isActSelected ? "bg-blue-50 border-blue-500" : "border-transparent hover:bg-gray-50 hover:border-gray-200"
@@ -69,10 +69,9 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
                   <Activity size={11} className={`mt-0.5 shrink-0 ${isActSelected ? "text-blue-500" : "text-gray-300"}`} />
                   <div className="flex-1 min-w-0">
                     <p className={`truncate text-[11px] font-medium leading-relaxed text-wrap ${isActSelected ? "text-blue-700" : "text-gray-600"}`}>
-                      {act.activity_title}
+                      {act.title}
                     </p>
-                    {act.activity_date && <p className="text-[9px] text-gray-400 mt-0.5">{act.activity_date}</p>}
-                    {act.activity_duration_hours > 0 && <p className="text-[9px] text-gray-400">{act.activity_duration_hours}h</p>}
+                    {act.status && <p className="text-[10px] text-gray-500 mt-0.5">Status: {act.status}</p>}
                   </div>
                 </button>
               );

@@ -24,7 +24,8 @@ import {
   type ApiActivity,
   type ProposalReviewPayload,
   fetchReviewerProjectProposal,
-  type ReviewerProjectList,    // ← NEW (optional, for type safety)
+  type ReviewerProjectList,
+  fetchReviewerActivityProposal,    // ← NEW (optional, for type safety)
 } from "@/utils/reviewer-api";
 import { ActivityForm } from "../view-review/activity-form";
 import { ProjectForm } from "../view-review/project-form";
@@ -97,7 +98,7 @@ export interface ApiProposalDetail {
 }
 
 type ProjectItem = ReviewerProjectList;
-type ActivityItem = ApiActivity;
+type ActivityItem = ReviewerProjectList;
 type TabType = "program" | "project" | "activity";
 
 export interface Comments {
@@ -176,9 +177,6 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     load();
   }, [isOpen, childId]);
 
-  console.log("Project List", projectList)
-
- 
 
   // ── Fetch history when modal opens ───────────────────────────────────────
   useEffect(() => {
@@ -215,18 +213,20 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   }, [isOpen]);
 
   // ── Activity loading ──────────────────────────────────────────────────────
-  const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
-    if (activitiesCache[project.child_id] !== undefined) return;
-    setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
-    try {
-      const data: ApiActivityListResponse = await fetchActivityList(project.child_id);
-      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data.activities || [] }));
-    } catch (err) {
-      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: [] }));
-    } finally {
-      setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: false }));
-    }
-  }, [activitiesCache]);
+const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
+  if (activitiesCache[project.child_id] !== undefined) return;
+  setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
+  try {
+    const data: ApiActivity[] = await fetchReviewerActivityProposal(project.child_id);
+    // API returns a flat array of activities directly — no .activities wrapper
+    setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data }));
+  } catch (err) {
+    console.error("[ActivityList] Failed:", err);
+    setActivitiesCache((prev) => ({ ...prev, [project.child_id]: [] }));
+  } finally {
+    setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: false }));
+  }
+}, [activitiesCache]);
 
   const handleSelectProject = useCallback(async (project: ProjectItem) => {
     setSelectedProject(project);
@@ -244,18 +244,19 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     }
   }, []);
 
-  const handleExpandProject = useCallback(async (project: ProjectItem) => {
-    if (selectedProject?.child_id === project.child_id) {
-      setSelectedProject(null);
-      setSelectedActivity(null);
-      setActivityDetail(null);
-      return;
-    }
-    setSelectedProject(project);
+const handleExpandProject = useCallback(async (project: ProjectItem) => {
+  if (selectedProject?.child_id === project.child_id) {
+    setSelectedProject(null);
     setSelectedActivity(null);
     setActivityDetail(null);
-    await loadActivitiesForProject(project);
-  }, [selectedProject, loadActivitiesForProject]);
+    return;
+  }
+  setSelectedProject(project);
+  setSelectedActivity(null);
+  setActivityDetail(null);
+  // Always load activities when expanding — needed for the activity tab
+  await loadActivitiesForProject(project);
+}, [selectedProject, loadActivitiesForProject]);
 
   const handleSelectActivity = useCallback(async (project: ProjectItem, activity: ActivityItem) => {
     setSelectedProject(project);
@@ -263,7 +264,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     setActivityDetail(null);
     setActivityDetailLoading(true);
     try {
-      const data = await fetchActivityProposalDetail(activity.id);
+      const data = await fetchActivityProposalDetail(activity.child_id);
       setActivityDetail(data);
     } catch (err) {
       console.error("[ActivityDetail] Failed:", err);
@@ -315,19 +316,32 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   const buildPayload = (overrideDecision?: "needs_revision" | "approved"): ProposalReviewPayload => {
     const proposalType = getProposalType();
     const proposalNode = getProposalNode()!;
+    // ── FIX: resolve the correct assignment_id per proposal level ──
+    const resolveReviewerAssignment = (): number | undefined => {
+      if (activeTab === "activity" && selectedActivity) {
+        return Number(selectedActivity.assignment);   // activity's own assignment
+      }
+      if (activeTab === "project" && selectedProject) {
+        return Number(selectedProject.assignment);    // project's own assignment
+      }
+      // program: use the top-level assignment from proposalData
+      return proposalData?.assignment_id
+        ? Number(proposalData.assignment_id)
+        : (user?.user_id ? Number(user.user_id) : undefined);
+    };
 
     if (import.meta.env.DEV) {
       console.log("[buildPayload] activeTab:", activeTab, "| proposalType:", proposalType, "| proposalNode:", proposalNode);
+      console.log("[buildPayload] resolvedAssignment:", resolveReviewerAssignment());
       console.log("[buildPayload] proposalData:", proposalData);
       console.log("[buildPayload] comments:", comments);
     }
 
     const base = {
-      // proposal_reviewer comes from the assignment row, not the auth user id
-      proposal_reviewer: proposalData?.assignment_id ? Number(proposalData.assignment_id) : (user?.user_id ? Number(user.user_id) : undefined),
+      proposal_reviewer: resolveReviewerAssignment(),
       proposal_node: Number(proposalData?.proposal_id),
       decision: overrideDecision ?? decision,
-      review_round: String(reviewRound),   // API expects a string e.g. "1"
+      review_round: String(reviewRound),
       proposal_type: proposalType,
     };
 
@@ -620,7 +634,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                       <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500 gap-3">
                         <Activity size={40} className="text-gray-300" />
                         <p className="font-medium">Select an activity from the sidebar</p>
-                        <p className="text-sm text-gray-400">{selectedProject.project_title}</p>
+                        <p className="text-sm text-gray-400">{selectedProject.title}</p>
                       </div>
                     ) : activityDetailLoading ? (
                       <div className="bg-white rounded-2xl border border-gray-100 p-8">
@@ -630,7 +644,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                       <ActivityForm
                         activityData={activityDetail || selectedActivity}
                         programTitle={proposalDetail?.program_title ?? proposalData?.title ?? ""}
-                        projectTitle={selectedProject.project_title}
+                        projectTitle={selectedProject.title}
                         comments={comments}
                         onCommentChange={handleCommentChange}
                         alreadyReviewed={alreadyReviewed}

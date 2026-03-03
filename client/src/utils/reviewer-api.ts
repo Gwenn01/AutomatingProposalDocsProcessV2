@@ -42,7 +42,7 @@ export type ReviewerProjectList = {
   version_no: number;
   is_reviewed: boolean;
   assigned_at: string | null;
-
+  activities?: ApiActivity[];
 }
 
 export type ApiActivity = {
@@ -302,15 +302,14 @@ export async function fetchReviewerProjectProposal(child_id: number): Promise<Re
   }
   return data;
 }
-export async function fetchReviewerActivityProposal(child_id: number): Promise<ReviewerProjectList[]> {
+export async function fetchReviewerActivityProposal(child_id: number): Promise<ApiActivity[]> {
   const res = await authFetch(`${BASE_URL}/reviewer-proposals/activity/${child_id}`);
-  const data = await handleResponse<ReviewerProposal[]>(res);
-  if (import.meta.env.DEV){
-    console.log('[fetchReviewerProjectProposal', JSON.stringify(data, null,2))
+  const data = await handleResponse<ApiActivity[]>(res);
+  if (import.meta.env.DEV) {
+    console.log('[fetchReviewerActivityProposal]', JSON.stringify(data, null, 2));
   }
   return data;
 }
-
 
 /**
  * GET /api/reviewer-notifications/
