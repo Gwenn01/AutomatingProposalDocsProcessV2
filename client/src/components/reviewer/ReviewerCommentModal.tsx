@@ -22,7 +22,9 @@ import {
   type ApiActivityListResponse,
   type ApiProject,
   type ApiActivity,
-  type ProposalReviewPayload,    // ← NEW (optional, for type safety)
+  type ProposalReviewPayload,
+  fetchReviewerProjectProposal,
+  type ReviewerProjectList,    // ← NEW (optional, for type safety)
 } from "@/utils/reviewer-api";
 import { ActivityForm } from "../view-review/activity-form";
 import { ProjectForm } from "../view-review/project-form";
@@ -94,7 +96,7 @@ export interface ApiProposalDetail {
   created_at: string;
 }
 
-type ProjectItem = ApiProject;
+type ProjectItem = ReviewerProjectList;
 type ActivityItem = ApiActivity;
 type TabType = "program" | "project" | "activity";
 
@@ -163,8 +165,8 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     const load = async () => {
       setProjectListLoading(true);
       try {
-        const data: ApiProjectListResponse = await fetchProjectList(childId);
-        setProjectList(data.projects || []);
+        const data: ReviewerProjectList  = await fetchReviewerProjectProposal(childId);
+        setProjectList(data);
       } catch (err) {
         console.error("[ProjectList] Failed:", err);
       } finally {
@@ -173,6 +175,10 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     };
     load();
   }, [isOpen, childId]);
+
+  console.log("Project List", projectList)
+
+ 
 
   // ── Fetch history when modal opens ───────────────────────────────────────
   useEffect(() => {
@@ -210,15 +216,15 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
   // ── Activity loading ──────────────────────────────────────────────────────
   const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
-    if (activitiesCache[project.id] !== undefined) return;
-    setActivitiesLoadingCache((prev) => ({ ...prev, [project.id]: true }));
+    if (activitiesCache[project.child_id] !== undefined) return;
+    setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
     try {
-      const data: ApiActivityListResponse = await fetchActivityList(project.id);
-      setActivitiesCache((prev) => ({ ...prev, [project.id]: data.activities || [] }));
+      const data: ApiActivityListResponse = await fetchActivityList(project.child_id);
+      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data.activities || [] }));
     } catch (err) {
-      setActivitiesCache((prev) => ({ ...prev, [project.id]: [] }));
+      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: [] }));
     } finally {
-      setActivitiesLoadingCache((prev) => ({ ...prev, [project.id]: false }));
+      setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: false }));
     }
   }, [activitiesCache]);
 
@@ -229,7 +235,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     setProjectDetail(null);
     setProjectDetailLoading(true);
     try {
-      const detail = await fetchProjectProposalDetail(project.id);
+      const detail = await fetchProjectProposalDetail(project.child_id);
       setProjectDetail(detail);
     } catch (err) {
       console.error("[ProjectDetail] Failed:", err);
@@ -239,7 +245,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   }, []);
 
   const handleExpandProject = useCallback(async (project: ProjectItem) => {
-    if (selectedProject?.id === project.id) {
+    if (selectedProject?.child_id === project.child_id) {
       setSelectedProject(null);
       setSelectedActivity(null);
       setActivityDetail(null);
@@ -437,6 +443,9 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
+  console.log("ProjectDetail", projectDetail)
+  console.log("SelectedProject", selectedProject)
+
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-overlay-enter">
@@ -536,7 +545,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                     </div>
                   ) : (
                     projectList.map((proj) => (
-                      <div key={proj.id} className="group rounded-xl transition-all duration-200 hover:bg-white hover:shadow-sm">
+                      <div key={proj.child_id} className="group rounded-xl transition-all duration-200 hover:bg-white hover:shadow-sm">
                         <ProjectTreeNode
                           project={proj}
                           activeTab={activeTab}
@@ -590,7 +599,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                       </div>
                     ) : (
                       <ProjectForm
-                        projectData={projectDetail || selectedProject}
+                        projectData={projectDetail || selectedProject || projectList}
                         programTitle={proposalDetail?.program_title ?? proposalData?.title ?? ""}
                         comments={comments}
                         onCommentChange={handleCommentChange}

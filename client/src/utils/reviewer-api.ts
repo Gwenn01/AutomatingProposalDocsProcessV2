@@ -10,7 +10,8 @@ const BASE_URL = 'http://127.0.0.1:8000/api';
 export type ApiProjectListResponse = {
   id: number;
   program_title: string;
-  projects: ApiProject[];
+  //projects: ApiProject[];
+  projects: ReviewerProjectList[];
 };
 
 export type ApiActivityListResponse = {
@@ -28,6 +29,21 @@ export type ApiProject = {
   start_date: string | null;
   end_date: string | null;
 };
+
+export type ReviewerProjectList = {
+  assignment: number;
+  proposal: number;
+  child_id: number;
+  implementor: number;
+  title: string;
+  type: string;
+  status: string;
+  reviewer_count: number;
+  version_no: number;
+  is_reviewed: boolean;
+  assigned_at: string | null;
+
+}
 
 export type ApiActivity = {
   id: number;
@@ -277,6 +293,16 @@ export async function fetchReviewerProposals(): Promise<ReviewerProposal[]> {
   }
   return data;
 }
+
+export async function fetchReviewerProjectProposal(child_id: number): Promise<ReviewerProjectList[]> {
+  const res = await authFetch(`${BASE_URL}/reviewer-proposals/project/${child_id}`);
+  const data = await handleResponse<ReviewerProposal[]>(res);
+  if (import.meta.env.DEV){
+    console.log('[fetchReviewerProjectProposal', JSON.stringify(data, null,2))
+  }
+  return data;
+}
+
 
 /**
  * GET /api/reviewer-notifications/

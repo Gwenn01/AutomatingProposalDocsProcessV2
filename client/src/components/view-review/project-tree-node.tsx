@@ -1,7 +1,7 @@
-import type { ApiActivity, ApiProject } from "@/utils/reviewer-api";
+import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/utils/reviewer-api";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
-type ProjectItem = ApiProject;
+type ProjectItem = ReviewerProjectList;
 type ActivityItem = ApiActivity;
 type TabType = "program" | "project" | "activity";
 
@@ -21,9 +21,9 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
   project, activeTab, selectedProject, selectedActivity,
   onSelectProject, onSelectActivity, activitiesCache, loadingCache, onExpandProject,
 }) => {
-  const isProjectSelected = selectedProject?.id === project.id;
-  const activities = activitiesCache[project.id] ?? [];
-  const isLoadingActivities = loadingCache[project.id] ?? false;
+  const isProjectSelected = selectedProject?.child_id === project.child_id;
+  const activities = activitiesCache[project.child_id] ?? [];
+  const isLoadingActivities = loadingCache[project.child_id] ?? false;
 
   return (
     <div className="border-b border-gray-100 last:border-b-0">
@@ -36,7 +36,7 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
         <FolderOpen size={13} className={`mt-0.5 shrink-0 ${isProjectSelected ? "text-primaryGreen" : "text-gray-400"}`} />
         <div className="flex-1 min-w-0">
           <p className={`truncate text-xs font-semibold leading-relaxed text-wrap ${isProjectSelected ? "text-primaryGreen" : "text-gray-700"}`}>
-            {project.project_title}
+            {project.title}
           </p>
           {project.project_leader && (
             <p className="text-[10px] text-gray-400 mt-0.5 truncate">{project.project_leader}</p>

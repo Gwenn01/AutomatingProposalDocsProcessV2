@@ -193,7 +193,7 @@ useEffect(() => {
     [proposalsData],
   );
 
-  console.log("filtered",filteredProposals)
+ 
   const handleReview = (proposal: Proposal) =>
     showToast(`Opening review form for: ${proposal.title}`, "info");
   const handleViewOthers = (proposal: Proposal) =>
