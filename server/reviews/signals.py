@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from proposals_node.models import Proposal
+from reviewer.models import ProposalReviewer
 from reviews.models import ProposalReview, ProposalReviewHistory
 
 # this general signal that when the implementor update either program, project or activity it will update the review too
@@ -84,3 +85,10 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
         review.budget_requirements_feedback = None
 
         review.save()
+    
+    # after saving the history change the is review 
+    reviewer = ProposalReviewer.objects.filter(proposal=instance)
+    
+    for r in reviewer:
+        r.is_reviewed = True
+        r.save()

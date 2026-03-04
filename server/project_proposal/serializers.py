@@ -55,6 +55,9 @@ class ProjectProposalSerializer(serializers.ModelSerializer):
     
 # implementor update the project proposal after reviews and save the history
 class ProjectProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
+    
+    title = serializers.CharField(write_only=True, required=False)
+    
     class Meta:
         model = ProjectProposal
         fields = "__all__"
@@ -62,8 +65,8 @@ class ProjectProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
     @transaction.atomic 
     def update(self, instance, validated_data):
         ...
-        activity_list = validated_data.pop("activity_list", [])
-        title = validated_data.pop("title")
+        activity_list = validated_data.pop("activity_list", None)
+        title = validated_data.pop("title", None)
         
         # calculate the version first
         latest_version = (
@@ -79,8 +82,8 @@ class ProjectProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
             proposal=instance.proposal,
             version=next_version,
 
-            project_title=instance.program_title,
-            project_leader=instance.program_leader,
+            project_title=instance.project_title,
+            project_leader=instance.project_leader,
             members= instance.members,
             duration_months= instance.duration_months,
             start_date= instance.start_date,
@@ -118,8 +121,8 @@ class ProjectProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
         instance.save()
         
         # save the optional update of activity list 
-        if activity_list:
-            instance.activity_list.set(activity_list)
+        if activity_list is not None:
+            instance.activity_list = activity_list
         return instance
         
         

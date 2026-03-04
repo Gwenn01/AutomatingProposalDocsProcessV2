@@ -12,6 +12,7 @@ from .serializers import (
     ProjectActivitiesSerializer,
 )
 from notifications.services import NotificationService
+from reviewer.services import ProposalReviewerServices
 # Create your views here.
 
 class ProjectProposalList(APIView):
@@ -93,6 +94,13 @@ class UpdateProjectSaveHistoryView(APIView):
             context={"request": request},
             partial=True
         )
+        
+        # check if all reviewers have reviewed the proposal
+        proposal = request.data.get('proposal')
+        if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
+            return Response({"message": "All reviewers should review this proposal before updating"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
         if serializer.is_valid():
             serializer.save()
             NotificationService.admin_notifications(
