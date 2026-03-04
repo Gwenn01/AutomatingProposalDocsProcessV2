@@ -77,3 +77,9 @@ class ActivityListDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityProposal
         fields = ['id', 'activity_title', 'project_leader', 'members', 'activity_duration_hours', 'activity_date']
+        
+# activity history list
+class ActivityProposalHistoryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivityProposalHistory
+        fields = ["id", "version", "activity_title", "project_leader"]

@@ -6,9 +6,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny 
 from .models import ActivityProposal
-from .serializers import ActivityProposalSerializer, ActivityProposalUpdateSaveHistorySerializer
+from .serializers import (
+    ActivityProposalSerializer,
+    ActivityProposalUpdateSaveHistorySerializer,
+    ActivityProposalHistoryListSerializer
+)
+from .mapper import ActivityHistoryMapper
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
+from proposals_node.models import Proposal
 
 class ActivityProposalList(APIView):
     permission_classes = [IsAuthenticated]
@@ -94,3 +100,21 @@ class UpdateActivitySaveHistoryView(APIView):
                              "data": serializer.data}, status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# get the list of history on activity proposal
+class ActivityListHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, proposal_id):
+        # serialize the object
+        ...
+        # get the current proposal
+        proposal = get_object_or_404(Proposal, id=proposal_id)
+        activity_proposals = get_object_or_404(ActivityProposal, proposal=proposal)
+        # get the history
+        history = proposal.activity_history.all()
+        
+        activity_serializer = ActivityProposalSerializer(activity_proposals)
+        history_serializer = ActivityProposalHistoryListSerializer(history, many=True)
+        
+        return Response(ActivityHistoryMapper.history_list_mapper(activity_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
