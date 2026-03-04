@@ -1,8 +1,26 @@
 import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/utils/reviewer-api";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
-type ProjectItem = ReviewerProjectList;
-type ActivityItem = ReviewerProjectList;
+type ProjectListFields = {
+  assignment: number;
+  proposal: number;
+  child_id: number;
+  implementor: number;
+  project_title: string;
+  project_leader: string;
+  activity_title?: string;
+  type: string;
+  status: string;
+  reviewer_count: number;
+  version_no: number;
+  is_reviewed: boolean;
+  assigned_at: string | null;
+  activities?: ApiActivity[];
+}
+
+
+type ProjectItem = ProjectListFields;
+type ActivityItem = ProjectListFields;
 type TabType = "program" | "project" | "activity";
 
 interface ProjectTreeNodeProps {
@@ -36,11 +54,11 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
         <FolderOpen size={13} className={`mt-0.5 shrink-0 ${isProjectSelected ? "text-primaryGreen" : "text-gray-400"}`} />
         <div className="flex-1 min-w-0">
           <p className={`truncate text-xs font-semibold leading-relaxed text-wrap ${isProjectSelected ? "text-primaryGreen" : "text-gray-700"}`}>
-            {project.title}
+            {project.project_title}
           </p>
-          {/* {project.project_leader && (
+          {project.project_leader && (
             <p className="text-[10px] text-gray-400 mt-0.5 truncate">{project.project_leader}</p>
-          )} */}
+          )}
         </div>
         {activeTab === "activity" && (
           <ChevronRight size={12} className={`shrink-0 mt-0.5 transition-transform text-gray-400 ${isProjectSelected ? "rotate-90" : ""}`} />
@@ -69,9 +87,9 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
                   <Activity size={11} className={`mt-0.5 shrink-0 ${isActSelected ? "text-blue-500" : "text-gray-300"}`} />
                   <div className="flex-1 min-w-0">
                     <p className={`truncate text-[11px] font-medium leading-relaxed text-wrap ${isActSelected ? "text-blue-700" : "text-gray-600"}`}>
-                      {act.title}
+                      {act.activity_title || "Untitled Activity"}
                     </p>
-                    {act.status && <p className="text-[10px] text-gray-500 mt-0.5">Status: {act.status}</p>}
+                    {act.activity_date}
                   </div>
                 </button>
               );

@@ -12,8 +12,13 @@ import {
   fetchReviewerProjectProposal,
   fetchReviewerActivityProposal,
   type ReviewerProjectList,
+  type ApiProjectListResponse,
+  fetchProjectList,
+  type ApiActivityListResponse,
+  fetchProjectProposalDetail,
+  type ApiActivity,
 } from "@/utils/reviewer-api";
-import { fetchReviewedProposal } from "@/utils/implementor-api";
+import { fetchActivityList, fetchActivityProposalDetail, fetchReviewedProposal } from "@/utils/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import { ActivityForm } from "./view-review-forms/activity-form";
 import { ProjectForm } from "./view-review-forms/project-form";
@@ -68,8 +73,23 @@ export interface Comments {
   [key: string]: string;
 }
 
-type ProjectItem = ReviewerProjectList;
-type ActivityItem = ReviewerProjectList;
+type ProjectListFields = {
+  proposal_id: number;
+  child_id: number;
+  implementor: number;
+  project_title: string;
+  project_leader: string;
+  type: string;
+  status: string;
+  reviewer_count: number;
+  version_no: number;
+  is_reviewed: boolean;
+  assigned_at: string | null;
+  activities?: ApiActivity[];
+}
+
+type ProjectItem = ProjectListFields;
+type ActivityItem = ProjectListFields;
 type TabType = "program" | "project" | "activity";
 
 interface History {
@@ -218,6 +238,12 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [history]                                          = useState<History[]>([]);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
 
+  const [projectDetail, setProjectDetail] = useState<any | null>(null);
+  const [projectDetailLoading, setProjectDetailLoading] = useState(false);
+
+  const [activityDetail, setActivityDetail] = useState<any | null>(null);
+  const [activityDetailLoading, setActivityDetailLoading] = useState(false);
+
   const showCommentInputs = !selectedHistoryVersion || selectedHistoryVersion.status === "current";
   const statusStyle = proposalData
     ? getStatusStyle(proposalData.status ?? "")
@@ -248,53 +274,47 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   // directly to projectList.
   useEffect(() => {
     if (!isOpen || !childId) return;
-
     const load = async () => {
       setProjectListLoading(true);
       try {
-        const data = await fetchReviewerProjectProposal(childId);
-        // fetchReviewerProjectProposal returns ReviewerProjectList[] directly
-        setProjectList(Array.isArray(data) ? data : []);
+        const data: ApiProjectListResponse = await fetchProjectList(childId);
+        setProjectList(data.projects || []);
       } catch (err) {
         console.error("[ProjectList] Failed:", err);
-        setProjectList([]);
       } finally {
         setProjectListLoading(false);
       }
     };
-
     load();
   }, [isOpen, childId]);
-
-  console.log("Project List", projectList);
 
   // ── 3. Project reviewed data ───────────────────────────────────────────────
   useEffect(() => {
     if (!selectedProject?.child_id) { setProjectReviewedData(null); return; }
     setProjectLoading(true);
     setProjectReviewedData(null);
-    fetchReviewedProposal(selectedProject.child_id, "project")
+    fetchReviewedProposal(selectedProject.proposal_id, "project")
       .then(setProjectReviewedData)
       .catch((err) => {
         console.error("[ViewReviewed] project fetch failed:", err);
         setProjectReviewedData(null);
       })
       .finally(() => setProjectLoading(false));
-  }, [selectedProject?.child_id]);
+  }, [selectedProject?.proposal_id]);
 
   // ── 4. Activity reviewed data ──────────────────────────────────────────────
   useEffect(() => {
-    if (!selectedActivity?.child_id) { setActivityReviewedData(null); return; }
+    if (!selectedActivity?.proposal_id) { setActivityReviewedData(null); return; }
     setActivityLoading(true);
     setActivityReviewedData(null);
-    fetchReviewedProposal(selectedActivity.child_id, "activity")
+    fetchReviewedProposal(selectedActivity.proposal_id, "activity")
       .then(setActivityReviewedData)
       .catch((err) => {
         console.error("[ViewReviewed] activity fetch failed:", err);
         setActivityReviewedData(null);
       })
       .finally(() => setActivityLoading(false));
-  }, [selectedActivity?.child_id]);
+  }, [selectedActivity?.proposal_id]);
 
   // ── Reset on close ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -312,43 +332,68 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setProjectList([]);
   }, [isOpen]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Load activities for a project (with cache) ──
   const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
-    if (activitiesCache[project.child_id] !== undefined) return;
-    setActivitiesLoadingCache((p) => ({ ...p, [project.child_id]: true }));
+    if (activitiesCache[project.child_id] !== undefined) return; // already cached
+    setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
     try {
-      const data = await fetchReviewerActivityProposal(project.child_id);
-      setActivitiesCache((p) => ({ ...p, [project.child_id]: data }));
+      const data: ApiActivityListResponse = await fetchActivityList(project.child_id);
+      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data.activities || [] }));
     } catch (err) {
-      console.error("[ViewReviewed] activity list fetch failed:", err);
-      setActivitiesCache((p) => ({ ...p, [project.child_id]: [] }));
+      console.error("[ActivityList] Failed:", err);
+      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: [] }));
     } finally {
-      setActivitiesLoadingCache((p) => ({ ...p, [project.child_id]: false }));
+      setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: false }));
     }
   }, [activitiesCache]);
 
-  const handleSelectProject = useCallback((project: ProjectItem) => {
+  // ── Select project (project tab) ──
+  const handleSelectProject = useCallback(async (project: ProjectItem) => {
     setSelectedProject(project);
     setSelectedActivity(null);
-    setActivityReviewedData(null);
+    setActivityDetail(null);
+    setProjectDetail(null);
+    setProjectDetailLoading(true);
+    try {
+      const detail = await fetchReviewedProposal(project.proposal_id, "project");
+      console.log("PProject Detail", detail);
+      setProjectDetail(detail);
+    } catch (err) {
+      console.error("[ProjectDetail] Failed:", err);
+    } finally {
+      setProjectDetailLoading(false);
+    }
   }, []);
 
+  // ── Expand project in activity tab (toggle + load activities) ──
   const handleExpandProject = useCallback(async (project: ProjectItem) => {
-    if (selectedProject?.child_id === project.child_id) {
+    if (selectedProject?.proposal_id === project.proposal_id) {
+      // Collapse
       setSelectedProject(null);
       setSelectedActivity(null);
-      setActivityReviewedData(null);
+      setActivityDetail(null);
       return;
     }
     setSelectedProject(project);
     setSelectedActivity(null);
-    setActivityReviewedData(null);
+    setActivityDetail(null);
     await loadActivitiesForProject(project);
   }, [selectedProject, loadActivitiesForProject]);
 
-  const handleSelectActivity = useCallback((project: ProjectItem, activity: ActivityItem) => {
+  // ── Select activity ──
+  const handleSelectActivity = useCallback(async (project: ProjectItem, activity: ActivityItem) => {
     setSelectedProject(project);
     setSelectedActivity(activity);
+    setActivityDetail(null);
+    setActivityDetailLoading(true);
+    try {
+      const data = await fetchActivityProposalDetail(activity.proposal_id);
+      setActivityDetail(data);
+    } catch (err) {
+      console.error("[ActivityDetail] Failed:", err);
+    } finally {
+      setActivityDetailLoading(false);
+    }
   }, []);
 
   const goToProjectTab = () => {

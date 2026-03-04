@@ -4,6 +4,7 @@ import { VerticalLine } from "./program-form";
 import CommentInput from "@/components/reviewer/CommentInput";
 import PreviousComment from "@/components/reviewer/PreviousComment";
 import type { BudgetItem } from "../view-reviewed-document";
+import { Clock } from "lucide-react";
 
 interface Comments {
   [key: string]: string;
@@ -40,13 +41,25 @@ const SectionReviews: React.FC<{
       <PreviousComment key={i} comment={r.comment} reviewerName={r.reviewer_name ?? "Reviewer"} />
     ))}
     {showCommentInputs && reviews.length === 0 && (
-      <CommentInput
-        sectionName={sectionName}
-        onCommentChange={onCommentChange}
-        InputValue={inputKey}
-        value={comments[inputKey] || ""}
-        disabled={alreadyReviewed}
-      />
+      <div className="">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
+          
+          {/* Icon */}
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <Clock className="h-5 w-5" />
+          </div>
+
+          {/* Text Content */}
+          <div>
+            <p className="text-sm font-semibold text-gray-800">
+              Not Reviewed Yet
+            </p>
+            <p className="text-xs text-gray-500">
+              This proposal is still pending review.
+            </p>
+          </div>
+        </div>
+      </div>
     )}
   </>
 );
