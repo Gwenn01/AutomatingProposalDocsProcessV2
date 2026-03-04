@@ -112,13 +112,14 @@ interface ReviewerCommentModalProps {
   proposalDetail: ApiProposalDetail | null; // Full detail already fetched
   reviewe?: string;
   review_id?: string;
+  programNode_id?: number;
 }
 
 
 // ================= MAIN MODAL =================
 
 const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
-  isOpen, onClose, proposalData, proposalDetail, reviewe, review_id,
+  isOpen, onClose, proposalData, proposalDetail, programNode_id, review_id,
 }) => {
   const { showToast } = useToast();
 
@@ -311,7 +312,6 @@ const handleExpandProject = useCallback(async (project: ProjectItem) => {
     return proposalData?.proposal_id ? Number(proposalData.proposal_id) : (proposalDetail?.proposal ?? null);
   };
 
-
   // ── Build submit payload matching the API contract ────────────────────────
   const buildPayload = (overrideDecision?: "needs_revision" | "approved"): ProposalReviewPayload => {
     const proposalType = getProposalType();
@@ -329,6 +329,17 @@ const handleExpandProject = useCallback(async (project: ProjectItem) => {
         ? Number(proposalData.assignment_id)
         : (user?.user_id ? Number(user.user_id) : undefined);
     };
+    const resolveReviewerProposalNode = (): number | undefined => {
+      if (activeTab === "activity" && selectedActivity) {
+        return Number(selectedActivity.proposal);   // activity's own assignment
+      }
+      if (activeTab === "project" && selectedProject) {
+        return Number(selectedProject.proposal);    // project's own assignment
+      }
+      // program: use the top-level assignment from proposalData
+      return Number(proposalData.proposal_id);
+    };
+
 
     if (import.meta.env.DEV) {
       console.log("[buildPayload] activeTab:", activeTab, "| proposalType:", proposalType, "| proposalNode:", proposalNode);
@@ -339,7 +350,7 @@ const handleExpandProject = useCallback(async (project: ProjectItem) => {
 
     const base = {
       proposal_reviewer: resolveReviewerAssignment(),
-      proposal_node: Number(proposalData?.proposal_id),
+      proposal_node: resolveReviewerProposalNode(),
       decision: overrideDecision ?? decision,
       review_round: String(reviewRound),
       proposal_type: proposalType,

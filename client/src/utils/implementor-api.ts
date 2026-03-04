@@ -574,3 +574,13 @@ export async function fetchActivityProposalDetail(activityId: number): Promise<a
   const res = await authFetch(`${BASE_URL}/activity-proposal/${activityId}/`);
   return handleResponse<any>(res);
 }
+
+export async function fetchReviewedProposal(
+  proposal_node: number,
+  proposal_type: "program" | "project" | "activity"
+): Promise<any> {
+  const res = await authFetch(
+    `${BASE_URL}/proposal-review/proposal/${proposal_node}/${proposal_type}/`
+  );
+  return handleResponse<any>(res);
+}

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
-  List,
   Eye,
   ChevronLeft,
   ChevronRight,
@@ -9,6 +8,7 @@ import {
   Search,
   X,
   FileX,
+  Edit,
 } from "lucide-react";
 
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
@@ -16,31 +16,19 @@ import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
 import { fetchProposalsNode, fetchProgramProposalDetail } from "@/utils/implementor-api";
 import { useAuth } from "@/context/auth-context";
+import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
 
 // ================= TYPE DEFINITIONS =================
 
-interface User {
-  user_id: string | number;
-  [key: string]: any;
-}
-
-interface Review {
-  review_id: string | number;
-  reviewer_id: string | number;
-  status: string;
-  [key: string]: any;
-}
-
 interface Document {
-  proposal_id: string | number;
-  child_id?: string | number;
+  proposal_id: string | number;   // ← node PK (p.id  e.g. 124) — used for review API
+  child_id?: string | number;     // ← program-proposal PK (p.child_id e.g. 32) — used for detail API
   reviewer_count: number;
   title: string;
   file_path: string;
   status: string;
   submitted_at: string | null;
-  reviews: Review[] | number;
-  reviews_per_docs?: any;
+  reviews: any[] | number;
 }
 
 interface Notification {
@@ -64,8 +52,6 @@ const ViewProposal: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
-  //const [user, setUser] = useState<User | null>(null);
-  const [showReviewerModal, setShowReviewerModal] = useState<boolean>(false);
   const [showViewerModal, setShowViewerModal] = useState<boolean>(false);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [showReviewerStatus, setShowReviewerStatus] = useState<boolean>(false);
@@ -74,15 +60,16 @@ const ViewProposal: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [progress, setProgress] = useState<number>(0);
-
-  // Holds the full detail response from /api/program-proposal/{child_id}/
   const [proposalDetail, setProposalDetail] = useState<any | null>(null);
+
+  // ── Review modal state ────────────────────────────────────────────────────
+  const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
+  const [reviewProposalData, setReviewProposalData] = useState<any | null>(null);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const rowsPerPage: number = 10;
 
   const { user } = useAuth();
-
 
   // ================= PROGRESS BAR =================
   useEffect(() => {
@@ -96,24 +83,7 @@ const ViewProposal: React.FC = () => {
     return () => clearInterval(interval);
   }, [actionLoading]);
 
-  // ================= FETCH USER =================
-  // useEffect(() => {
-  //   const storedUser = localStorage.getItem("user");
-  //   if (storedUser) {
-  //     try {
-  //       setUser(JSON.parse(storedUser));
-  //     } catch (error) {
-  //       console.error("Error parsing user data:", error);
-  //     }
-  //   }
-  // }, []);
-
   // ================= NOTIFICATIONS =================
-  useEffect(() => {
-    if (!user) return;
-    // Placeholder for future API implementation
-  }, [user]);
-
   const unreadCount: number = notifications.filter((n) => n.is_read === 0).length;
 
   const handleRead = async (id: string | number): Promise<void> => {
@@ -141,18 +111,16 @@ const ViewProposal: React.FC = () => {
       try {
         const data: any[] = await fetchProposalsNode("Program");
         const mapped: Document[] = data.map((p) => ({
-          proposal_id: p.id,
-          child_id: p.child_id,
+          proposal_id: p.id,         // ← node PK  (124) — for review API
+          child_id:    p.child_id,   // ← detail PK (32) — for program-proposal detail API
           reviewer_count: p.reviewer_count,
-          title: p.title,
-          file_path: p.file_path ?? "",
-          status: p.status ?? "unknown",
+          title:       p.title,
+          file_path:   p.file_path ?? "",
+          status:      p.status ?? "unknown",
           submitted_at: p.created_at ?? null,
-          reviews: p.reviews ?? 0,
+          reviews:     p.reviews ?? 0,
         }));
-
         setDocuments(mapped);
-
       } catch (err) {
         console.error("[ViewProposal] Failed to fetch proposals:", err);
       } finally {
@@ -162,10 +130,7 @@ const ViewProposal: React.FC = () => {
     load();
   }, [user]);
 
-
-
-
-  // ================= VIEW PROPOSAL — uses authFetch via implementor-api =================
+  // ================= VIEW PROPOSAL (uses child_id for detail API) =================
   const handleViewProposal = async (doc: Document): Promise<void> => {
     setActionLoading(true);
     setSelectedDoc(doc);
@@ -182,18 +147,29 @@ const ViewProposal: React.FC = () => {
     }
   };
 
+  // ================= OPEN REVIEW MODAL (uses proposal_id = node PK for review API) =================
+  const handleOpenReview = (doc: Document): void => {
+    setReviewProposalData({
+      title:       doc.title,
+      status:      doc.status,
+      proposal_id: doc.proposal_id,   // ← node PK (124) — what review API expects
+      child_id:    doc.child_id,      // ← detail PK (32) — for fetching project list sidebar
+    });
+    setShowReviewModal(true);
+  };
+
   // ================= STATUS STYLE =================
   const getStatusStyle = (status: string): StatusStyle => {
     switch (status) {
-      case "submitted":   return { label: "Initial Review", className: "bg-[#FFC107] text-white" };
-      case "for_review":  return { label: "For Review",     className: "bg-[#38BDF8] text-white" };
-      case "under_review":return { label: "Under Review",   className: "bg-[#FFC107] text-white" };
-      case "final_review":return { label: "Final Review",   className: "bg-[#FBBF24] text-white" };
-      case "for_approval":return { label: "For Approval",   className: "bg-[#6366F1] text-white" };
-      case "approved":    return { label: "Completed",      className: "bg-[#22C55E] text-white" };
-      case "for_revision":return { label: "For Revision",   className: "bg-[#F97316] text-white" };
-      case "rejected":    return { label: "Rejected",       className: "bg-[#EF4444] text-white" };
-      default:            return { label: status,           className: "bg-gray-400 text-white" };
+      case "submitted":    return { label: "Initial Review", className: "bg-[#FFC107] text-white" };
+      case "for_review":   return { label: "For Review",     className: "bg-[#38BDF8] text-white" };
+      case "under_review": return { label: "Under Review",   className: "bg-[#FFC107] text-white" };
+      case "final_review": return { label: "Final Review",   className: "bg-[#FBBF24] text-white" };
+      case "for_approval": return { label: "For Approval",   className: "bg-[#6366F1] text-white" };
+      case "approved":     return { label: "Completed",      className: "bg-[#22C55E] text-white" };
+      case "for_revision": return { label: "For Revision",   className: "bg-[#F97316] text-white" };
+      case "rejected":     return { label: "Rejected",       className: "bg-[#EF4444] text-white" };
+      default:             return { label: status,           className: "bg-gray-400 text-white" };
     }
   };
 
@@ -210,10 +186,10 @@ const ViewProposal: React.FC = () => {
 
   const totalPages: number = Math.ceil(filteredDocuments.length / rowsPerPage);
   const startIndex: number = (currentPage - 1) * rowsPerPage;
-  const endIndex: number = startIndex + rowsPerPage;
+  const endIndex: number   = startIndex + rowsPerPage;
   const currentDocuments: Document[] = filteredDocuments.slice(startIndex, endIndex);
 
-  const goToNextPage = () => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); };
+  const goToNextPage     = () => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); };
   const goToPreviousPage = () => { if (currentPage > 1) setCurrentPage(currentPage - 1); };
 
   const formatDate = (dateString: string | null): string => {
@@ -338,7 +314,7 @@ const ViewProposal: React.FC = () => {
 
       {/* ================= GRID VIEW ================= */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 ">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {currentDocuments.map((doc) => {
             const status = getStatusStyle(doc.status);
             return (
@@ -357,9 +333,7 @@ const ViewProposal: React.FC = () => {
                     >
                       <p className="text-xs font-extralight">List of Reviewer</p>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-green-700 font-semibold text-xs">
-                        {doc.reviewer_count}
-                      </span>
+                      <span className="text-green-700 font-semibold text-xs">{doc.reviewer_count}</span>
                     </button>
                   </div>
                   <h3 className="text-base font-bold text-gray-900 mb-3 leading-tight" title={doc.title}>
@@ -379,11 +353,11 @@ const ViewProposal: React.FC = () => {
                     <span>View</span>
                   </button>
                   <button
-                    onClick={() => { setSelectedDoc(doc); setShowReviewerModal(true); }}
-                    className="flex-1 flex items-center justify-center space-x-2 bg-[#166534] text-white py-3 rounded-md font-bold text-xs hover:bg-[#14532d] transition-colors"
+                    onClick={() => handleOpenReview(doc)}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-amber-500 text-white py-3 rounded-md font-bold text-xs hover:bg-amber-600 transition-colors"
                   >
-                    <List className="w-[18px] h-[18px]" />
-                    <span>Reviewer</span>
+                    <Edit className="w-[18px] h-[18px]" />
+                    <span>Edit</span>
                   </button>
                 </div>
               </div>
@@ -413,7 +387,7 @@ const ViewProposal: React.FC = () => {
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4 text-center">Status</th>
                 <th className="px-6 py-4 text-center">View</th>
-                <th className="px-6 py-4 text-center">Actions</th>
+                <th className="px-6 py-4 text-center">Edit</th>
                 <th className="px-6 py-4 text-center">Reviewer List</th>
               </tr>
             </thead>
@@ -451,11 +425,11 @@ const ViewProposal: React.FC = () => {
                     </td>
                     <td className="px-6 py-5 text-center align-middle">
                       <button
-                        onClick={() => { setSelectedDoc(doc); setShowReviewerModal(true); }}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 text-[#166534] px-5 py-2.5 rounded-lg text-xs font-semibold hover:from-green-100 hover:to-emerald-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                        onClick={() => handleOpenReview(doc)}
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 px-5 py-2.5 rounded-lg text-xs font-semibold hover:from-amber-100 hover:to-orange-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                       >
-                        <List className="w-4 h-4" />
-                        Reviewer
+                        <Edit className="w-4 h-4" />
+                        Edit
                       </button>
                     </td>
                     <td className="px-2 py-5 text-center align-middle">
@@ -464,9 +438,7 @@ const ViewProposal: React.FC = () => {
                         className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition"
                       >
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-green-700 font-semibold text-xs">
-                          {doc.reviewer_count}
-                        </span>
+                        <span className="text-green-700 font-semibold text-xs">{doc.reviewer_count}</span>
                       </button>
                     </td>
                   </tr>
@@ -538,6 +510,12 @@ const ViewProposal: React.FC = () => {
         isOpen={showReviewerStatus}
         proposalId={selectedDoc?.proposal_id}
         onClose={() => setShowReviewerStatus(false)}
+      />
+
+      <ViewReviewedDocuments
+        isOpen={showReviewModal}
+        onClose={() => { setShowReviewModal(false); setReviewProposalData(null); }}
+        proposalData={reviewProposalData}
       />
     </div>
   );
