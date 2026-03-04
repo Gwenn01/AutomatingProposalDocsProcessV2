@@ -10,9 +10,12 @@ from .serializers import (
     ProjectProposalSerializer,
     ProjectProposalUpdateSaveHistorySerializer,
     ProjectActivitiesSerializer,
+    ProjectProposalHistoryListSerializer
 )
+from .mapper import ProjectHistoryMapper
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
+from proposals_node.models import Proposal
 # Create your views here.
 
 class ProjectProposalList(APIView):
@@ -122,4 +125,19 @@ class ProjectActivitiesView(APIView):
         serializer = ProjectActivitiesSerializer(project_proposal)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+# list of project list history 
+class ProjectListHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, proposal_id):
+        # serialize the object
+        ...
+        proposal = get_object_or_404(Proposal, id=proposal_id)
+        project_proposals = get_object_or_404(ProjectProposal, proposal=proposal)
+        history = proposal.project_history.all()
         
+        project_serializer = ProjectProposalSerializer(project_proposals)
+        history_serializer = ProjectProposalHistoryListSerializer(history, many=True)
+        
+        return Response(ProjectHistoryMapper.history_list_mapper(project_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
