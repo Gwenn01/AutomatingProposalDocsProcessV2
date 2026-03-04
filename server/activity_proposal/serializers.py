@@ -74,9 +74,20 @@ class ActivityProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
         return instance
         
 class ActivityListDataSerializer(serializers.ModelSerializer):
+
+    child_id = serializers.IntegerField(source='id', read_only=True)
+    proposal_id = serializers.IntegerField(source='proposal.id', read_only=True)
     class Meta:
         model = ActivityProposal
-        fields = ['id', 'activity_title', 'project_leader', 'members', 'activity_duration_hours', 'activity_date']
+        fields = [
+            'child_id',
+            'proposal_id',  # auto-created by Django
+            'activity_title',
+            'project_leader',
+            'members',
+            'activity_duration_hours',
+            'activity_date'
+        ]
         
 # activity history list
 class ActivityProposalHistoryListSerializer(serializers.ModelSerializer):

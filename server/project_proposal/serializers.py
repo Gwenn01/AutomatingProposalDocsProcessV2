@@ -128,9 +128,22 @@ class ProjectProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
         
 # serializer for the data need in program proposal list
 class ProjectsListDataSerializer(serializers.ModelSerializer):
+
+    child_id = serializers.IntegerField(source='id', read_only=True)
+    proposal_id = serializers.IntegerField(source='proposal.id', read_only=True)
+
     class Meta:
         model = ProjectProposal
-        fields = ['id', 'project_title', 'project_leader', 'members', 'duration_months', 'start_date', 'end_date']
+        fields = [
+            'child_id',
+            'proposal_id',
+            'project_title',
+            'project_leader',
+            'members',
+            'duration_months',
+            'start_date',
+            'end_date'
+        ]
    
 # serializer to get the activities list
 class ProjectActivitiesSerializer(serializers.ModelSerializer):
