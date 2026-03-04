@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import ActivityProposal
 from .serializers import ActivityProposalSerializer, ActivityProposalUpdateSaveHistorySerializer
 from notifications.services import NotificationService
+from reviewer.services import ProposalReviewerServices
 
 class ActivityProposalList(APIView):
     permission_classes = [IsAuthenticated]
@@ -77,6 +78,13 @@ class UpdateActivitySaveHistoryView(APIView):
             partial=True,
             context={"request": request}
         )
+        
+        # # check if all reviewers have reviewed the proposal
+        proposal = request.data.get('proposal')
+        if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
+            return Response({"message": "All reviewers should review this proposal before updating"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
         if serializer.is_valid():
             serializer.save()
             NotificationService.admin_notifications(

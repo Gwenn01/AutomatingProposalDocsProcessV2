@@ -14,13 +14,14 @@ class ActivityProposalSerializer(serializers.ModelSerializer):
         
 
 class ActivityProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
+    title = serializers.CharField(write_only=True, required=False)
     class Meta:
         model = ActivityProposal
         fields = "__all__" 
         
     @transaction.atomic
     def update(self, instance, validated_data):
-        title = validated_data.pop('title')
+        title = validated_data.pop('title', None)
         
         latest_version = (
             ActivityProposalHistory.objects
@@ -58,17 +59,18 @@ class ActivityProposalUpdateSaveHistorySerializer(serializers.ModelSerializer):
             plan_of_activity=instance.plan_of_activity,
             budget_requirements=instance.budget_requirements,
         )
-        # rename the title form parent and save the version on the parent node
-        if title:
-            instance.proposal.title = title
-        instance.proposal.version_no = next_version
-        instance.proposal.save()
         
-         # save the updated  
+        # Update ActivityProposal fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         
+        # rename the title form parent and save the version on the parent node
+        if title is not None:
+            instance.proposal.title = title
+            
+        instance.proposal.version_no = next_version
+        instance.proposal.save()
         return instance
         
 class ActivityListDataSerializer(serializers.ModelSerializer):
