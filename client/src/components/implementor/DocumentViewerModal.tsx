@@ -69,8 +69,24 @@ interface ApiProposalDetail {
   created_at: string;
 }
 
+
+type ProjectListFields = {
+  proposal_id: number;
+  child_id: number;
+  implementor: number;
+  project_title: string;
+  project_leader: string;
+  type: string;
+  status: string;
+  reviewer_count: number;
+  version_no: number;
+  is_reviewed: boolean;
+  assigned_at: string | null;
+  activities?: ApiActivity[];
+}
+
 // Re-export for local use with clearer names
-type ProjectItem = ApiProject;
+type ProjectItem = ProjectListFields;
 type ActivityItem = ApiActivity;
 interface DocumentViewerModalProps {
   isOpen: boolean;
@@ -143,16 +159,16 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
 
   // ── Load activities for a project (with cache) ──
   const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
-    if (activitiesCache[project.id] !== undefined) return; // already cached
-    setActivitiesLoadingCache((prev) => ({ ...prev, [project.id]: true }));
+    if (activitiesCache[project.child_id] !== undefined) return; // already cached
+    setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
     try {
-      const data: ApiActivityListResponse = await fetchActivityList(project.id);
-      setActivitiesCache((prev) => ({ ...prev, [project.id]: data.activities || [] }));
+      const data: ApiActivityListResponse = await fetchActivityList(project.child_id);
+      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data.activities || [] }));
     } catch (err) {
       console.error("[ActivityList] Failed:", err);
-      setActivitiesCache((prev) => ({ ...prev, [project.id]: [] }));
+      setActivitiesCache((prev) => ({ ...prev, [project.child_id]: [] }));
     } finally {
-      setActivitiesLoadingCache((prev) => ({ ...prev, [project.id]: false }));
+      setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: false }));
     }
   }, [activitiesCache]);
 
@@ -165,6 +181,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     setProjectDetailLoading(true);
     try {
       const detail = await fetchProjectProposalDetail(project.id);
+      console.log("DETAIL", detail)
       setProjectDetail(detail);
     } catch (err) {
       console.error("[ProjectDetail] Failed:", err);
@@ -175,7 +192,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
 
   // ── Expand project in activity tab (toggle + load activities) ──
   const handleExpandProject = useCallback(async (project: ProjectItem) => {
-    if (selectedProject?.id === project.id) {
+    if (selectedProject?.child_id === project.child_id) {
       // Collapse
       setSelectedProject(null);
       setSelectedActivity(null);

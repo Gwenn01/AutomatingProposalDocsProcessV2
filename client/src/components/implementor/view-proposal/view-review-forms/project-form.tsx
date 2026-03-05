@@ -5,9 +5,10 @@ import type { BudgetItem, Comments, MethodologyPhase, WorkplanItem } from "../vi
 import CommentInput from "@/components/reviewer/CommentInput";
 import PreviousComment from "@/components/reviewer/PreviousComment";
 import { Clock } from "lucide-react";
+import { formatDate } from "@/utils/dateFormat";
 
 // ---------------------------------------------------------------------------
-// Helpers (mirrored from program-form)
+// Helpers
 // ---------------------------------------------------------------------------
 
 /** Only keep plain objects with a non-blank comment */
@@ -19,9 +20,9 @@ const validReviews = (reviews: any): any[] => {
 };
 
 /**
- * Renders existing review comments for a section, then – only when no reviews
- * exist yet and showCommentInputs is true – shows the CommentInput field.
- * This mirrors the SectionReviews component in program-form.
+ * Renders existing review comments for a section.
+ * - If NO section across the whole form has been reviewed → "Not Reviewed Yet"
+ * - If at least ONE section has a review but THIS section has none → "No Comment Provided"
  */
 const SectionReviews: React.FC<{
   reviews: any[];
@@ -31,30 +32,49 @@ const SectionReviews: React.FC<{
   comments: Comments;
   onCommentChange: (key: string, val: string) => void;
   alreadyReviewed: boolean;
-}> = ({ reviews, showCommentInputs, sectionName, inputKey, comments, onCommentChange, alreadyReviewed }) => (
+  hasAnyReviewAcrossSections: boolean;
+}> = ({ reviews, showCommentInputs, sectionName, inputKey, comments, onCommentChange, alreadyReviewed, hasAnyReviewAcrossSections }) => (
   <>
-    {reviews.map((r, i) => (
-      <PreviousComment key={i} comment={r.comment} reviewerName={r.reviewer_name ?? "Reviewer"} />
-    ))}
-    {showCommentInputs && reviews.length === 0 && (
-      <div className="">
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
-          
-          {/* Icon */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-            <Clock className="h-5 w-5" />
-          </div>
+    {reviews.map((r, i) => {
+      const commentText =
+        r.comment && r.comment.trim() !== "" ? r.comment : "No Comment Provided";
 
-          {/* Text Content */}
-          <div>
-            <p className="text-sm font-semibold text-gray-800">
-              Not Reviewed Yet
-            </p>
-            <p className="text-xs text-gray-500">
-              This proposal is still pending review.
-            </p>
+      return (
+        <PreviousComment
+          key={i}
+          comment={commentText}
+          reviewerName={r.reviewer_name ?? "Reviewer"}
+        />
+      );
+    })}
+
+    {showCommentInputs && reviews.length === 0 && (
+      <div>
+        {hasAnyReviewAcrossSections ? (
+          /* At least one other section has a review — this section was skipped */
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">No Comment Provided</p>
+              <p className="text-xs text-gray-500">The reviewer did not leave a comment for this section.</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* No section has any review at all — proposal is fully pending */
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Not Reviewed Yet</p>
+              <p className="text-xs text-gray-500">This proposal is still pending review.</p>
+            </div>
+          </div>
+        )}
       </div>
     )}
   </>
@@ -71,7 +91,6 @@ export const ProjectForm: React.FC<{
   onCommentChange: (key: string, val: string) => void;
   alreadyReviewed: boolean;
   showCommentInputs: boolean;
-  /** Reviewed data shape mirrors program-form's reviewedData */
   reviewedData?: any;
 }> = ({ projectData, programTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs, reviewedData }) => {
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
@@ -80,21 +99,35 @@ export const ProjectForm: React.FC<{
   (projectData.workplan || []).forEach(({ month, activity }: WorkplanItem) => { workplanMap[month] = activity; });
 
   // Derive validated review arrays for every section
-  const profileReviews       = validReviews(reviewedData?.profile?.reviews);
-  const agencyReviews        = validReviews(reviewedData?.agencies?.reviews);
-  const extensionSiteReviews = validReviews(reviewedData?.extension_sites?.reviews);
-  const taggingReviews       = validReviews(reviewedData?.tagging_clustering_extension?.reviews);
-  const sdgReviews           = validReviews(reviewedData?.sdg_and_academic_program?.reviews);
-  const rationaleReviews     = validReviews(reviewedData?.rationale?.reviews);
-  const significanceReviews  = validReviews(reviewedData?.significance?.reviews);
-  const generalObjReviews    = validReviews(reviewedData?.objectives?.reviews_general);
-  const specificObjReviews   = validReviews(reviewedData?.objectives?.reviews_specific);
-  const methodologyReviews   = validReviews(reviewedData?.methodology?.reviews);
+  const profileReviews        = validReviews(reviewedData?.profile?.reviews);
+  const agencyReviews         = validReviews(reviewedData?.agencies?.reviews);
+  const extensionSiteReviews  = validReviews(reviewedData?.extension_sites?.reviews);
+  const taggingReviews        = validReviews(reviewedData?.tagging_clustering_extension?.reviews);
+  const sdgReviews            = validReviews(reviewedData?.sdg_and_academic_program?.reviews);
+  const rationaleReviews      = validReviews(reviewedData?.rationale?.reviews);
+  const significanceReviews   = validReviews(reviewedData?.significance?.reviews);
+  const generalObjReviews     = validReviews(reviewedData?.objectives?.reviews_general);
+  const specificObjReviews    = validReviews(reviewedData?.objectives?.reviews_specific);
+  const methodologyReviews    = validReviews(reviewedData?.methodology?.reviews);
   const expectedOutputReviews = validReviews(reviewedData?.expected_output_6ps?.reviews);
-  const budgetReviews        = validReviews(reviewedData?.budget_requirements?.reviews);
+  const budgetReviews         = validReviews(reviewedData?.budget_requirements?.reviews);
 
-  // Shared props passed to every SectionReviews instance
-  const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs };
+  // True if at least one section across the entire form has a valid review
+  const hasAnyReviewAcrossSections =
+    profileReviews.length > 0 ||
+    agencyReviews.length > 0 ||
+    extensionSiteReviews.length > 0 ||
+    taggingReviews.length > 0 ||
+    sdgReviews.length > 0 ||
+    rationaleReviews.length > 0 ||
+    significanceReviews.length > 0 ||
+    generalObjReviews.length > 0 ||
+    specificObjReviews.length > 0 ||
+    methodologyReviews.length > 0 ||
+    expectedOutputReviews.length > 0 ||
+    budgetReviews.length > 0;
+
+  const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
 
   return (
     <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-serif text-gray-900 leading-relaxed p-5">
@@ -105,9 +138,7 @@ export const ProjectForm: React.FC<{
       </div>
 
       <div className="">
-        {/* ---------------------------------------------------------------- */}
-        {/* I. PROFILE                                                        */}
-        {/* ---------------------------------------------------------------- */}
+        {/* I. PROFILE */}
         <div className="p-5">
           <h2 className="text-base font-bold my-2 flex"><VerticalLine />I. PROFILE</h2>
           <div className="my-4">
@@ -117,15 +148,13 @@ export const ProjectForm: React.FC<{
             <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members?.map((m: any) => m).join(", "))}</span></p>
             <br />
             <p className="font-bold">Project Duration: <span className="font-normal">{val(projectData.duration_months)}</span></p>
-            <p className="font-bold">Start Date: <span className="font-normal">{val(projectData.start_date)}</span></p>
-            <p className="font-bold">End Date: <span className="font-normal">{val(projectData.end_date)}</span></p>
+            <p className="font-bold">Start Date: <span className="font-normal">{val(formatDate(projectData.start_date))}</span></p>
+            <p className="font-bold">End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
           </div>
         </div>
         <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="proj_profile_feedback" {...sectionProps} />
 
-        {/* ---------------------------------------------------------------- */}
-        {/* IMPLEMENTING / COOPERATING AGENCY                                 */}
-        {/* ---------------------------------------------------------------- */}
+        {/* IMPLEMENTING / COOPERATING AGENCY */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
@@ -143,9 +172,7 @@ export const ProjectForm: React.FC<{
         </div>
         <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="proj_implementing_agency_feedback" {...sectionProps} />
 
-        {/* ---------------------------------------------------------------- */}
-        {/* EXTENSION SITES                                                   */}
-        {/* ---------------------------------------------------------------- */}
+        {/* EXTENSION SITES */}
         <p className="font-bold mt-2 mb-3 px-2 flex"><VerticalLine />Extension Site/s or Venue/s</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -165,9 +192,7 @@ export const ProjectForm: React.FC<{
         </div>
         <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="proj_extension_site_feedback" {...sectionProps} />
 
-        {/* ---------------------------------------------------------------- */}
-        {/* TAGGING / CLUSTER / AGENDA / SDG                                  */}
-        {/* ---------------------------------------------------------------- */}
+        {/* TAGGING / CLUSTER / AGENDA / SDG */}
         <div className="overflow-x-auto">
           <table className="w-full border-b border-black text-sm">
             <tbody>
@@ -192,7 +217,6 @@ export const ProjectForm: React.FC<{
                   />
                 </td>
               </tr>
-              {/* Tagging / Cluster / Agenda reviews rendered inside the table */}
               <tr>
                 <td colSpan={2} className="p-0">
                   <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="proj_tagging_cluster_extension_feedback" {...sectionProps} />
@@ -212,27 +236,21 @@ export const ProjectForm: React.FC<{
         <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="proj_sdg_academic_program_feedback" {...sectionProps} />
 
         <div className="text-gray-700 leading-relaxed">
-          {/* -------------------------------------------------------------- */}
-          {/* II. RATIONALE                                                    */}
-          {/* -------------------------------------------------------------- */}
+          {/* II. RATIONALE */}
           <div className="px-2 py-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.rationale)}</p>
           </div>
           <SectionReviews reviews={rationaleReviews} sectionName="Project Rationale" inputKey="proj_rationale_feedback" {...sectionProps} />
 
-          {/* -------------------------------------------------------------- */}
-          {/* III. SIGNIFICANCE                                                */}
-          {/* -------------------------------------------------------------- */}
+          {/* III. SIGNIFICANCE */}
           <div className="p-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. SIGNIFICANCE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.significance)}</p>
           </div>
           <SectionReviews reviews={significanceReviews} sectionName="Project Significance" inputKey="proj_significance_feedback" {...sectionProps} />
 
-          {/* -------------------------------------------------------------- */}
-          {/* IV. OBJECTIVES                                                   */}
-          {/* -------------------------------------------------------------- */}
+          {/* IV. OBJECTIVES */}
           <div className="border-b border-black p-2">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />IV. OBJECTIVES</h3>
             <p className="text-base font-semibold mb-2 mt-3 ml-2">General:</p>
@@ -243,9 +261,7 @@ export const ProjectForm: React.FC<{
             <SectionReviews reviews={specificObjReviews} sectionName="Project Specific Objectives" inputKey="proj_specific_objectives_feedback" {...sectionProps} />
           </div>
 
-          {/* -------------------------------------------------------------- */}
-          {/* V. METHODOLOGY                                                   */}
-          {/* -------------------------------------------------------------- */}
+          {/* V. METHODOLOGY */}
           <div className="border-b border-black p-2">
             <h3 className="font-bold text-gray-900 text-base mb-5 flex"><VerticalLine />V. METHODOLOGY</h3>
             {(projectData.methodology || []).length > 0 ? (
@@ -261,9 +277,7 @@ export const ProjectForm: React.FC<{
           </div>
           <SectionReviews reviews={methodologyReviews} sectionName="Project Methodology" inputKey="proj_methodology_feedback" {...sectionProps} />
 
-          {/* -------------------------------------------------------------- */}
-          {/* VI. EXPECTED OUTPUT                                              */}
-          {/* -------------------------------------------------------------- */}
+          {/* VI. EXPECTED OUTPUT */}
           <div>
             <h3 className="font-bold text-gray-900 p-2 text-base my-2 flex"><VerticalLine />VI. EXPECTED OUTPUT/OUTCOME</h3>
             <table className="w-full border-t border-black text-sm">
@@ -283,9 +297,7 @@ export const ProjectForm: React.FC<{
           </div>
           <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="proj_expected_output_feedback" {...sectionProps} />
 
-          {/* -------------------------------------------------------------- */}
-          {/* VII. BUDGET                                                      */}
-          {/* -------------------------------------------------------------- */}
+          {/* VII. BUDGET */}
           <div>
             <h3 className="font-bold text-gray-900 text-base p-2 mb-2 flex"><VerticalLine />VII. BUDGETARY REQUIREMENT</h3>
             <table className="w-full text-sm">

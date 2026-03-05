@@ -298,6 +298,37 @@ export interface ActivityFormData {
   saved: boolean;
 }
 
+export interface ProgramHistoryListFields {
+  proposal_id: string;
+  program_id: number;
+  program_title: string;
+  program_leader: string;
+  history_id: number;
+  version: number;
+  status: string;
+}
+
+export interface ProjectHistoryListFields {
+  proposal_id: number;
+  project_id: number;
+  project_title: string;
+  project_leader: string;
+  history_id: number;
+  version: number;
+  status: string;
+}
+
+export interface ActivityHistoryListFields {
+  proposal_id: number;
+  activity_id: number;
+  activity_title: string;
+  project_leader: string;
+  history_id: number;
+  version: number;
+  status: string;
+  
+}
+
 // ─────────────────────────────────────────────
 // MAPPING UTILITIES
 // ─────────────────────────────────────────────
@@ -582,5 +613,20 @@ export async function fetchReviewedProposal(
   const res = await authFetch(
     `${BASE_URL}/proposal-review/proposal/${proposal_node}/${proposal_type}/`
   );
+  return handleResponse<any>(res);
+}
+
+export async function fetchProgramHistoryList(proposal_node: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/program-proposal/${proposal_node}/history-list/`);
+  return handleResponse<any>(res);
+}
+
+export async function fetchProjectHistoryList(proposal_node: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/project-proposal/${proposal_node}/history-list/`);
+  return handleResponse<any>(res);
+}
+
+export async function fetchActivityHistoryList(proposal_node: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${proposal_node}/history-list/`);
   return handleResponse<any>(res);
 }

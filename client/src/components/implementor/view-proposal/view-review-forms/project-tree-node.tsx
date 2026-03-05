@@ -1,3 +1,4 @@
+import { formatDate } from "@/utils/dateFormat";
 import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/utils/reviewer-api";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
@@ -9,6 +10,7 @@ type ProjectListFields = {
   project_title: string;
   project_leader: string;
   activity_title?: string;
+  activity_date: string;
   type: string;
   status: string;
   reviewer_count: number;
@@ -89,7 +91,8 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
                     <p className={`truncate text-[11px] font-medium leading-relaxed text-wrap ${isActSelected ? "text-blue-700" : "text-gray-600"}`}>
                       {act.activity_title || "Untitled Activity"}
                     </p>
-                    {act.activity_date}
+                    <p className="text-[9px] text-gray-400"><span className="text-gray-500">Activity Date: </span>{formatDate(act.activity_date)}</p>
+                    
                   </div>
                 </button>
               );

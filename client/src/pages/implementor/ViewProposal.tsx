@@ -138,6 +138,7 @@ const ViewProposal: React.FC = () => {
     try {
       const childId = doc.child_id ?? doc.proposal_id;
       const detail = await fetchProgramProposalDetail(childId);
+      console.log("Detail", detail)
       setProposalDetail(detail);
       setShowViewerModal(true);
     } catch (err) {

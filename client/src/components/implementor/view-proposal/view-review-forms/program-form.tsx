@@ -4,6 +4,8 @@ import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
 import type { ApiProposalDetail, Comments } from "../view-reviewed-document";
 import CommentInput from "@/components/reviewer/CommentInput";
 import PreviousComment from "@/components/reviewer/PreviousComment";
+import { formatDate } from "@/utils/dateFormat";
+import { Clock } from "lucide-react";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 
@@ -15,7 +17,8 @@ const validReviews = (reviews: any): any[] => {
   );
 };
 
-// Render reviews + conditionally show CommentInput only when no reviews exist yet
+// Render reviews + conditionally show "Not Reviewed Yet" or "No Comment Provided"
+// depending on whether any section across the whole form has been reviewed.
 const SectionReviews: React.FC<{
   reviews: any[];
   showCommentInputs: boolean;
@@ -24,19 +27,50 @@ const SectionReviews: React.FC<{
   comments: Comments;
   onCommentChange: (key: string, val: string) => void;
   alreadyReviewed: boolean;
-}> = ({ reviews, showCommentInputs, sectionName, inputKey, comments, onCommentChange, alreadyReviewed }) => (
+  hasAnyReviewAcrossSections: boolean;
+}> = ({ reviews, showCommentInputs, sectionName, inputKey, comments, onCommentChange, alreadyReviewed, hasAnyReviewAcrossSections }) => (
   <>
-    {reviews.map((r, i) => (
-      <PreviousComment key={i} comment={r.comment} reviewerName={r.reviewer_name ?? "Reviewer"} />
-    ))}
+    {reviews.map((r, i) => {
+      const commentText =
+        r.comment && r.comment.trim() !== "" ? r.comment : "No Comment Provided";
+
+      return (
+        <PreviousComment
+          key={i}
+          comment={commentText}
+          reviewerName={r.reviewer_name ?? "Reviewer"}
+        />
+      );
+    })}
+
     {showCommentInputs && reviews.length === 0 && (
-      <CommentInput
-        sectionName={sectionName}
-        onCommentChange={onCommentChange}
-        InputValue={inputKey}
-        value={comments[inputKey] || ""}
-        disabled={alreadyReviewed}
-      />
+      <div>
+        {hasAnyReviewAcrossSections ? (
+          /* At least one other section has a review — this section was skipped */
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">No Comment Provided</p>
+              <p className="text-xs text-gray-500">The reviewer did not leave a comment for this section.</p>
+            </div>
+          </div>
+        ) : (
+          /* No section has any review at all — proposal is fully pending */
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Not Reviewed Yet</p>
+              <p className="text-xs text-gray-500">This proposal is still pending review.</p>
+            </div>
+          </div>
+        )}
+      </div>
     )}
   </>
 );
@@ -71,7 +105,25 @@ export const ProgramForm: React.FC<{
   const workplanReviews       = validReviews(reviewedData?.work_plan?.reviews);
   const budgetReviews         = validReviews(reviewedData?.budget_requirements?.reviews);
 
-  const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs };
+  // True if at least one section across the entire form has a valid review
+  const hasAnyReviewAcrossSections =
+    profileReviews.length > 0 ||
+    agencyReviews.length > 0 ||
+    extensionSiteReviews.length > 0 ||
+    taggingReviews.length > 0 ||
+    sdgReviews.length > 0 ||
+    rationaleReviews.length > 0 ||
+    significanceReviews.length > 0 ||
+    generalObjReviews.length > 0 ||
+    specificObjReviews.length > 0 ||
+    methodologyReviews.length > 0 ||
+    expectedOutputReviews.length > 0 ||
+    sustainabilityReviews.length > 0 ||
+    orgStaffingReviews.length > 0 ||
+    workplanReviews.length > 0 ||
+    budgetReviews.length > 0;
+
+  const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
 
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
@@ -97,8 +149,8 @@ export const ProgramForm: React.FC<{
                   <p className="font-bold">Project Members: <span className="font-normal">{val(proj.project_member?.join(", "))}</span></p>
                   <br />
                   <p className="font-bold">Project Duration: <span className="font-normal">{val(proj.project_duration)}</span></p>
-                  <p className="font-bold">Project Start Date: <span className="font-normal">{val(proj.project_start_date)}</span></p>
-                  <p className="font-bold">Project End Date: <span className="font-normal">{val(proj.project_end_date)}</span></p>
+                  <p className="font-bold">Project Start Date: <span className="font-normal">{val(formatDate(proj.project_start_date))}</span></p>
+                  <p className="font-bold">Project End Date: <span className="font-normal">{val(formatDate(proj.project_end_date))}</span></p>
                   <br />
                 </div>
               </React.Fragment>

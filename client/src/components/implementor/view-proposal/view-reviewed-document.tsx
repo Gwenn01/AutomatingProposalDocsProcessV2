@@ -18,7 +18,14 @@ import {
   fetchProjectProposalDetail,
   type ApiActivity,
 } from "@/utils/reviewer-api";
-import { fetchActivityList, fetchActivityProposalDetail, fetchReviewedProposal } from "@/utils/implementor-api";
+import {
+  fetchActivityList,
+  fetchActivityProposalDetail,
+  fetchReviewedProposal,
+  fetchProgramHistoryList,
+  fetchProjectHistoryList,
+  fetchActivityHistoryList,
+} from "@/utils/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import { ActivityForm } from "./view-review-forms/activity-form";
 import { ProjectForm } from "./view-review-forms/project-form";
@@ -206,6 +213,26 @@ function mapReviewedToActivity(data: any): any | null {
   };
 }
 
+// ================= HISTORY NORMALIZER =================
+
+/**
+ * Normalises raw history list responses from all three endpoints into the
+ * shared History shape used by the sidebar.  Each endpoint returns a slightly
+ * different field name for the history id and version, so we handle all known
+ * variants here.
+ */
+function normalizeHistoryList(raw: any): History[] {
+  if (!raw) return [];
+  const items: any[] = Array.isArray(raw) ? raw : raw.history ?? raw.results ?? [];
+  return items.map((item) => ({
+    history_id: String(item.history_id ?? item.id ?? ""),
+    proposal_id: String(item.proposal_id ?? item.proposal ?? ""),
+    status: item.status ?? "unknown",
+    version_no: item.version ?? item.version_no ?? 0,
+    created_at: item.created_at ?? "",
+  }));
+}
+
 // ================= MAIN MODAL =================
 
 const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
@@ -233,10 +260,15 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [projectLoading,  setProjectLoading]  = useState(false);
   const [activityLoading, setActivityLoading] = useState(false);
 
-  // ── Misc ──────────────────────────────────────────────────────────────────
-  const [comments,               setComments]              = useState<Comments>({});
-  const [history]                                          = useState<History[]>([]);
+  // ── History (per tab) ─────────────────────────────────────────────────────
+  const [programHistory,       setProgramHistory]       = useState<History[]>([]);
+  const [projectHistory,       setProjectHistory]       = useState<History[]>([]);
+  const [activityHistory,      setActivityHistory]      = useState<History[]>([]);
+  const [historyLoading,       setHistoryLoading]       = useState(false);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
+
+  // ── Misc ──────────────────────────────────────────────────────────────────
+  const [comments, setComments] = useState<Comments>({});
 
   const [projectDetail, setProjectDetail] = useState<any | null>(null);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
@@ -254,9 +286,16 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const nodeId  = proposalData ? Number(proposalData.proposal_id) : null;
   const childId = proposalData ? Number(proposalData.child_id)    : null;
 
-  // ── 1. Program reviewed data ───────────────────────────────────────────────
+  // ── Derive the active history list based on current tab / selection ───────
+  const activeHistory: History[] =
+    activeTab === "activity" ? activityHistory :
+    activeTab === "project"  ? projectHistory  :
+    programHistory;
+
+  // ── 1. Program reviewed data + history ────────────────────────────────────
   useEffect(() => {
     if (!isOpen || !nodeId) return;
+
     setProgramLoading(true);
     setProgramReviewedData(null);
     fetchReviewedProposal(nodeId, "program")
@@ -266,12 +305,19 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
         setProgramReviewedData(null);
       })
       .finally(() => setProgramLoading(false));
+
+    // Fetch program history list
+    setHistoryLoading(true);
+    fetchProgramHistoryList(nodeId)
+      .then((raw) => setProgramHistory(normalizeHistoryList(raw)))
+      .catch((err) => {
+        console.error("[ProgramHistory] fetch failed:", err);
+        setProgramHistory([]);
+      })
+      .finally(() => setHistoryLoading(false));
   }, [isOpen, nodeId]);
 
   // ── 2. Sidebar project list ────────────────────────────────────────────────
-  // Uses fetchReviewerProjectProposal(childId) which returns a list of projects
-  // under the given program proposal child. The result is an array assigned
-  // directly to projectList.
   useEffect(() => {
     if (!isOpen || !childId) return;
     const load = async () => {
@@ -288,32 +334,66 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     load();
   }, [isOpen, childId]);
 
-  // ── 3. Project reviewed data ───────────────────────────────────────────────
+  // ── 3. Project reviewed data + history ────────────────────────────────────
   useEffect(() => {
-    if (!selectedProject?.child_id) { setProjectReviewedData(null); return; }
+    if (!selectedProject?.proposal_id) {
+      setProjectReviewedData(null);
+      setProjectHistory([]);
+      return;
+    }
+
+    const proposalId = selectedProject.proposal_id;
+
     setProjectLoading(true);
     setProjectReviewedData(null);
-    fetchReviewedProposal(selectedProject.proposal_id, "project")
+    fetchReviewedProposal(proposalId, "project")
       .then(setProjectReviewedData)
       .catch((err) => {
         console.error("[ViewReviewed] project fetch failed:", err);
         setProjectReviewedData(null);
       })
       .finally(() => setProjectLoading(false));
+
+    // Fetch project history list
+    setHistoryLoading(true);
+    fetchProjectHistoryList(proposalId)
+      .then((raw) => setProjectHistory(normalizeHistoryList(raw)))
+      .catch((err) => {
+        console.error("[ProjectHistory] fetch failed:", err);
+        setProjectHistory([]);
+      })
+      .finally(() => setHistoryLoading(false));
   }, [selectedProject?.proposal_id]);
 
-  // ── 4. Activity reviewed data ──────────────────────────────────────────────
+  // ── 4. Activity reviewed data + history ───────────────────────────────────
   useEffect(() => {
-    if (!selectedActivity?.proposal_id) { setActivityReviewedData(null); return; }
+    if (!selectedActivity?.proposal_id) {
+      setActivityReviewedData(null);
+      setActivityHistory([]);
+      return;
+    }
+
+    const proposalId = selectedActivity.proposal_id;
+
     setActivityLoading(true);
     setActivityReviewedData(null);
-    fetchReviewedProposal(selectedActivity.proposal_id, "activity")
+    fetchReviewedProposal(proposalId, "activity")
       .then(setActivityReviewedData)
       .catch((err) => {
         console.error("[ViewReviewed] activity fetch failed:", err);
         setActivityReviewedData(null);
       })
       .finally(() => setActivityLoading(false));
+
+    // Fetch activity history list
+    setHistoryLoading(true);
+    fetchActivityHistoryList(proposalId)
+      .then((raw) => setActivityHistory(normalizeHistoryList(raw)))
+      .catch((err) => {
+        console.error("[ActivityHistory] fetch failed:", err);
+        setActivityHistory([]);
+      })
+      .finally(() => setHistoryLoading(false));
   }, [selectedActivity?.proposal_id]);
 
   // ── Reset on close ────────────────────────────────────────────────────────
@@ -330,7 +410,15 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setProjectReviewedData(null);
     setActivityReviewedData(null);
     setProjectList([]);
+    setProgramHistory([]);
+    setProjectHistory([]);
+    setActivityHistory([]);
   }, [isOpen]);
+
+  // ── Clear selected history version when tab changes ───────────────────────
+  useEffect(() => {
+    setSelectedHistoryVersion(null);
+  }, [activeTab, selectedProject?.proposal_id, selectedActivity?.proposal_id]);
 
   // ── Load activities for a project (with cache) ──
   const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
@@ -625,11 +713,16 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
               <p className="text-xs text-gray-400 mt-1">Recent changes of proposal</p>
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4">
-              {history.length === 0 ? (
+              {historyLoading ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <div className="w-6 h-6 border-2 border-gray-200 border-t-primaryGreen rounded-full animate-spin" />
+                  <p className="text-xs text-gray-400">Loading history...</p>
+                </div>
+              ) : activeHistory.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-10">No history available</p>
               ) : (
                 <div className="space-y-2">
-                  {history.map((item) => {
+                  {activeHistory.map((item) => {
                     const isSelected = selectedHistoryVersion?.history_id === item.history_id;
                     return (
                       <div
@@ -647,7 +740,11 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                             {item.status === "current" ? "Current Proposal" : `Revision ${item.version_no}`}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            {new Date(item.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            {new Date(item.created_at).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </p>
                         </div>
                       </div>

@@ -42,13 +42,17 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
               <table className="w-full text-sm">
                 <tbody>
                   <tr className="border-b border-t border-black p-5">
+                    <td>
                       <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
                       <p className="px-3 mb-2">{arrVal(projectData.implementing_agency)}</p>
                       {/* <td className="px-4 py-3">{arrVal(proposalData.implementing_agency)}</td> */}
+                    </td>
                     </tr>
                     <tr className="border-b border-black">
-                      <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
-                      <p className="   px-3 mb-2 font-normal">{arrVal(projectData.cooperating_agencies)}</p>
+                      <td>
+                        <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
+                        <p className="   px-3 mb-2 font-normal">{arrVal(projectData.cooperating_agencies)}</p>
+                      </td>
                     </tr>
                 </tbody>
               </table>
