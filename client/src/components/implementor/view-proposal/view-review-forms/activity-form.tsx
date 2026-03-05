@@ -6,6 +6,7 @@ import PreviousComment from "@/components/reviewer/PreviousComment";
 import type { BudgetItem } from "../view-reviewed-document";
 import { Clock } from "lucide-react";
 import { formatDate } from "@/utils/dateFormat";
+import { CommentHeader } from "./ui/comment-header";
 
 interface Comments {
   [key: string]: string;
@@ -152,8 +153,10 @@ export const ActivityForm: React.FC<{
             <p className="font-normal">Date: <span className="font-normal">{val(formatDate(activityData.activity_date))}</span></p>
           </div>
         </div>
-        <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="act_profile_feedback" {...sectionProps} />
 
+        <CommentHeader sectionName="Profile" >
+          <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="act_profile_feedback" {...sectionProps} />
+        </CommentHeader>
         {/* IMPLEMENTING / COOPERATING AGENCY */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -170,7 +173,10 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="act_implementing_agency_feedback" {...sectionProps} />
+
+        <CommentHeader sectionName="Implementing & Cooperating Agency" >
+          <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="act_implementing_agency_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* EXTENSION SITES */}
         <p className="font-bold text-base p-3 mb-2 flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
@@ -190,7 +196,9 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="act_extension_site_feedback" {...sectionProps} />
+        <CommentHeader sectionName="Extension Sites" >
+          <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="act_extension_site_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* TAGGING / CLUSTER / AGENDA / SDG */}
         <div className="overflow-x-auto">
@@ -219,7 +227,9 @@ export const ActivityForm: React.FC<{
               </tr>
               <tr>
                 <td colSpan={2} className="p-0">
-                  <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="act_tagging_cluster_extension_feedback" {...sectionProps} />
+                  <CommentHeader sectionName="Tagging, Cluster & Extension Agenda" >
+                    <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="act_tagging_cluster_extension_feedback" {...sectionProps} />
+                  </CommentHeader>
                 </td>
               </tr>
               <tr className="border border-black">
@@ -233,29 +243,36 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="act_sdg_academic_program_feedback" {...sectionProps} />
-
+        <CommentHeader sectionName="Tagging, Cluster & Extension Agenda" >
+          <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="act_sdg_academic_program_feedback" {...sectionProps} />
+        </CommentHeader>
         <div className="text-gray-700 leading-relaxed">
           {/* II. RATIONALE */}
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.rationale)}</p>
           </div>
-          <SectionReviews reviews={rationaleReviews} sectionName="Activity Rationale" inputKey="act_rationale_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Activity Rationale" >
+            <SectionReviews reviews={rationaleReviews} sectionName="Activity Rationale" inputKey="act_rationale_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* III. OBJECTIVES */}
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. OBJECTIVES OF THE ACTIVITY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.objectives)}</p>
           </div>
-          <SectionReviews reviews={objectivesReviews} sectionName="Activity Objectives" inputKey="act_objectives_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Activity Objectives" >
+            <SectionReviews reviews={objectivesReviews} sectionName="Activity Objectives" inputKey="act_objectives_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* IV. METHODOLOGY */}
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />IV. METHODOLOGY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.methodology)}</p>
           </div>
-          <SectionReviews reviews={methodologyReviews} sectionName="Activity Methodology" inputKey="act_methodology_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Activity Methodology" >
+            <SectionReviews reviews={methodologyReviews} sectionName="Activity Methodology" inputKey="act_methodology_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* V. EXPECTED OUTPUT */}
           <div>
@@ -275,7 +292,9 @@ export const ActivityForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="act_expected_output_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Expected Output" >
+            <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="act_expected_output_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VI. PLAN OF ACTIVITY */}
           <div>
@@ -303,7 +322,9 @@ export const ActivityForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={planOfActivityReviews} sectionName="Plan of Activities" inputKey="act_work_plan_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Plan of Activity" >
+            <SectionReviews reviews={planOfActivityReviews} sectionName="Plan of Activities" inputKey="act_work_plan_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VII. BUDGET */}
           <div>
@@ -331,7 +352,9 @@ export const ActivityForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={budgetReviews} sectionName="Activity Budget" inputKey="act_budget_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Budget Requirement" >
+            <SectionReviews reviews={budgetReviews} sectionName="Activity Budget" inputKey="act_budget_feedback" {...sectionProps} />
+          </CommentHeader>
         </div>
       </div>
     </section>

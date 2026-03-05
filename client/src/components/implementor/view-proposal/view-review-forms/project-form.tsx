@@ -6,6 +6,7 @@ import CommentInput from "@/components/reviewer/CommentInput";
 import PreviousComment from "@/components/reviewer/PreviousComment";
 import { Clock } from "lucide-react";
 import { formatDate } from "@/utils/dateFormat";
+import { CommentHeader } from "./ui/comment-header";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -152,7 +153,10 @@ export const ProjectForm: React.FC<{
             <p className="font-bold">End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
           </div>
         </div>
-        <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="proj_profile_feedback" {...sectionProps} />
+
+        <CommentHeader sectionName="Profile" >
+          <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="proj_profile_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* IMPLEMENTING / COOPERATING AGENCY */}
         <div className="overflow-x-auto">
@@ -170,7 +174,9 @@ export const ProjectForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="proj_implementing_agency_feedback" {...sectionProps} />
+        <CommentHeader sectionName="Implementing & Cooperating Agency" >
+          <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="proj_implementing_agency_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* EXTENSION SITES */}
         <p className="font-bold mt-2 mb-3 px-2 flex"><VerticalLine />Extension Site/s or Venue/s</p>
@@ -190,7 +196,9 @@ export const ProjectForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="proj_extension_site_feedback" {...sectionProps} />
+        <CommentHeader sectionName="Extension Sites" >
+          <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="proj_extension_site_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* TAGGING / CLUSTER / AGENDA / SDG */}
         <div className="overflow-x-auto">
@@ -219,7 +227,9 @@ export const ProjectForm: React.FC<{
               </tr>
               <tr>
                 <td colSpan={2} className="p-0">
-                  <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="proj_tagging_cluster_extension_feedback" {...sectionProps} />
+                  <CommentHeader sectionName="Tagging, Cluster & Extension Agenda" >
+                    <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="proj_tagging_cluster_extension_feedback" {...sectionProps} />
+                  </CommentHeader>
                 </td>
               </tr>
               <tr className="border border-black">
@@ -233,22 +243,27 @@ export const ProjectForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="proj_sdg_academic_program_feedback" {...sectionProps} />
-
+        <CommentHeader sectionName="Tagging, Cluster & Extension Agenda" >
+          <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="proj_sdg_academic_program_feedback" {...sectionProps} />
+        </CommentHeader>
         <div className="text-gray-700 leading-relaxed">
           {/* II. RATIONALE */}
           <div className="px-2 py-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.rationale)}</p>
           </div>
-          <SectionReviews reviews={rationaleReviews} sectionName="Project Rationale" inputKey="proj_rationale_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Project Rationale">
+            <SectionReviews reviews={rationaleReviews} sectionName="Project Rationale" inputKey="proj_rationale_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* III. SIGNIFICANCE */}
           <div className="p-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. SIGNIFICANCE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.significance)}</p>
           </div>
-          <SectionReviews reviews={significanceReviews} sectionName="Project Significance" inputKey="proj_significance_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Project Significance">
+            <SectionReviews reviews={significanceReviews} sectionName="Project Significance" inputKey="proj_significance_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* IV. OBJECTIVES */}
           <div className="border-b border-black p-2">
@@ -275,7 +290,9 @@ export const ProjectForm: React.FC<{
               ))
             ) : <p className="text-base">{NA}</p>}
           </div>
-          <SectionReviews reviews={methodologyReviews} sectionName="Project Methodology" inputKey="proj_methodology_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Project Methodology" >
+            <SectionReviews reviews={methodologyReviews} sectionName="Project Methodology" inputKey="proj_methodology_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VI. EXPECTED OUTPUT */}
           <div>
@@ -295,7 +312,9 @@ export const ProjectForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="proj_expected_output_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Expected Output" >
+            <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="proj_expected_output_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VII. BUDGET */}
           <div>
@@ -323,7 +342,9 @@ export const ProjectForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={budgetReviews} sectionName="Project Budget" inputKey="proj_budget_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Budget Requirement" >
+            <SectionReviews reviews={budgetReviews} sectionName="Project Budget" inputKey="proj_budget_feedback" {...sectionProps} />
+          </CommentHeader>
         </div>
       </div>
     </section>

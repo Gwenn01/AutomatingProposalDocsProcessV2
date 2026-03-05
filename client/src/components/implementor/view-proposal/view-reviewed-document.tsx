@@ -31,6 +31,7 @@ import { ActivityForm } from "./view-review-forms/activity-form";
 import { ProjectForm } from "./view-review-forms/project-form";
 import { ProgramForm } from "./view-review-forms/program-form";
 import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
+import EditSaveButton from "./EditSaveButton";
 
 // ================= TYPES =================
 
@@ -93,7 +94,7 @@ type ProjectListFields = {
   is_reviewed: boolean;
   assigned_at: string | null;
   activities?: ApiActivity[];
-}
+};
 
 type ProjectItem = ProjectListFields;
 type ActivityItem = ProjectListFields;
@@ -114,7 +115,7 @@ interface ViewReviewedDocumentsProps {
     title: string;
     status: string;
     proposal_id: number | string;
-    child_id:    number | string;
+    child_id: number | string;
     assignment_id?: number | string;
   } | null;
   proposalDetail?: any;
@@ -215,21 +216,15 @@ function mapReviewedToActivity(data: any): any | null {
 
 // ================= HISTORY NORMALIZER =================
 
-/**
- * Normalises raw history list responses from all three endpoints into the
- * shared History shape used by the sidebar.  Each endpoint returns a slightly
- * different field name for the history id and version, so we handle all known
- * variants here.
- */
 function normalizeHistoryList(raw: any): History[] {
   if (!raw) return [];
   const items: any[] = Array.isArray(raw) ? raw : raw.history ?? raw.results ?? [];
   return items.map((item) => ({
-    history_id: String(item.history_id ?? item.id ?? ""),
+    history_id:  String(item.history_id ?? item.id ?? ""),
     proposal_id: String(item.proposal_id ?? item.proposal ?? ""),
-    status: item.status ?? "unknown",
-    version_no: item.version ?? item.version_no ?? 0,
-    created_at: item.created_at ?? "",
+    status:      item.status ?? "unknown",
+    version_no:  item.version ?? item.version_no ?? 0,
+    created_at:  item.created_at ?? "",
   }));
 }
 
@@ -245,10 +240,10 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>("program");
 
   // ── Sidebar ───────────────────────────────────────────────────────────────
-  const [projectList,        setProjectList]        = useState<ProjectItem[]>([]);
-  const [projectListLoading, setProjectListLoading] = useState(false);
-  const [selectedProject,    setSelectedProject]    = useState<ProjectItem | null>(null);
-  const [selectedActivity,   setSelectedActivity]   = useState<ActivityItem | null>(null);
+  const [projectList,            setProjectList]            = useState<ProjectItem[]>([]);
+  const [projectListLoading,     setProjectListLoading]     = useState(false);
+  const [selectedProject,        setSelectedProject]        = useState<ProjectItem | null>(null);
+  const [selectedActivity,       setSelectedActivity]       = useState<ActivityItem | null>(null);
   const [activitiesCache,        setActivitiesCache]        = useState<Record<number, ActivityItem[]>>({});
   const [activitiesLoadingCache, setActivitiesLoadingCache] = useState<Record<number, boolean>>({});
 
@@ -256,41 +251,58 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [programReviewedData,  setProgramReviewedData]  = useState<any | null>(null);
   const [projectReviewedData,  setProjectReviewedData]  = useState<any | null>(null);
   const [activityReviewedData, setActivityReviewedData] = useState<any | null>(null);
-  const [programLoading,  setProgramLoading]  = useState(false);
-  const [projectLoading,  setProjectLoading]  = useState(false);
-  const [activityLoading, setActivityLoading] = useState(false);
+  const [programLoading,       setProgramLoading]       = useState(false);
+  const [projectLoading,       setProjectLoading]       = useState(false);
+  const [activityLoading,      setActivityLoading]      = useState(false);
 
   // ── History (per tab) ─────────────────────────────────────────────────────
-  const [programHistory,       setProgramHistory]       = useState<History[]>([]);
-  const [projectHistory,       setProjectHistory]       = useState<History[]>([]);
-  const [activityHistory,      setActivityHistory]      = useState<History[]>([]);
-  const [historyLoading,       setHistoryLoading]       = useState(false);
+  const [programHistory,         setProgramHistory]         = useState<History[]>([]);
+  const [projectHistory,         setProjectHistory]         = useState<History[]>([]);
+  const [activityHistory,        setActivityHistory]        = useState<History[]>([]);
+  const [historyLoading,         setHistoryLoading]         = useState(false);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
+
+  // ── Edit / save state (shared across all tabs) ────────────────────────────
+  const [isEditing,       setIsEditing]       = useState(false);
+  const [isSaving,        setIsSaving]        = useState(false);
+  const [canEdit,         setCanEdit]         = useState(true);
+  const [isDocumentReady, setIsDocumentReady] = useState(false);
 
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [comments, setComments] = useState<Comments>({});
 
-  const [projectDetail, setProjectDetail] = useState<any | null>(null);
+  const [projectDetail,        setProjectDetail]        = useState<any | null>(null);
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
-
-  const [activityDetail, setActivityDetail] = useState<any | null>(null);
+  const [activityDetail,       setActivityDetail]       = useState<any | null>(null);
   const [activityDetailLoading, setActivityDetailLoading] = useState(false);
 
-  const showCommentInputs = !selectedHistoryVersion || selectedHistoryVersion.status === "current";
+  const showCommentInputs =
+    !selectedHistoryVersion || selectedHistoryVersion.status === "current";
+
   const statusStyle = proposalData
     ? getStatusStyle(proposalData.status ?? "")
     : { className: "", label: "" };
 
-  // nodeId  = proposal_id → /proposal-review/proposal/{nodeId}/program/
-  // childId = child_id    → /reviewer-project-proposal/{childId}/
   const nodeId  = proposalData ? Number(proposalData.proposal_id) : null;
   const childId = proposalData ? Number(proposalData.child_id)    : null;
 
-  // ── Derive the active history list based on current tab / selection ───────
   const activeHistory: History[] =
     activeTab === "activity" ? activityHistory :
     activeTab === "project"  ? projectHistory  :
     programHistory;
+
+  // ── Action bar handlers ───────────────────────────────────────────────────
+  const handleEdit   = () => setIsEditing(true);
+  const handleCancel = () => setIsEditing(false);
+  const handleSave   = async () => {
+    setIsSaving(true);
+    try {
+      // TODO: call the appropriate save API based on activeTab
+    } finally {
+      setIsSaving(false);
+      setIsEditing(false);
+    }
+  };
 
   // ── 1. Program reviewed data + history ────────────────────────────────────
   useEffect(() => {
@@ -300,20 +312,13 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setProgramReviewedData(null);
     fetchReviewedProposal(nodeId, "program")
       .then(setProgramReviewedData)
-      .catch((err) => {
-        console.error("[ViewReviewed] program fetch failed:", err);
-        setProgramReviewedData(null);
-      })
+      .catch((err) => { console.error("[ViewReviewed] program fetch failed:", err); setProgramReviewedData(null); })
       .finally(() => setProgramLoading(false));
 
-    // Fetch program history list
     setHistoryLoading(true);
     fetchProgramHistoryList(nodeId)
       .then((raw) => setProgramHistory(normalizeHistoryList(raw)))
-      .catch((err) => {
-        console.error("[ProgramHistory] fetch failed:", err);
-        setProgramHistory([]);
-      })
+      .catch((err) => { console.error("[ProgramHistory] fetch failed:", err); setProgramHistory([]); })
       .finally(() => setHistoryLoading(false));
   }, [isOpen, nodeId]);
 
@@ -341,27 +346,19 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
       setProjectHistory([]);
       return;
     }
-
     const proposalId = selectedProject.proposal_id;
 
     setProjectLoading(true);
     setProjectReviewedData(null);
     fetchReviewedProposal(proposalId, "project")
       .then(setProjectReviewedData)
-      .catch((err) => {
-        console.error("[ViewReviewed] project fetch failed:", err);
-        setProjectReviewedData(null);
-      })
+      .catch((err) => { console.error("[ViewReviewed] project fetch failed:", err); setProjectReviewedData(null); })
       .finally(() => setProjectLoading(false));
 
-    // Fetch project history list
     setHistoryLoading(true);
     fetchProjectHistoryList(proposalId)
       .then((raw) => setProjectHistory(normalizeHistoryList(raw)))
-      .catch((err) => {
-        console.error("[ProjectHistory] fetch failed:", err);
-        setProjectHistory([]);
-      })
+      .catch((err) => { console.error("[ProjectHistory] fetch failed:", err); setProjectHistory([]); })
       .finally(() => setHistoryLoading(false));
   }, [selectedProject?.proposal_id]);
 
@@ -372,27 +369,19 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
       setActivityHistory([]);
       return;
     }
-
     const proposalId = selectedActivity.proposal_id;
 
     setActivityLoading(true);
     setActivityReviewedData(null);
     fetchReviewedProposal(proposalId, "activity")
       .then(setActivityReviewedData)
-      .catch((err) => {
-        console.error("[ViewReviewed] activity fetch failed:", err);
-        setActivityReviewedData(null);
-      })
+      .catch((err) => { console.error("[ViewReviewed] activity fetch failed:", err); setActivityReviewedData(null); })
       .finally(() => setActivityLoading(false));
 
-    // Fetch activity history list
     setHistoryLoading(true);
     fetchActivityHistoryList(proposalId)
       .then((raw) => setActivityHistory(normalizeHistoryList(raw)))
-      .catch((err) => {
-        console.error("[ActivityHistory] fetch failed:", err);
-        setActivityHistory([]);
-      })
+      .catch((err) => { console.error("[ActivityHistory] fetch failed:", err); setActivityHistory([]); })
       .finally(() => setHistoryLoading(false));
   }, [selectedActivity?.proposal_id]);
 
@@ -413,16 +402,18 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setProgramHistory([]);
     setProjectHistory([]);
     setActivityHistory([]);
+    setIsEditing(false);
   }, [isOpen]);
 
-  // ── Clear selected history version when tab changes ───────────────────────
+  // ── Reset edit state when navigating between tabs / items ─────────────────
   useEffect(() => {
     setSelectedHistoryVersion(null);
+    setIsEditing(false);
   }, [activeTab, selectedProject?.proposal_id, selectedActivity?.proposal_id]);
 
-  // ── Load activities for a project (with cache) ──
+  // ── Load activities for a project (with cache) ────────────────────────────
   const loadActivitiesForProject = useCallback(async (project: ProjectItem) => {
-    if (activitiesCache[project.child_id] !== undefined) return; // already cached
+    if (activitiesCache[project.child_id] !== undefined) return;
     setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
     try {
       const data: ApiActivityListResponse = await fetchActivityList(project.child_id);
@@ -435,7 +426,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     }
   }, [activitiesCache]);
 
-  // ── Select project (project tab) ──
+  // ── Select project (project tab) ──────────────────────────────────────────
   const handleSelectProject = useCallback(async (project: ProjectItem) => {
     setSelectedProject(project);
     setSelectedActivity(null);
@@ -444,7 +435,6 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setProjectDetailLoading(true);
     try {
       const detail = await fetchReviewedProposal(project.proposal_id, "project");
-      console.log("PProject Detail", detail);
       setProjectDetail(detail);
     } catch (err) {
       console.error("[ProjectDetail] Failed:", err);
@@ -453,10 +443,9 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     }
   }, []);
 
-  // ── Expand project in activity tab (toggle + load activities) ──
+  // ── Expand project in activity tab ────────────────────────────────────────
   const handleExpandProject = useCallback(async (project: ProjectItem) => {
     if (selectedProject?.proposal_id === project.proposal_id) {
-      // Collapse
       setSelectedProject(null);
       setSelectedActivity(null);
       setActivityDetail(null);
@@ -468,7 +457,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     await loadActivitiesForProject(project);
   }, [selectedProject, loadActivitiesForProject]);
 
-  // ── Select activity ──
+  // ── Select activity ───────────────────────────────────────────────────────
   const handleSelectActivity = useCallback(async (project: ProjectItem, activity: ActivityItem) => {
     setSelectedProject(project);
     setSelectedActivity(activity);
@@ -510,6 +499,17 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
+  // Shared props for the action bar
+  const actionBarProps = {
+    isEditing,
+    isSaving,
+    canEdit,
+    isDocumentReady,
+    onEdit:   handleEdit,
+    onSave:   handleSave,
+    onCancel: handleCancel,
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
       <div className="bg-white flex-1 h-[100vh] flex flex-col overflow-hidden">
@@ -545,9 +545,9 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   activeTab === tab ? "bg-white text-primaryGreen shadow-md" : "text-white hover:bg-white/20"
                 }`}
               >
-                {tab === "program" && <FileText size={15} />}
-                {tab === "project" && <FolderOpen size={15} />}
-                {tab === "activity" && <Activity size={15} />}
+                {tab === "program"  && <FileText  size={15} />}
+                {tab === "project"  && <FolderOpen size={15} />}
+                {tab === "activity" && <Activity  size={15} />}
                 {tab}
                 {tab === "project" && projectList.length > 0 && (
                   <span className={`ml-1 text-[10px] px-2 py-[2px] rounded-full font-bold ${
@@ -618,22 +618,27 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
           )}
 
           {/* Document content */}
-          <div className="flex-1 overflow-y-auto bg-white">
-            <div className="p-10">
+          <div className="flex-1 overflow-y-auto relative bg-white">
+            <div className="p-5">
 
-              {/* PROGRAM */}
+              {/* ── PROGRAM TAB ── */}
               {activeTab === "program" && (
                 programLoading ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 p-8"><FormSkeleton lines={6} /></div>
+                  <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                    <FormSkeleton lines={6} />
+                  </div>
                 ) : mappedProgram ? (
-                  <ProgramForm
-                    proposalData={mappedProgram}
-                    comments={comments}
-                    onCommentChange={handleCommentChange}
-                    alreadyReviewed={false}
-                    showCommentInputs={showCommentInputs}
-                    reviewedData={programReviewedData}
-                  />
+                  <div className="flex flex-col items-end justify-center relative">
+                    <ProgramForm
+                      proposalData={mappedProgram}
+                      comments={comments}
+                      onCommentChange={handleCommentChange}
+                      alreadyReviewed={false}
+                      showCommentInputs={showCommentInputs}
+                      reviewedData={programReviewedData}
+                    />
+                    <EditSaveButton {...actionBarProps} />
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
                     <FileText size={40} className="text-gray-300" />
@@ -642,7 +647,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                 )
               )}
 
-              {/* PROJECT */}
+              {/* ── PROJECT TAB ── */}
               {activeTab === "project" && (
                 !selectedProject ? (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
@@ -650,17 +655,22 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                     <p className="font-medium">Select a project from the sidebar</p>
                   </div>
                 ) : projectLoading ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 p-8"><FormSkeleton lines={6} /></div>
+                  <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                    <FormSkeleton lines={6} />
+                  </div>
                 ) : mappedProject ? (
-                  <ProjectForm
-                    projectData={mappedProject}
-                    programTitle={programTitle}
-                    comments={comments}
-                    onCommentChange={handleCommentChange}
-                    alreadyReviewed={false}
-                    showCommentInputs={showCommentInputs}
-                    reviewedData={projectReviewedData}
-                  />
+                  <div className="flex flex-col items-end justify-center relative">
+                    <ProjectForm
+                      projectData={mappedProject}
+                      programTitle={programTitle}
+                      comments={comments}
+                      onCommentChange={handleCommentChange}
+                      alreadyReviewed={false}
+                      showCommentInputs={showCommentInputs}
+                      reviewedData={projectReviewedData}
+                    />
+                    <EditSaveButton {...actionBarProps} />
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
                     <FolderOpen size={40} className="text-gray-300" />
@@ -669,7 +679,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                 )
               )}
 
-              {/* ACTIVITY */}
+              {/* ── ACTIVITY TAB ── */}
               {activeTab === "activity" && (
                 !selectedProject ? (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
@@ -680,21 +690,26 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500 gap-3">
                     <Activity size={40} className="text-gray-300" />
                     <p className="font-medium">Select an activity from the sidebar</p>
-                    <p className="text-sm text-gray-400">{selectedProject.title}</p>
+                    <p className="text-sm text-gray-400">{selectedProject.project_title}</p>
                   </div>
                 ) : activityLoading ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 p-8"><FormSkeleton lines={6} /></div>
+                  <div className="bg-white rounded-2xl border border-gray-100 p-8">
+                    <FormSkeleton lines={6} />
+                  </div>
                 ) : mappedActivity ? (
-                  <ActivityForm
-                    activityData={mappedActivity}
-                    programTitle={programTitle}
-                    projectTitle={selectedProject.title}
-                    comments={comments}
-                    onCommentChange={handleCommentChange}
-                    alreadyReviewed={false}
-                    showCommentInputs={showCommentInputs}
-                    reviewedData={activityReviewedData}
-                  />
+                  <div className="flex flex-col items-end justify-center relative">
+                    <ActivityForm
+                      activityData={mappedActivity}
+                      programTitle={programTitle}
+                      projectTitle={selectedProject.project_title}
+                      comments={comments}
+                      onCommentChange={handleCommentChange}
+                      alreadyReviewed={false}
+                      showCommentInputs={showCommentInputs}
+                      reviewedData={activityReviewedData}
+                    />
+                    <EditSaveButton {...actionBarProps} />
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
                     <Activity size={40} className="text-gray-300" />
@@ -706,7 +721,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
             </div>
           </div>
 
-          {/* History */}
+          {/* ── History panel ── */}
           <div className="bg-white h-full w-72 flex-shrink-0 shadow-sm border-l border-gray-200 flex flex-col">
             <div className="px-6 py-5 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">History</h2>
@@ -729,7 +744,9 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                         key={item.history_id}
                         onClick={() => setSelectedHistoryVersion(isSelected ? null : item)}
                         className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition ${
-                          isSelected ? "bg-emerald-100 border-2 border-emerald-500" : "bg-gray-50 hover:bg-gray-100"
+                          isSelected
+                            ? "bg-emerald-100 border-2 border-emerald-500"
+                            : "bg-gray-50 hover:bg-gray-100"
                         }`}
                       >
                         <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-sm font-semibold">
@@ -741,9 +758,9 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
                             {new Date(item.created_at).toLocaleDateString("en-US", {
-                              year: "numeric",
+                              year:  "numeric",
                               month: "short",
-                              day: "numeric",
+                              day:   "numeric",
                             })}
                           </p>
                         </div>

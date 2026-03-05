@@ -6,6 +6,7 @@ import CommentInput from "@/components/reviewer/CommentInput";
 import PreviousComment from "@/components/reviewer/PreviousComment";
 import { formatDate } from "@/utils/dateFormat";
 import { Clock } from "lucide-react";
+import { CommentHeader } from "./ui/comment-header";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 
@@ -16,6 +17,7 @@ const validReviews = (reviews: any): any[] => {
     (r) => r !== null && typeof r === "object" && typeof r.comment === "string" && r.comment.trim() !== ""
   );
 };
+
 
 // Render reviews + conditionally show "Not Reviewed Yet" or "No Comment Provided"
 // depending on whether any section across the whole form has been reviewed.
@@ -157,7 +159,9 @@ export const ProgramForm: React.FC<{
             ))}
           </div>
         </div>
-        <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="profile_feedback" {...sectionProps} />
+        <CommentHeader sectionName="Profile" >
+          <SectionReviews reviews={profileReviews} sectionName="Profile" inputKey="profile_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* IMPLEMENTING / COOPERATING AGENCY */}
         <div className="overflow-x-auto">
@@ -174,7 +178,9 @@ export const ProgramForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="implementing_agency_feedback" {...sectionProps} />
+        <CommentHeader sectionName="Implementing & Cooperating Agency" >
+          <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" inputKey="implementing_agency_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* EXTENSION SITES */}
         <p className="font-bold p-3 text-base flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
@@ -194,7 +200,9 @@ export const ProgramForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="extension_site_feedback" {...sectionProps} />
+        <CommentHeader sectionName="Extension Site/s" >
+          <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" inputKey="extension_site_feedback" {...sectionProps} />
+        </CommentHeader>
 
         {/* TAGGING / CLUSTER / AGENDA */}
         <div className="overflow-x-auto">
@@ -224,7 +232,9 @@ export const ProgramForm: React.FC<{
               {/* Tagging reviews + input inside the table */}
               <tr>
                 <td colSpan={2} className="p-0">
-                  <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="tagging_cluster_extension_feedback" {...sectionProps} />
+                  <CommentHeader sectionName="Tagging, Cluster & Extension Agenda" >
+                    <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" inputKey="tagging_cluster_extension_feedback" {...sectionProps} />
+                  </CommentHeader>
                 </td>
               </tr>
               <tr className="border border-black">
@@ -238,7 +248,9 @@ export const ProgramForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="sdg_academic_program_feedback" {...sectionProps} />
+        <CommentHeader sectionName="SDG & Academic Program" >
+          <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" inputKey="sdg_academic_program_feedback" {...sectionProps} />
+        </CommentHeader>
 
         <div className="text-gray-700 leading-relaxed">
           {/* II. RATIONALE */}
@@ -246,24 +258,32 @@ export const ProgramForm: React.FC<{
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.rationale)}</p>
           </div>
-          <SectionReviews reviews={rationaleReviews} sectionName="Rationale" inputKey="rationale_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Rationale" >
+            <SectionReviews reviews={rationaleReviews} sectionName="Rationale" inputKey="rationale_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* III. SIGNIFICANCE */}
           <div className="p-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. SIGNIFICANCE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.significance)}</p>
           </div>
-          <SectionReviews reviews={significanceReviews} sectionName="Significance" inputKey="significance_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Significance" >
+            <SectionReviews reviews={significanceReviews} sectionName="Significance" inputKey="significance_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* IV. OBJECTIVES */}
           <div className="p-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />IV. OBJECTIVES</h3>
             <p className="text-base font-semibold mb-2 mt-3">General:</p>
             <p className="p-5 text-base">{val(proposalData.general_objectives)}</p>
-            <SectionReviews reviews={generalObjReviews} sectionName="General Objectives" inputKey="general_objectives_feedback" {...sectionProps} />
+            <CommentHeader sectionName="General Objectives" >
+              <SectionReviews reviews={generalObjReviews} sectionName="General Objectives" inputKey="general_objectives_feedback" {...sectionProps} />
+            </CommentHeader>
             <p className="text-base font-semibold mb-2 mt-3">Specific:</p>
             <p className="p-5 text-base">{val(proposalData.specific_objectives)}</p>
-            <SectionReviews reviews={specificObjReviews} sectionName="Specific Objectives" inputKey="specific_objectives_feedback" {...sectionProps} />
+            <CommentHeader sectionName="Specific Objectives" >
+              <SectionReviews reviews={specificObjReviews} sectionName="Specific Objectives" inputKey="specific_objectives_feedback" {...sectionProps} />
+            </CommentHeader>
           </div>
 
           {/* V. METHODOLOGY */}
@@ -280,7 +300,9 @@ export const ProgramForm: React.FC<{
               ))
             ) : <p className="text-base">{NA}</p>}
           </div>
-          <SectionReviews reviews={methodologyReviews} sectionName="Methodology" inputKey="methodology_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Methodology" >
+            <SectionReviews reviews={methodologyReviews} sectionName="Methodology" inputKey="methodology_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VI. EXPECTED OUTPUT */}
           <div>
@@ -300,14 +322,18 @@ export const ProgramForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="expected_output_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Expected Output" >
+            <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" inputKey="expected_output_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VII. SUSTAINABILITY PLAN */}
           <div className="p-2 border-b border-black">
             <h3 className="mb-3 font-bold text-gray-900 text-base flex"><VerticalLine />VII. SUSTAINABILITY PLAN</h3>
             <p className="text-base whitespace-pre-line">{val(proposalData.sustainability_plan)}</p>
           </div>
-          <SectionReviews reviews={sustainabilityReviews} sectionName="Sustainability Plan" inputKey="sustainability_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Sustainability Plan" >
+            <SectionReviews reviews={sustainabilityReviews} sectionName="Sustainability Plan" inputKey="sustainability_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* VIII. ORG & STAFFING */}
           <div>
@@ -334,7 +360,9 @@ export const ProgramForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={orgStaffingReviews} sectionName="Organization & Staffing" inputKey="org_staffing_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Organization & Staffing" >
+            <SectionReviews reviews={orgStaffingReviews} sectionName="Organization & Staffing" inputKey="org_staffing_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* IX. WORKPLAN */}
           <div>
@@ -365,7 +393,10 @@ export const ProgramForm: React.FC<{
               </table>
             </div>
           </div>
-          <SectionReviews reviews={workplanReviews} sectionName="Work Plan" inputKey="work_plan_feedback" {...sectionProps} />
+
+          <CommentHeader sectionName="Work Plan" >
+            <SectionReviews reviews={workplanReviews} sectionName="Work Plan" inputKey="work_plan_feedback" {...sectionProps} />
+          </CommentHeader>
 
           {/* X. BUDGET */}
           <div>
@@ -393,7 +424,9 @@ export const ProgramForm: React.FC<{
               </tbody>
             </table>
           </div>
-          <SectionReviews reviews={budgetReviews} sectionName="Budget" inputKey="budget_feedback" {...sectionProps} />
+          <CommentHeader sectionName="Budget Requirement" >
+            <SectionReviews reviews={budgetReviews} sectionName="Budget" inputKey="budget_feedback" {...sectionProps} />
+          </CommentHeader>
         </div>
       </div>
     </section>
