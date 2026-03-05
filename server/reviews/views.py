@@ -65,15 +65,15 @@ class ProposalReviewDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # get the proposal with reviews  
-class ProposalReviewListByProposal(APIView):
+class ProposalReviewByProposal(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, proposal_id, proposal_type, format=None):
         data = ProposalReviewSelectors.proposal_reviews_mapper(proposal_id, proposal_type)
         return Response(data, status=status.HTTP_200_OK)
     
 # get the proposal with reviews history
-# class ProposalReviewListByProposalHistory(APIView):
-#     permission_classes = [IsAuthenticated]
-#     def get(self, request, proposal_id, proposal_type, format=None):
-#         data = ProposalReviewSelectors.proposal_reviews_detail_mapper(proposal_id, proposal_type)
-#         return Response(data, status=status.HTTP_200_OK)
+class ProposalReviewHistoryByProposalHistory(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, proposal_id, history_id, version, proposal_type, format=None):
+        data = ProposalReviewSelectors.proposal_reviews_history_mapper(proposal_id, history_id, version, proposal_type)
+        return Response(data, status=status.HTTP_200_OK)
