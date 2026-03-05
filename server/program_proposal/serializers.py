@@ -162,9 +162,17 @@ class ProgramProjectsSerializer(serializers.ModelSerializer):
 
 # proposal history list
 class ProgramProposalHistoryListSerializer(serializers.ModelSerializer):
+    proposal_id = serializers.IntegerField(source='proposal.id', read_only=True)
+    history_id = serializers.IntegerField(source='id', read_only=True)
     class Meta:
         model = ProgramProposalHistory
-        fields = ["id", "version", "program_title", "program_leader"]
+        fields = [
+            "history_id",
+            "proposal_id",
+            "version",
+            "program_title",
+            "program_leader",
+        ]
     
 class ProgramProposalHistorySerializer(serializers.ModelSerializer):
     class Meta:
