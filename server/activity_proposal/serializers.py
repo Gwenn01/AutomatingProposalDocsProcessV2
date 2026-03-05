@@ -91,6 +91,8 @@ class ActivityListDataSerializer(serializers.ModelSerializer):
         
 # activity history list
 class ActivityProposalHistoryListSerializer(serializers.ModelSerializer):
+    proposal_id = serializers.IntegerField(source='proposal.id', read_only=True)
+    history_id = serializers.IntegerField(source='id', read_only=True)
     class Meta:
         model = ActivityProposalHistory
-        fields = ["id", "version", "activity_title", "project_leader"]
+        fields = ["proposal_id", "history_id", "version", "activity_title", "project_leader"]
