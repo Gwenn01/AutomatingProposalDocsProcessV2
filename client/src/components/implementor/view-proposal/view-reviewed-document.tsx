@@ -1,21 +1,11 @@
+// view-reviewed-document.tsx
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  X,
-  ChevronRight,
-  FileText,
-  FolderOpen,
-  Activity,
-} from "lucide-react";
+import { X, ChevronRight, FileText, FolderOpen, Activity } from "lucide-react";
 import { getStatusStyle } from "@/utils/statusStyles";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import {
-  fetchReviewerProjectProposal,
-  fetchReviewerActivityProposal,
-  type ReviewerProjectList,
-  type ApiProjectListResponse,
   fetchProjectList,
-  type ApiActivityListResponse,
-  fetchProjectProposalDetail,
+  type ApiProjectListResponse,
   type ApiActivity,
 } from "@/utils/reviewer-api";
 import {
@@ -25,6 +15,7 @@ import {
   fetchProgramHistoryList,
   fetchProjectHistoryList,
   fetchActivityHistoryList,
+  type ApiActivityListResponse,
 } from "@/utils/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import { ActivityForm } from "./view-review-forms/activity-form";
@@ -32,23 +23,13 @@ import { ProjectForm } from "./view-review-forms/project-form";
 import { ProgramForm } from "./view-review-forms/program-form";
 import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
+import { useProposalEdit } from "@/hooks/useProposalEdit";
 
 // ================= TYPES =================
 
-export interface MethodologyPhase {
-  phase: string;
-  activities: string[];
-}
-
-export interface WorkplanItem {
-  month: string;
-  activity: string;
-}
-
-export interface BudgetItem {
-  item: string;
-  amount: number | string;
-}
+export interface MethodologyPhase { phase: string; activities: string[]; }
+export interface WorkplanItem     { month: string; activity: string; }
+export interface BudgetItem       { item: string; amount: number | string; }
 
 export interface ApiProposalDetail {
   id: number;
@@ -77,9 +58,7 @@ export interface ApiProposalDetail {
   created_at: string;
 }
 
-export interface Comments {
-  [key: string]: string;
-}
+export interface Comments { [key: string]: string; }
 
 type ProjectListFields = {
   proposal_id: number;
@@ -96,9 +75,9 @@ type ProjectListFields = {
   activities?: ApiActivity[];
 };
 
-type ProjectItem = ProjectListFields;
+type ProjectItem  = ProjectListFields;
 type ActivityItem = ProjectListFields;
-type TabType = "program" | "project" | "activity";
+type TabType      = "program" | "project" | "activity";
 
 interface History {
   history_id: string;
@@ -108,7 +87,7 @@ interface History {
   created_at: string;
 }
 
-interface ViewReviewedDocumentsProps {
+export interface ViewReviewedDocumentsProps {
   isOpen: boolean;
   onClose: () => void;
   proposalData: {
@@ -262,18 +241,15 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [historyLoading,         setHistoryLoading]         = useState(false);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
 
-  // ── Edit / save state (shared across all tabs) ────────────────────────────
-  const [isEditing,       setIsEditing]       = useState(false);
-  const [isSaving,        setIsSaving]        = useState(false);
-  const [canEdit,         setCanEdit]         = useState(true);
-  const [isDocumentReady, setIsDocumentReady] = useState(false);
+  // ── Edit state ────────────────────────────────────────────────────────────
+  const [isEditing, setIsEditing] = useState(false);
 
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [comments, setComments] = useState<Comments>({});
 
-  const [projectDetail,        setProjectDetail]        = useState<any | null>(null);
-  const [projectDetailLoading, setProjectDetailLoading] = useState(false);
-  const [activityDetail,       setActivityDetail]       = useState<any | null>(null);
+  const [projectDetail,         setProjectDetail]         = useState<any | null>(null);
+  const [projectDetailLoading,  setProjectDetailLoading]  = useState(false);
+  const [activityDetail,        setActivityDetail]        = useState<any | null>(null);
   const [activityDetailLoading, setActivityDetailLoading] = useState(false);
 
   const showCommentInputs =
@@ -291,18 +267,36 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     activeTab === "project"  ? projectHistory  :
     programHistory;
 
-  // ── Action bar handlers ───────────────────────────────────────────────────
-  const handleEdit   = () => setIsEditing(true);
-  const handleCancel = () => setIsEditing(false);
-  const handleSave   = async () => {
-    setIsSaving(true);
-    try {
-      // TODO: call the appropriate save API based on activeTab
-    } finally {
-      setIsSaving(false);
-      setIsEditing(false);
-    }
-  };
+  // ── Mapped form data ──────────────────────────────────────────────────────
+  const mappedProgram  = mapReviewedToProgram(programReviewedData);
+  const mappedProject  = mapReviewedToProject(projectReviewedData);
+  const mappedActivity = mapReviewedToActivity(activityReviewedData);
+
+  // ── which proposal ID is "active" for the current tab ────────────────────
+  const activeProposalId =
+    activeTab === "activity" ? (selectedActivity?.proposal_id ?? null) :
+    activeTab === "project"  ? (selectedProject?.proposal_id  ?? null) :
+    nodeId;
+
+  // ── Edit hook ─────────────────────────────────────────────────────────────
+  const {
+    programDraft,  setProgramDraft,
+    projectDraft,  setProjectDraft,
+    activityDraft, setActivityDraft,
+    isSaving,
+    handleSave,
+    handleCancel,
+  } = useProposalEdit({
+    activeTab,
+    proposalId: activeProposalId,
+    mappedProgram,
+    mappedProject,
+    mappedActivity,
+    isEditing,
+    onEditingChange: setIsEditing,
+  });
+
+  const programTitle = mappedProgram?.program_title ?? proposalData?.title ?? "";
 
   // ── 1. Program reviewed data + history ────────────────────────────────────
   useEffect(() => {
@@ -325,18 +319,11 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   // ── 2. Sidebar project list ────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen || !childId) return;
-    const load = async () => {
-      setProjectListLoading(true);
-      try {
-        const data: ApiProjectListResponse = await fetchProjectList(childId);
-        setProjectList(data.projects || []);
-      } catch (err) {
-        console.error("[ProjectList] Failed:", err);
-      } finally {
-        setProjectListLoading(false);
-      }
-    };
-    load();
+    setProjectListLoading(true);
+    fetchProjectList(childId)
+      .then((data: ApiProjectListResponse) => setProjectList(data.projects || []))
+      .catch((err) => console.error("[ProjectList] Failed:", err))
+      .finally(() => setProjectListLoading(false));
   }, [isOpen, childId]);
 
   // ── 3. Project reviewed data + history ────────────────────────────────────
@@ -489,26 +476,13 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const handleCommentChange = (key: string, val: string) =>
     setComments((prev) => ({ ...prev, [key]: val }));
 
-  // ── Mapped form data ──────────────────────────────────────────────────────
-  const mappedProgram  = mapReviewedToProgram(programReviewedData);
-  const mappedProject  = mapReviewedToProject(projectReviewedData);
-  const mappedActivity = mapReviewedToActivity(activityReviewedData);
-  const programTitle   = mappedProgram?.program_title ?? proposalData?.title ?? "";
-
   if (!isOpen || !proposalData) return null;
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
-  // Shared props for the action bar
-  const actionBarProps = {
-    isEditing,
-    isSaving,
-    canEdit,
-    isDocumentReady,
-    onEdit:   handleEdit,
-    onSave:   handleSave,
-    onCancel: handleCancel,
-  };
+  // Shared props passed to every form
+  const commentProps = { comments, onCommentChange: handleCommentChange };
+  const reviewProps  = { alreadyReviewed: false, showCommentInputs };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -537,7 +511,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
               <button
                 key={tab}
                 onClick={() => {
-                  if (tab === "project") goToProjectTab();
+                  if (tab === "project")       goToProjectTab();
                   else if (tab === "activity") goToActivityTab();
                   else { setActiveTab("program"); setComments({}); }
                 }}
@@ -631,13 +605,22 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   <div className="flex flex-col items-end justify-center relative">
                     <ProgramForm
                       proposalData={mappedProgram}
-                      comments={comments}
-                      onCommentChange={handleCommentChange}
-                      alreadyReviewed={false}
-                      showCommentInputs={showCommentInputs}
+                      draft={programDraft}
+                      onDraftChange={setProgramDraft}
+                      isEditing={isEditing}
                       reviewedData={programReviewedData}
+                      {...commentProps}
+                      {...reviewProps}
                     />
-                    <EditSaveButton {...actionBarProps} />
+                    <EditSaveButton
+                      isEditing={isEditing}
+                      isSaving={isSaving}
+                      canEdit={true}
+                      isDocumentReady={!!mappedProgram}
+                      onEdit={() => setIsEditing(true)}
+                      onSave={handleSave}
+                      onCancel={handleCancel}
+                    />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
@@ -663,13 +646,22 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                     <ProjectForm
                       projectData={mappedProject}
                       programTitle={programTitle}
-                      comments={comments}
-                      onCommentChange={handleCommentChange}
-                      alreadyReviewed={false}
-                      showCommentInputs={showCommentInputs}
+                      draft={projectDraft}
+                      onDraftChange={setProjectDraft}
+                      isEditing={isEditing}
                       reviewedData={projectReviewedData}
+                      {...commentProps}
+                      {...reviewProps}
                     />
-                    <EditSaveButton {...actionBarProps} />
+                    <EditSaveButton
+                      isEditing={isEditing}
+                      isSaving={isSaving}
+                      canEdit={true}
+                      isDocumentReady={!!mappedProject}
+                      onEdit={() => setIsEditing(true)}
+                      onSave={handleSave}
+                      onCancel={handleCancel}
+                    />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
@@ -702,13 +694,22 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                       activityData={mappedActivity}
                       programTitle={programTitle}
                       projectTitle={selectedProject.project_title}
-                      comments={comments}
-                      onCommentChange={handleCommentChange}
-                      alreadyReviewed={false}
-                      showCommentInputs={showCommentInputs}
+                      draft={activityDraft}
+                      onDraftChange={setActivityDraft}
+                      isEditing={isEditing}
                       reviewedData={activityReviewedData}
+                      {...commentProps}
+                      {...reviewProps}
                     />
-                    <EditSaveButton {...actionBarProps} />
+                    <EditSaveButton
+                      isEditing={isEditing}
+                      isSaving={isSaving}
+                      canEdit={true}
+                      isDocumentReady={!!mappedActivity}
+                      onEdit={() => setIsEditing(true)}
+                      onSave={handleSave}
+                      onCancel={handleCancel}
+                    />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
@@ -758,9 +759,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
                             {new Date(item.created_at).toLocaleDateString("en-US", {
-                              year:  "numeric",
-                              month: "short",
-                              day:   "numeric",
+                              year: "numeric", month: "short", day: "numeric",
                             })}
                           </p>
                         </div>
