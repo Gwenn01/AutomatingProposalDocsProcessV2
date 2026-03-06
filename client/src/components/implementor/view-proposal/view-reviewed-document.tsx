@@ -80,11 +80,15 @@ type ActivityItem = ProjectListFields;
 type TabType      = "program" | "project" | "activity";
 
 interface History {
-  history_id: string;
-  proposal_id: string;
+  history_id: number;
+  proposal_id: number;
   status: string;
-  version_no: number;
-  created_at: string;
+  version: number;
+  program_title: string;
+  program_leader: string;
+  project_title: string;
+  project_leader: string;
+  activity_title: string;
 }
 
 export interface ViewReviewedDocumentsProps {
@@ -202,8 +206,8 @@ function normalizeHistoryList(raw: any): History[] {
     history_id:  String(item.history_id ?? item.id ?? ""),
     proposal_id: String(item.proposal_id ?? item.proposal ?? ""),
     status:      item.status ?? "unknown",
-    version_no:  item.version ?? item.version_no ?? 0,
-    created_at:  item.created_at ?? "",
+    version:  item.version ?? item.version_no ?? 0,
+    program_title:  String(item.program_title ?? item.project_title ?? item.activity_title),
   }));
 }
 
@@ -500,7 +504,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const commentProps = { comments, onCommentChange: handleCommentChange };
   const reviewProps  = { alreadyReviewed: false, showCommentInputs };
 
-
+  console.log("History Data", activeHistory)
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">

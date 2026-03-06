@@ -250,39 +250,17 @@ export function toStringArray(value: string): string[] {
 
 export type ProposalNodeType = 'Program' | 'Project' | 'Activity';
 
-
-export async function fetchReviewedProposal(
-  proposal_node: number,
-  proposal_type: "program" | "project" | "activity"
-): Promise<any> {
-  const res = await authFetch(
-    `${BASE_URL}/proposal-review/proposal/${proposal_node}/${proposal_type}/`
-  );
-  return handleResponse<any>(res);
+export async function fetchProgramHistoryData(proposal_id: number, history_id: number, version: number): Promise<any> {
+    const res = await authFetch(`${BASE_URL}/proposal-review/proposal-history/${proposal_id}/${history_id}/${version}/program/`);
+    return handleResponse<any>(res);
 }
 
-export async function fetchProgramHistoryList(proposal_node: number): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/program-proposal/${proposal_node}/history-list/`);
-  return handleResponse<any>(res);
+export async function fetchProjectHistoryData(proposal_id: number, history_id: number, version: number): Promise<any> {
+    const res = await authFetch(`${BASE_URL}/proposal-review/proposal-history/${proposal_id}/${history_id}/${version}/project/`);
+    return handleResponse<any>(res);
 }
 
-export async function fetchProjectHistoryList(proposal_node: number): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/project-proposal/${proposal_node}/history-list/`);
-  return handleResponse<any>(res);
-}
-
-export async function fetchActivityHistoryList(proposal_node: number): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/activity-proposal/${proposal_node}/history-list/`);
-  return handleResponse<any>(res);
-}
-
-export async function updateActivityProposal(childId: number, payload: Record<string, any>): Promise<any> {
-  if (import.meta.env.DEV) {
-    console.log(`[updateActivityProposal] child_id=${childId}`, JSON.stringify(payload, null, 2));
-  }
-  const res = await authFetch(`${BASE_URL}/activity-proposal/${childId}/update-activity-save-history/`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<any>(res);
+export async function fetchActivityHistoryData(proposal_id: number, history_id: number, version: number): Promise<any> {
+    const res = await authFetch(`${BASE_URL}/proposal-review/proposal-history/${proposal_id}/${history_id}/${version}/activity/`);
+    return handleResponse<any>(res);
 }
