@@ -9,8 +9,10 @@ from .models import ProposalReview
 from .serializers import ProposalReviewSerializer
 from .selectors import ProposalReviewSelectors
 from reviewer.models import ProposalReviewer
+from notifications.models import Notification
+from proposals_node.models import Proposal
 # Create your views here.
-
+# create reviews 
 class ProposalReviewList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -19,7 +21,9 @@ class ProposalReviewList(APIView):
 
         proposal_reviewer_id = request.data.get('proposal_reviewer')
         reviewer = get_object_or_404(ProposalReviewer, id=proposal_reviewer_id)
-
+        # get the proposal for notification
+        proposal = get_object_or_404(Proposal, id=request.data.get('proposal_node'))
+        
         # Check if already reviewed
         if reviewer.is_review:
             return Response(
@@ -33,6 +37,10 @@ class ProposalReviewList(APIView):
             reviewer.is_review = True
             reviewer.save()
 
+            Notification.objects.create(
+                user=proposal.user,
+                message=f"{reviewer.reviewer.username} has submitted a review for your proposal."
+            )
             return Response(
                 ProposalReviewSerializer(review).data,
                 status=status.HTTP_201_CREATED
@@ -83,9 +91,6 @@ class ProposalReviewUpdate(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self, proposal, assignment):
-        print("proposal:", proposal)
-        print("assignment:", assignment)
-
         return get_object_or_404(
             ProposalReview,
             proposal_node_id=proposal,
@@ -100,6 +105,8 @@ class ProposalReviewUpdate(APIView):
             ProposalReviewer,
             id=assignment
         )
+        # get the proposal for notification
+        proposal = get_object_or_404(Proposal, id=request.data.get('proposal_node'))
 
         # Prevent duplicate review submission
         if reviewer.is_review:
@@ -121,6 +128,11 @@ class ProposalReviewUpdate(APIView):
             # mark reviewer as reviewed
             reviewer.is_review = True
             reviewer.save()
+            
+            Notification.objects.create(
+                user=proposal.user,
+                message=f"{reviewer.reviewer.username} has submitted a review for your proposal."
+            )
 
             return Response(serializer.data, status=status.HTTP_200_OK)
 

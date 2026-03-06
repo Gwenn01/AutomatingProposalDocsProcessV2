@@ -90,5 +90,5 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
     # after saving the history change the is review 
     reviewer = ProposalReviewer.objects.filter(proposal=instance)
     for r in reviewer:
-        r.is_reviewed = False
+        r.is_review = False
         r.save()

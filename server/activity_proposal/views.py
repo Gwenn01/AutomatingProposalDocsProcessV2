@@ -15,6 +15,8 @@ from .mapper import ActivityHistoryMapper
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
 from proposals_node.models import Proposal
+from notifications.models import Notification
+from reviewer.models import ProposalReviewer
 
 class ActivityProposalList(APIView):
     permission_classes = [IsAuthenticated]
@@ -84,6 +86,8 @@ class UpdateActivitySaveHistoryView(APIView):
             partial=True,
             context={"request": request}
         )
+        #get the proposal reviewer to notify that this proposal is already reviewed
+        proposal_reviewer = ProposalReviewer.objects.filter(proposal=request.data.get('proposal'))
         
         # # check if all reviewers have reviewed the proposal
         proposal = request.data.get('proposal')
@@ -92,10 +96,19 @@ class UpdateActivitySaveHistoryView(APIView):
         
         
         if serializer.is_valid():
-            serializer.save()
+            activity_data = serializer.save()
+            # admin notification
             NotificationService.admin_notifications(
                 f"Activity proposal created by {request.user.username}"
             )
+            # notification for reviwer
+            # save notification for every reviewer that this proposal is already revised
+            for r in proposal_reviewer:
+                Notification.objects.create(
+                    user= r.reviewer,
+                    message=f"The proposal '{activity_data.activity_title}' has been revised by the implementor and is ready for your review."
+                )
+            
             return Response({"message": "Activity proposal updated successfully",  
                              "data": serializer.data}, status=status.HTTP_200_OK
             )

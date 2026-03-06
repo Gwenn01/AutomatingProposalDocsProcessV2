@@ -9,7 +9,7 @@ from .serializers import NotificationSerializer
 # Create your views here.
 
 class NotificationList(APIView):
-    permission_classes = [IsAdminUser, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         notifications = Notification.objects.filter(user=request.user)
@@ -17,7 +17,7 @@ class NotificationList(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class NotificationDetail(APIView):
-    permission_classes = [IsAdminUser, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk, user):
         notification = get_object_or_404(

@@ -16,6 +16,8 @@ from .mapper import ProjectHistoryMapper
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
 from proposals_node.models import Proposal
+from notifications.models import Notification
+from reviewer.models import ProposalReviewer
 # Create your views here.
 
 class ProjectProposalList(APIView):
@@ -98,6 +100,9 @@ class UpdateProjectSaveHistoryView(APIView):
             partial=True
         )
         
+        #get the proposal reviewer to notify that this proposal is already reviewed
+        proposal_reviewer = ProposalReviewer.objects.filter(proposal=request.data.get('proposal'))
+        
         # check if all reviewers have reviewed the proposal
         proposal = request.data.get('proposal')
         if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
@@ -105,10 +110,20 @@ class UpdateProjectSaveHistoryView(APIView):
         
         
         if serializer.is_valid():
-            serializer.save()
+            project_data = serializer.save()
+            # notification for admin
             NotificationService.admin_notifications(
                 f"Project proposal created by {request.user.username}"
             )
+            
+            # notification for reviewer
+            # save notification for every reviewer that this proposal is already revised
+            for r in proposal_reviewer:
+                Notification.objects.create(
+                    user= r.reviewer,
+                    message=f"The proposal '{project_data.project_title}' has been revised by the implementor and is ready for your review."
+                )
+            
             return Response({"message": "Project proposal updated successfully",
                          "data": serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

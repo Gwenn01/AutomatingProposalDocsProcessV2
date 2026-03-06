@@ -17,7 +17,9 @@ from .serializers import (
 from .mapper import ProgramHistoryMapper
 from proposals_node.models import Proposal
 from notifications.services import NotificationService
+from reviewer.models import ProposalReviewer
 from reviewer.services import ProposalReviewerServices
+from notifications.models import Notification
 # Create your views here.
 
 # IMPLEMENTOR VIEWS CREATE proposal
@@ -77,13 +79,24 @@ class ProgramProposalDetail(APIView):
         program_proposal = self.get_object(pk)
         serializer = ProgramProposalSerializer(program_proposal, data=request.data)
         
+        # get the proposal reviewer to notify that this proposal is already reviewed
+        proposal_reviewer = ProposalReviewer.objects.filter(proposal=request.data.get('proposal'))
+        
         # check if all reviewers have reviewed the proposal
         proposal = request.data.get('proposal')
         if not ProposalReviewerServices.check_all_reviewer_already_review(proposal_id=proposal):
             return Response({"message": "All reviewers should review this proposal before updating"}, status=status.HTTP_400_BAD_REQUEST)
         
         if serializer.is_valid():
-            serializer.save()
+            program_data = serializer.save()
+            
+            # save notification for every reviewer that this proposal is already revised
+            for r in proposal_reviewer:
+                Notification.objects.create(
+                    user= r.reviewer,
+                    message=f"The proposal '{program_data.program_title}' has been revised by the implementor and is ready for your review."
+                )
+            
             return Response(
                 {"detail": "Program proposal updated successfully"},
                 status=status.HTTP_200_OK
