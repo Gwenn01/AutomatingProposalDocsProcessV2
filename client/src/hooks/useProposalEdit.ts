@@ -8,6 +8,7 @@ import {
   updateProjectProposal,
   updateActivityProposal,
 } from "@/utils/implementor-api";
+import { useToast } from "@/context/toast";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 const str  = (v: any): string          => (v == null ? "" : String(v));
@@ -331,6 +332,7 @@ export function useProposalEdit({
   const [activityDraft, setActivityDraft] = useState<EditableActivity>(defaultActivity());
   const [isSaving,      setIsSaving]      = useState(false);
   const [saveError,     setSaveError]     = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // Use stable scalar IDs as deps so we never trigger on new object references.
   // mappedProgram/Project/Activity are new objects every render even with useMemo
@@ -363,16 +365,19 @@ export function useProposalEdit({
         if (!programChildId)    throw new Error("Missing program ID — cannot save.");
         const payload = { proposal: programProposalId, ...buildProgramPayload(programDraft) };
         await updateProgramProposal(programChildId, payload);
+        showToast(`Program Updated Successfully`, "success");
 
       } else if (activeTab === "project") {
         if (!projectChildId)    throw new Error("Missing project ID — cannot save.");
         const payload = { proposal: projectProposalId, ...buildProjectPayload(projectDraft) };
         await updateProjectProposal(projectChildId, payload);
+        showToast(`Project Updated Successfully`, "success");
 
       } else {
         if (!activityChildId)   throw new Error("Missing activity ID — cannot save.");
         const payload = { proposal: activityProposalId, ...buildActivityPayload(activityDraft) };
         await updateActivityProposal(activityChildId, payload);
+        showToast(`Activity Updated Successfully`, "success");
       }
 
       onEditingChange(false);

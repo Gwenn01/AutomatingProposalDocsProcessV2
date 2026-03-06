@@ -500,6 +500,8 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const commentProps = { comments, onCommentChange: handleCommentChange };
   const reviewProps  = { alreadyReviewed: false, showCommentInputs };
 
+
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
       <div className="bg-white flex-1 h-[100vh] flex flex-col overflow-hidden">
