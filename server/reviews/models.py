@@ -3,6 +3,8 @@ from reviewer.models import ProposalReviewer
 from proposals_node.models import Proposal
 
 class ProposalReview(models.Model):
+    class Meta:
+        unique_together = ('proposal_node', 'proposal_reviewer')
 
     # ---------- Decision ----------
     DECISION_CHOICES = [
@@ -38,11 +40,7 @@ class ProposalReview(models.Model):
     )
    
     # ---------- Review Info ----------
-    review_round = models.CharField(
-        max_length=10,
-        null=True,
-        blank=True
-    )
+    review_round = models.PositiveIntegerField(default=1)
 
     proposal_type = models.CharField(
         max_length=20,
@@ -71,9 +69,8 @@ class ProposalReview(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Review {self.review_round}"
+        return f"Review {self.id} by reviewer {self.proposal_reviewer.id} for proposal {self.proposal_node.id}"
     
-
 
 class ProposalReviewHistory(models.Model):
     
