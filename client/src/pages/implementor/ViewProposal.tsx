@@ -19,16 +19,18 @@ import { useAuth } from "@/context/auth-context";
 import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
 
 // ================= TYPE DEFINITIONS =================
-
 interface Document {
   proposal_id: string | number;   // ← node PK (p.id  e.g. 124) — used for review API
   child_id?: string | number;     // ← program-proposal PK (p.child_id e.g. 32) — used for detail API
   reviewer_count: number;
+  reviewed_count: number;
+  review_progress: number;
   title: string;
   file_path: string;
   status: string;
   submitted_at: string | null;
   reviews: any[] | number;
+
 }
 
 interface Notification {
@@ -114,6 +116,8 @@ const ViewProposal: React.FC = () => {
           proposal_id: p.id,         // ← node PK  (124) — for review API
           child_id:    p.child_id,   // ← detail PK (32) — for program-proposal detail API
           reviewer_count: p.reviewer_count,
+          reviewed_count: p.reviewed_count,
+          review_progress: p.review_progress,
           title:       p.title,
           file_path:   p.file_path ?? "",
           status:      p.status ?? "unknown",
@@ -332,9 +336,8 @@ const ViewProposal: React.FC = () => {
                       onClick={() => { setSelectedDoc(doc); setShowReviewerStatus(true); }}
                       className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition"
                     >
-                      <p className="text-xs font-extralight">List of Reviewer</p>
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-green-700 font-semibold text-xs">{doc.reviewer_count}</span>
+                      <span className="text-green-700 font-semibold text-xs">{doc.review_progress}</span>
                     </button>
                   </div>
                   <h3 className="text-base font-bold text-gray-900 mb-3 leading-tight" title={doc.title}>

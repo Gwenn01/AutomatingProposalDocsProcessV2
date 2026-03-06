@@ -680,3 +680,16 @@ export async function updateActivityProposal(childId: number, payload: Record<st
   });
   return handleResponse<any>(res);
 }
+
+interface ListOfReviewer {
+  id: number;
+  reviewer_name: string;
+  is_review: boolean;
+  decision: string;
+  assigned_at: string;
+
+}
+export async function getListofReviewer(proposal_id: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/reviewer-proposal-list/${proposal_id}`)
+  return handleResponse<any>(res);
+}

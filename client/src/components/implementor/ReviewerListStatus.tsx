@@ -1,16 +1,23 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { X, User, CheckCircle2, Clock } from "lucide-react";
+import { getListofReviewer } from "@/utils/implementor-api";
 
 interface Reviewer {
   fullname: string;
   is_reviewed: number;
+  id: number;
+  reviewer_name: string;
+  is_review: boolean;
+  decision: string;
+  assigned_at: string;
 }
 
 interface ReviewerListStatusProps {
   isOpen: boolean;
   onClose: () => void;
-  proposalId?: string | number;
+  proposalId: number;
 }
+
 
 const SkeletonRow: React.FC = () => (
   <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 animate-pulse">
@@ -29,27 +36,25 @@ const ReviewerListStatus: React.FC<ReviewerListStatusProps> = ({
 }) => {
   const [reviewers, setReviewers] = useState<Reviewer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
   // Simulate loading reviewers (replace with API later)
-  useEffect(() => {
-    if (!isOpen) return;
+    useEffect(() => {
+      if (!isOpen) return;
 
-    setLoading(true);
+      const load = async () => {
+        setLoading(true);
 
-    const dummyData: Reviewer[] = [
-      { fullname: "Kian Fontillas", is_reviewed: 1 },
-      { fullname: "Peter James Marteja", is_reviewed: 0 },
-      { fullname: "Angela Reyes", is_reviewed: 0 },
-      { fullname: "Michael Torres", is_reviewed: 1 },
-    ];
+        try {
+          const data: Reviewer[] = await getListofReviewer(proposalId);
+          setReviewers(data);
+        } catch (error) {
+          console.error("Failed to fetch reviewers:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    const timer = setTimeout(() => {
-      setReviewers(dummyData);
-      setLoading(false);
-    }, 1000); // simulate network delay
-
-    return () => clearTimeout(timer);
-  }, [isOpen, proposalId]);
+      load();
+    }, [isOpen, proposalId]);
 
   const reviewedCount = useMemo(
     () => reviewers.filter((r) => r.is_reviewed === 1).length,
@@ -115,7 +120,7 @@ const ReviewerListStatus: React.FC<ReviewerListStatusProps> = ({
                 .slice(0, 2)
                 .toUpperCase();
 
-              const reviewed = rev.is_reviewed === 1;
+              const reviewed = rev.decision === "pending";
 
               return (
                 <div
@@ -134,7 +139,7 @@ const ReviewerListStatus: React.FC<ReviewerListStatusProps> = ({
                     </div>
 
                     <div>
-                      <p className="font-medium text-gray-900">{rev.fullname}</p>
+                      <p className="font-medium text-gray-900">{rev.reviewer_name}</p>
                       <p className="text-xs text-gray-500">Reviewer</p>
                     </div>
                   </div>
