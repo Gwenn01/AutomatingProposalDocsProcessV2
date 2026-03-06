@@ -48,6 +48,7 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
 
         # 1️ Create history record
         ProposalReviewHistory.objects.create(
+            proposal_reviewer=review.proposal_reviewer,
             proposal_node=review.proposal_node,
             review_round=new_round,
             profile_feedback=review.profile_feedback,

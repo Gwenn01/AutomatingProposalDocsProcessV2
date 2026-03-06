@@ -76,7 +76,14 @@ class ProposalReview(models.Model):
 
 
 class ProposalReviewHistory(models.Model):
-
+    
+    proposal_reviewer = models.ForeignKey(
+        ProposalReviewer,
+        on_delete=models.CASCADE,
+        related_name="proposal_reviewer_history",
+        null=True, blank=True
+    )
+    
     proposal_node = models.ForeignKey(
         Proposal,
         on_delete=models.CASCADE,
