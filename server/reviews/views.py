@@ -77,3 +77,51 @@ class ProposalReviewHistoryByProposalHistory(APIView):
     def get(self, request, proposal_id, history_id, version, proposal_type, format=None):
         data = ProposalReviewSelectors.proposal_reviews_history_mapper(proposal_id, history_id, version, proposal_type)
         return Response(data, status=status.HTTP_200_OK)
+    
+# when the reviews is created and then the implementor update the proposal, the reviews will be updated 
+class ProposalReviewUpdate(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, proposal, assignment):
+        print("proposal:", proposal)
+        print("assignment:", assignment)
+
+        return get_object_or_404(
+            ProposalReview,
+            proposal_node_id=proposal,
+            proposal_reviewer_id=assignment
+        )
+
+    def put(self, request, proposal, assignment):
+
+        review = self.get_object(proposal, assignment)
+
+        reviewer = get_object_or_404(
+            ProposalReviewer,
+            id=assignment
+        )
+
+        # Prevent duplicate review submission
+        if reviewer.is_review:
+            return Response(
+                {"detail": "This reviewer has already submitted a review."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ProposalReviewSerializer(
+            review,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            # mark reviewer as reviewed
+            reviewer.is_review = True
+            reviewer.save()
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

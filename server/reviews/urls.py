@@ -5,6 +5,7 @@ from .views import (
     ProposalReviewDetail,
     ProposalReviewByProposal,
     ProposalReviewHistoryByProposalHistory,
+    ProposalReviewUpdate
 )
 
 urlpatterns = [
@@ -23,6 +24,7 @@ urlpatterns = [
         ProposalReviewHistoryByProposalHistory.as_view(),
         name="proposal-review-history-by-proposal-history",
     ),
+    path("proposal-review-update/<int:proposal>/<int:assignment>/", ProposalReviewUpdate.as_view(), name="proposal-review-update"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

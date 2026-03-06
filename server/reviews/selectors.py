@@ -30,6 +30,7 @@ class ProposalReviewSelectors:
 
         else:
             raise ValueError("Invalid proposal type")
+        
     @staticmethod
     def proposal_reviews_history_mapper(proposal_id, history_id, version, proposal_type):
         proposal_reviews_queryset = ProposalReviewHistory.objects.select_related(
