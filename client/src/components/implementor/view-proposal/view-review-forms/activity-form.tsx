@@ -164,21 +164,25 @@ export const ActivityForm: React.FC<{
         <table className="w-full text-sm">
           <tbody>
             <tr className="border-b border-t border-black">
-              <p className="px-3 py-2 font-bold flex"><VerticalLine />IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
-              <p className="px-3 pb-1 text-xs text-gray-500 italic">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
-              <div className="px-3 mb-2">
-                {isEditing
-                  ? <EditableArray value={draft.implementing_agency} onChange={(v) => set("implementing_agency", v)} isEditing={isEditing} placeholder="Add agency…" />
-                  : <p>{arrVal(activityData.implementing_agency)}</p>}
-              </div>
+              <td className="px-3 py-2 font-bold" colSpan={2}>
+                <span className="flex items-center"><VerticalLine />IMPLEMENTING AGENCY <span className="font-normal ml-1">/ College / Mandated Program:</span></span>
+                <p className="pb-1 text-xs text-gray-500 italic mt-0.5">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
+                <div className="px-3 mb-2">
+                  {isEditing
+                    ? <EditableArray value={draft.implementing_agency} onChange={(v) => set("implementing_agency", v)} isEditing={isEditing} placeholder="Add agency…" />
+                    : <p>{arrVal(activityData.implementing_agency)}</p>}
+                </div>
+              </td>
             </tr>
             <tr className="border-b border-black">
-              <p className="px-3 py-2 font-bold flex"><VerticalLine />COOPERATING AGENCY/IES <span className="font-normal">/Program/College (Name/s and Address/es)</span></p>
-              <div className="px-3 mb-2">
-                {isEditing
-                  ? <EditableArray value={draft.cooperating_agencies} onChange={(v) => set("cooperating_agencies", v)} isEditing={isEditing} placeholder="Add agency…" />
-                  : <p className="font-normal">{arrVal(activityData.cooperating_agencies)}</p>}
-              </div>
+              <td className="px-3 py-2 font-bold" colSpan={2}>
+                <span className="flex items-center"><VerticalLine />COOPERATING AGENCY/IES <span className="font-normal ml-1">/Program/College (Name/s and Address/es)</span></span>
+                <div className="px-3 mb-2">
+                  {isEditing
+                    ? <EditableArray value={draft.cooperating_agencies} onChange={(v) => set("cooperating_agencies", v)} isEditing={isEditing} placeholder="Add agency…" />
+                    : <p className="font-normal">{arrVal(activityData.cooperating_agencies)}</p>}
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -188,7 +192,7 @@ export const ActivityForm: React.FC<{
       </CommentHeader>
 
       {/* EXTENSION SITES */}
-      <p className="font-bold text-base p-3 mb-2 flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
+      <div className="font-bold text-base p-3 mb-2 flex items-center"><VerticalLine />EXTENSION SITE/S OR VENUE/S</div>
       <div className="overflow-x-auto">
         <table className="w-full border border-black text-sm">
           <tbody>
@@ -223,19 +227,19 @@ export const ActivityForm: React.FC<{
           <tbody>
             <tr className="border-b border-black">
               <td className="border border-black px-4 py-4 align-top w-1/2">
-                <p className="font-bold mb-3 text-base flex"><VerticalLine />TAGGING</p>
+                <div className="font-bold mb-3 text-base flex items-center"><VerticalLine />TAGGING</div>
                 <CheckboxList
                   items={["General","Environment and Climate Change (for CECC)","Gender and Development (for GAD)","Mango-Related (for RMC)"]}
                   checked={(label) => (isEditing ? draft.tags : activityData.tags)?.some((t: string) => t.toLowerCase() === label.toLowerCase()) ?? false}
                 />
-                <p className="font-bold mt-5 mb-3 text-base flex"><VerticalLine />CLUSTER</p>
+                <div className="font-bold mt-5 mb-3 text-base flex items-center"><VerticalLine />CLUSTER</div>
                 <CheckboxList
                   items={["Health, Education, and Social Sciences","Engineering, Industry, Information Technology","Environment and Natural Resources","Tourism, Hospitality Management, Entrepreneurship, Criminal Justice","Graduate Studies","Fisheries","Agriculture, Forestry"]}
                   checked={(label) => (isEditing ? draft.clusters : activityData.clusters)?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false}
                 />
               </td>
               <td className="border border-black px-4 py-4 align-top w-1/2">
-                <p className="font-bold mb-3 text-base flex"><VerticalLine />EXTENSION AGENDA</p>
+                <div className="font-bold mb-3 text-base flex items-center"><VerticalLine />EXTENSION AGENDA</div>
                 <CheckboxList
                   items={["Business Management and Livelihood Skills Development","Accountability, Good Governance, and Peace and Order","Youth and Adult Functional Literacy and Education","Accessibility, Inclusivity, and Gender and Development","Nutrition, Health, and Wellness","Indigenous People's Rights and Cultural Heritage Preservation","Human Capital Development","Adoption and Commercialization of Appropriate Technologies","Natural Resources, Climate Change, and Disaster Risk Reduction Management"]}
                   checked={(label) => (isEditing ? draft.agendas : activityData.agendas)?.some((a: string) => a.toLowerCase() === label.toLowerCase()) ?? false}

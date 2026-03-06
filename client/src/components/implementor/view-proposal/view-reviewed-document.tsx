@@ -267,16 +267,26 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     activeTab === "project"  ? projectHistory  :
     programHistory;
 
-  // ── Mapped form data ──────────────────────────────────────────────────────
-  const mappedProgram  = mapReviewedToProgram(programReviewedData);
-  const mappedProject  = mapReviewedToProject(projectReviewedData);
-  const mappedActivity = mapReviewedToActivity(activityReviewedData);
+  // ── Mapped form data (memoized to prevent infinite re-render loops) ─────────
+  // Without useMemo, mapReviewedTo* creates new object references every render,
+  // which causes the useEffect deps in useProposalEdit to fire endlessly.
+  const mappedProgram  = React.useMemo(() => mapReviewedToProgram(programReviewedData),  [programReviewedData]);
+  const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),  [projectReviewedData]);
+  const mappedActivity = React.useMemo(() => mapReviewedToActivity(activityReviewedData), [activityReviewedData]);
 
-  // ── which proposal ID is "active" for the current tab ────────────────────
-  const activeProposalId =
-    activeTab === "activity" ? (selectedActivity?.proposal_id ?? null) :
-    activeTab === "project"  ? (selectedProject?.proposal_id  ?? null) :
-    nodeId;
+  // ── Resolved IDs for each PUT endpoint ──────────────────────────────────
+  // Program  → nodeId (proposal_id)             → PUT /program-proposal/{nodeId}/
+  //            payload: proposal = nodeId
+  // Project  → selectedProject.child_id         → PUT /project-proposal/{child_id}/update-project-save-history/
+  //            payload: proposal = selectedProject.proposal_id
+  // Activity → selectedActivity.child_id        → PUT /activity-proposal/{child_id}/update-activity-save-history/
+  //            payload: proposal = selectedActivity.proposal_id
+  const programChildId   = proposalData?.child_id;  
+  const programProposalId = nodeId;                                                           // payload proposal field
+  const projectChildId   = selectedProject  ? Number(selectedProject.child_id)   : null;     // URL id for project
+  const projectProposalId = selectedProject ? Number(selectedProject.proposal_id) : null;     // payload proposal field
+  const activityChildId  = selectedActivity ? Number(selectedActivity.child_id)  : null;     // URL id for activity
+  const activityProposalId = selectedActivity ? Number(selectedActivity.proposal_id) : null; // payload proposal field
 
   // ── Edit hook ─────────────────────────────────────────────────────────────
   const {
@@ -284,11 +294,17 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     projectDraft,  setProjectDraft,
     activityDraft, setActivityDraft,
     isSaving,
+    saveError,
     handleSave,
     handleCancel,
   } = useProposalEdit({
     activeTab,
-    proposalId: activeProposalId,
+    programChildId,
+    programProposalId,
+    projectChildId,
+    projectProposalId,
+    activityChildId,
+    activityProposalId,
     mappedProgram,
     mappedProject,
     mappedActivity,
@@ -594,6 +610,16 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
           {/* Document content */}
           <div className="flex-1 overflow-y-auto relative bg-white">
             <div className="p-5">
+
+              {/* ── Save error banner ── */}
+              {saveError && (
+                <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                  <span className="font-medium">{saveError}</span>
+                </div>
+              )}
 
               {/* ── PROGRAM TAB ── */}
               {activeTab === "program" && (

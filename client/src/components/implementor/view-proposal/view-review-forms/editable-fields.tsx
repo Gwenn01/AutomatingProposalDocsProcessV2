@@ -8,7 +8,7 @@ import React from "react";
 // EditableText – single-line
 // ─────────────────────────────────────────────────────────────
 interface EditableTextProps {
-  value: string;
+  value: any;
   onChange: (v: string) => void;
   isEditing: boolean;
   placeholder?: string;

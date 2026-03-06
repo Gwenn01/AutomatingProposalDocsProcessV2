@@ -1,8 +1,13 @@
 // hooks/useProposalEdit.ts
 // Manages local editable copies of program / project / activity proposal data.
-// Builds and console.logs the save payload on handleSave().
+// Calls the appropriate PUT endpoint on handleSave().
 
 import { useState, useEffect } from "react";
+import {
+  updateProgramProposal,
+  updateProjectProposal,
+  updateActivityProposal,
+} from "@/utils/implementor-api";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 const str  = (v: any): string          => (v == null ? "" : String(v));
@@ -12,6 +17,7 @@ const rows = <T,>(v: any, defaults: T): T[] =>
 
 // ─── shape of each editable form ────────────────────────────────────────────
 export interface EditableProgram {
+  title: string;
   program_title: string;
   program_leader: string;
   implementing_agency: string[];
@@ -82,6 +88,7 @@ export interface EditableActivity {
 
 // ─── defaults ────────────────────────────────────────────────────────────────
 const defaultProgram  = (): EditableProgram  => ({
+  title: "",
   program_title: "", program_leader: "",
   implementing_agency: [], cooperating_agencies: [], extension_sites: [],
   tags: [], clusters: [], agendas: [],
@@ -123,6 +130,7 @@ const defaultActivity = (): EditableActivity => ({
 function hydrateProgram(d: any): EditableProgram {
   if (!d) return defaultProgram();
   return {
+    title:                     str(d.program_title),
     program_title:             str(d.program_title),
     program_leader:            str(d.program_leader),
     implementing_agency:       arr(d.implementing_agency),
@@ -201,10 +209,10 @@ function hydrateActivity(d: any): EditableActivity {
   };
 }
 
-// ─── build final save payload ─────────────────────────────────────────────────
-function buildProgramPayload(proposalId: number | string, d: EditableProgram) {
+// ─── build final save payloads ────────────────────────────────────────────────
+function buildProgramPayload(d: EditableProgram) {
   return {
-    proposal: proposalId,
+    title:                     d.program_title,
     program_title:             d.program_title,
     program_leader:            d.program_leader,
     implementing_agency:       d.implementing_agency,
@@ -231,9 +239,8 @@ function buildProgramPayload(proposalId: number | string, d: EditableProgram) {
   };
 }
 
-function buildProjectPayload(proposalId: number | string, d: EditableProject) {
+function buildProjectPayload(d: EditableProject) {
   return {
-    proposal: proposalId,
     project_title:             d.project_title,
     project_leader:            d.project_leader,
     members:                   d.members,
@@ -261,9 +268,8 @@ function buildProjectPayload(proposalId: number | string, d: EditableProject) {
   };
 }
 
-function buildActivityPayload(proposalId: number | string, d: EditableActivity) {
+function buildActivityPayload(d: EditableActivity) {
   return {
-    proposal: proposalId,
     activity_title:            d.activity_title,
     project_leader:            d.project_leader,
     members:                   d.members,
@@ -292,7 +298,15 @@ function buildActivityPayload(proposalId: number | string, d: EditableActivity) 
 // ─── hook ─────────────────────────────────────────────────────────────────────
 export function useProposalEdit({
   activeTab,
-  proposalId,
+  // Program  → PUT /program-proposal/{programChildId}/      payload: proposal = programProposalId
+  programChildId,
+  programProposalId,
+  // Project  → PUT /project-proposal/{projectChildId}/...   payload: proposal = projectProposalId
+  projectChildId,
+  projectProposalId,
+  // Activity → PUT /activity-proposal/{activityChildId}/... payload: proposal = activityProposalId
+  activityChildId,
+  activityProposalId,
   mappedProgram,
   mappedProject,
   mappedActivity,
@@ -300,10 +314,15 @@ export function useProposalEdit({
   onEditingChange,
 }: {
   activeTab: "program" | "project" | "activity";
-  proposalId: number | string | null;
-  mappedProgram:  any | null;
-  mappedProject:  any | null;
-  mappedActivity: any | null;
+  programChildId:    number | null;
+  programProposalId: number | null;
+  projectChildId:    number | null;
+  projectProposalId: number | null;
+  activityChildId:   number | null;
+  activityProposalId: number | null;
+  mappedProgram:   any | null;
+  mappedProject:   any | null;
+  mappedActivity:  any | null;
   isEditing: boolean;
   onEditingChange: (v: boolean) => void;
 }) {
@@ -311,41 +330,62 @@ export function useProposalEdit({
   const [projectDraft,  setProjectDraft]  = useState<EditableProject>(defaultProject());
   const [activityDraft, setActivityDraft] = useState<EditableActivity>(defaultActivity());
   const [isSaving,      setIsSaving]      = useState(false);
+  const [saveError,     setSaveError]     = useState<string | null>(null);
 
-  // Re-hydrate drafts whenever source data or tab changes (and not currently editing)
+  // Use stable scalar IDs as deps so we never trigger on new object references.
+  // mappedProgram/Project/Activity are new objects every render even with useMemo
+  // (inner arrays differ by reference), so using them directly as deps causes an
+  // infinite setState → re-render → setState loop.
+  const programDataId  = mappedProgram  ? (mappedProgram.id  ?? mappedProgram.proposal  ?? programChildId)  : null;
+  const projectDataId  = mappedProject  ? (mappedProject.id  ?? projectChildId)  : null;
+  const activityDataId = mappedActivity ? (mappedActivity.id ?? activityChildId) : null;
+
   useEffect(() => {
     if (!isEditing && mappedProgram)  setProgramDraft(hydrateProgram(mappedProgram));
-  }, [mappedProgram,  isEditing]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programDataId, isEditing]);
 
   useEffect(() => {
     if (!isEditing && mappedProject)  setProjectDraft(hydrateProject(mappedProject));
-  }, [mappedProject,  isEditing]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectDataId, isEditing]);
 
   useEffect(() => {
     if (!isEditing && mappedActivity) setActivityDraft(hydrateActivity(mappedActivity));
-  }, [mappedActivity, isEditing]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activityDataId, isEditing]);
 
   const handleSave = async () => {
+    setSaveError(null);
     setIsSaving(true);
     try {
       if (activeTab === "program") {
-        const payload = buildProgramPayload(proposalId ?? "", programDraft);
-        console.log("[SAVE] Program payload:", JSON.stringify(payload, null, 2));
+        if (!programChildId)    throw new Error("Missing program ID — cannot save.");
+        const payload = { proposal: programProposalId, ...buildProgramPayload(programDraft) };
+        await updateProgramProposal(programChildId, payload);
+
       } else if (activeTab === "project") {
-        const payload = buildProjectPayload(proposalId ?? "", projectDraft);
-        console.log("[SAVE] Project payload:", JSON.stringify(payload, null, 2));
+        if (!projectChildId)    throw new Error("Missing project ID — cannot save.");
+        const payload = { proposal: projectProposalId, ...buildProjectPayload(projectDraft) };
+        await updateProjectProposal(projectChildId, payload);
+
       } else {
-        const payload = buildActivityPayload(proposalId ?? "", activityDraft);
-        console.log("[SAVE] Activity payload:", JSON.stringify(payload, null, 2));
+        if (!activityChildId)   throw new Error("Missing activity ID — cannot save.");
+        const payload = { proposal: activityProposalId, ...buildActivityPayload(activityDraft) };
+        await updateActivityProposal(activityChildId, payload);
       }
+
       onEditingChange(false);
+    } catch (err: any) {
+      console.error("[useProposalEdit] save failed:", err);
+      setSaveError(err?.message ?? "Save failed. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset draft to last known API data
+    setSaveError(null);
     if (activeTab === "program"  && mappedProgram)  setProgramDraft(hydrateProgram(mappedProgram));
     if (activeTab === "project"  && mappedProject)  setProjectDraft(hydrateProject(mappedProject));
     if (activeTab === "activity" && mappedActivity) setActivityDraft(hydrateActivity(mappedActivity));
@@ -357,6 +397,7 @@ export function useProposalEdit({
     projectDraft,  setProjectDraft,
     activityDraft, setActivityDraft,
     isSaving,
+    saveError,
     handleSave,
     handleCancel,
   };

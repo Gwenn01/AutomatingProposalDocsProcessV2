@@ -630,3 +630,53 @@ export async function fetchActivityHistoryList(proposal_node: number): Promise<a
   const res = await authFetch(`${BASE_URL}/activity-proposal/${proposal_node}/history-list/`);
   return handleResponse<any>(res);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADD THESE THREE FUNCTIONS TO THE BOTTOM OF implementor-api.ts
+// (after the existing fetchActivityHistoryList function)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * PUT /api/program-proposal/{childId}/
+ * Updates an existing program proposal with edited form data.
+ */
+export async function updateProgramProposal(childId: number, payload: Record<string, any>): Promise<any> {
+  if (import.meta.env.DEV) {
+    console.log(`[updateProgramProposal] child_id=${childId}`, JSON.stringify(payload, null, 2));
+  }
+  const res = await authFetch(`${BASE_URL}/program-proposal/${childId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<any>(res);
+}
+
+/**
+ * PUT /api/project-proposal/{childId}/update-project-save-history/
+ * Updates an existing project proposal and saves a new history entry.
+ */
+export async function updateProjectProposal(childId: number, payload: Record<string, any>): Promise<any> {
+  if (import.meta.env.DEV) {
+    console.log(`[updateProjectProposal] child_id=${childId}`, JSON.stringify(payload, null, 2));
+  }
+  const res = await authFetch(`${BASE_URL}/project-proposal/${childId}/update-project-save-history/`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<any>(res);
+}
+
+/**
+ * PUT /api/activity-proposal/{childId}/update-activity-save-history/
+ * Updates an existing activity proposal and saves a new history entry.
+ */
+export async function updateActivityProposal(childId: number, payload: Record<string, any>): Promise<any> {
+  if (import.meta.env.DEV) {
+    console.log(`[updateActivityProposal] child_id=${childId}`, JSON.stringify(payload, null, 2));
+  }
+  const res = await authFetch(`${BASE_URL}/activity-proposal/${childId}/update-activity-save-history/`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<any>(res);
+}
