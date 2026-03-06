@@ -94,7 +94,7 @@ class UpdateActivitySaveHistoryView(APIView):
         if serializer.is_valid():
             serializer.save()
             NotificationService.admin_notifications(
-                f"Activity proposal updated by {request.user.username}"
+                f"Activity proposal created by {request.user.username}"
             )
             return Response({"message": "Activity proposal updated successfully",  
                              "data": serializer.data}, status=status.HTTP_200_OK

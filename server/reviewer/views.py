@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from proposals_node.models import Proposal
+from notifications.models import Notification
 
 # app
 from django.contrib.auth.models import User
@@ -31,11 +33,17 @@ class AssignReviewerView(APIView):
             data=request.data,
             context={'request': request}
         )
+        user = get_object_or_404(User, id=request.data.get('reviewer'))
+        proposal = get_object_or_404(Proposal, id=request.data.get('proposal')) 
         if serializer.is_valid():
             reviewer = serializer.save()
             # use reviewer.proposal instead of querying again
             reviewer.proposal.status = "for_review"
             reviewer.proposal.save()
+            Notification.objects.create(
+                user=user,
+                message=f'You have been assigned to review proposal {proposal.title}',
+            )
             return Response(
                 {
                     "message": "Reviewer assigned successfully",
