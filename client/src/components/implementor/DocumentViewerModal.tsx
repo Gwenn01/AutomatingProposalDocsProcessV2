@@ -11,7 +11,7 @@ import {
   type ApiActivityListResponse,
   type ApiProject,
   type ApiActivity,
-} from "@/utils/implementor-api";
+} from "@/api/implementor-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 
 import { ProgramFormDocument } from "../view-document/program-form";
@@ -180,7 +180,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     setProjectDetail(null);
     setProjectDetailLoading(true);
     try {
-      const detail = await fetchProjectProposalDetail(project.id);
+      const detail = await fetchProjectProposalDetail(project.child_id);
       console.log("DETAIL", detail)
       setProjectDetail(detail);
     } catch (err) {

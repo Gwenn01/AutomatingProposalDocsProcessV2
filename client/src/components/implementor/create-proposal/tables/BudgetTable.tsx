@@ -1,4 +1,4 @@
-import type { BudgetLineItem, BudgetRows } from "@/utils/implementor-api";
+import type { BudgetLineItem, BudgetRows } from "@/api/implementor-api";
 
 export const BudgetTable = ({ rows, onChange }: { rows: BudgetRows; onChange: (v: BudgetRows) => void }) => {
   const handle = (cat: keyof BudgetRows, i: number, field: keyof BudgetLineItem, val: string) => {

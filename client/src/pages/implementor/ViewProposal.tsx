@@ -14,9 +14,11 @@ import {
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
-import { fetchProposalsNode, fetchProgramProposalDetail } from "@/utils/implementor-api";
+import { fetchProposalsNode, fetchProgramProposalDetail } from "@/api/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
+import { getNotifications } from "@/api/get-notification-api";
+import { markNotificationRead } from "@/api/reviewer-api";
 
 // ================= TYPE DEFINITIONS =================
 interface Document {
@@ -35,7 +37,7 @@ interface Document {
 
 interface Notification {
   id: string | number;
-  is_read: 0 | 1;
+  is_read: 0 | 1 | boolean;  // API returns boolean
   message: string;
   created_at: string;
   [key: string]: any;
@@ -87,23 +89,24 @@ const ViewProposal: React.FC = () => {
 
   // ================= NOTIFICATIONS =================
   const unreadCount: number = notifications.filter((n) => n.is_read === 0).length;
+const handleRead = async (id: string | number): Promise<void> => {
+  const target = notifications.find((n) => n.id === id);
+  if (!target || target.is_read === 1) return;
 
-  const handleRead = async (id: string | number): Promise<void> => {
-    if (!user) return;
-    const target = notifications.find((n) => n.id === id);
-    if (!target || target.is_read === 1) return;
+  // Optimistic update
+  setNotifications((prev) =>
+    prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+  );
+  try {
+    await markNotificationRead(id); // add this endpoint if available
+  } catch (error) {
+    console.error(error);
+    // Rollback
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+      prev.map((n) => (n.id === id ? { ...n, is_read: 0 } : n))
     );
-    try {
-      console.log("Marking notification as read:", id);
-    } catch (error) {
-      console.error(error);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: 0 } : n))
-      );
-    }
-  };
+  }
+};
 
   // ================= FETCH PROPOSALS LIST =================
   useEffect(() => {
@@ -125,6 +128,14 @@ const ViewProposal: React.FC = () => {
           reviews:     p.reviews ?? 0,
         }));
         setDocuments(mapped);
+        // ✅ Fetch notifications
+        const notifData = await getNotifications();
+        // Normalize boolean is_read → 0 | 1
+        const mapped_notifs: Notification[] = notifData.map((n: any) => ({
+          ...n,
+          is_read: n.is_read ? 1 : 0,
+        }));
+        setNotifications(mapped_notifs);
       } catch (err) {
         console.error("[ViewProposal] Failed to fetch proposals:", err);
       } finally {

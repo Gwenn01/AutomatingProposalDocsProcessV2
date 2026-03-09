@@ -1,5 +1,5 @@
 import { getProjectCompletion } from "@/helpers/create-proposal-helper";
-import type { ActivityItem, ProjectFormData } from "@/utils/implementor-api";
+import type { ActivityItem, ProjectFormData } from "@/api/implementor-api";
 import { Card } from "./ui/card";
 import { SectionHeader } from "./ui/section-header";
 import { CompletionBadge } from "./ui/completion-badge";

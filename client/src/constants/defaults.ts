@@ -1,4 +1,4 @@
-import type { ActivityFormData, ActivityItem, ActivityScheduleRow, ApiActivity, ApiProject, BudgetRows, ExpectedOutput6Ps, OrgStaffingItem, ProgramFormData, ProjectFormData, ProjectItem, WorkplanRow } from "@/utils/implementor-api";
+import type { ActivityFormData, ActivityItem, ActivityScheduleRow, ApiActivity, ApiProject, BudgetRows, ExpectedOutput6Ps, OrgStaffingItem, ProgramFormData, ProjectFormData, ProjectItem, WorkplanRow } from "@/api/implementor-api";
 
 
 export const defaultExpectedOutput = (): ExpectedOutput6Ps => ({

@@ -13,7 +13,7 @@ import {
 import {
   createAdminAccount,
   type CreateAdminUserPayload,
-} from "@/utils/admin-api";
+} from "@/api/admin-api";
 
 interface AddAccountModalProps {
   isOpen: boolean;

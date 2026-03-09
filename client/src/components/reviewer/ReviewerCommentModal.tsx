@@ -24,17 +24,17 @@ import {
   fetchReviewerProjectProposal,
   type ReviewerProjectList,
   fetchReviewerActivityProposal,
-} from "@/utils/reviewer-api";
+} from "@/api/reviewer-api";
 import {
   fetchProgramHistoryList,
   fetchProjectHistoryList,
   fetchActivityHistoryList,
-} from "@/utils/implementor-api";
+} from "@/api/implementor-api";
 import {
   fetchProgramHistoryData,
   fetchProjectHistoryData,
   fetchActivityHistoryData,
-} from "@/utils/get-history-data-api";
+} from "@/api/get-history-data-api";
 import { ActivityForm } from "../view-review/activity-form";
 import { ProjectForm } from "../view-review/project-form";
 import { ProgramForm } from "../view-review/program-form";
@@ -44,14 +44,17 @@ import { useAuth } from "@/context/auth-context";
 // ================= TYPES =================
 
 interface History {
-  history_id: string;
-  proposal_id: string;
+  history_id: number;
+  proposal_id: number;
   status: string;
   version: number;
-  version_no: number;
-  created_at: string;
+  program_title: string;
+  program_leader: string;
+  project_title: string;
+  project_leader: string;
+  activity_title: string;
+  created_at: any;
 }
-
 interface Review {
   id: string;
   comment: string;
@@ -228,6 +231,7 @@ function normalizeHistoryList(raw: any): History[] {
     version:     item.version ?? item.version_no ?? 0,
     version_no:  item.version_no ?? item.version ?? 0,
     created_at:  item.created_at ?? "",
+    program_title:  String(item.program_title ?? item.project_title ?? item.activity_title ?? ""),
   }));
 }
 
@@ -967,7 +971,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                             )}
                           </div>
                           <p className={`text-[11px] mt-0.5 ${isSelected ? "text-emerald-600/70" : "text-gray-400"}`}>
-                            {date}
+                            Title: <span>{item.program_title}</span>
                           </p>
                         </div>
 

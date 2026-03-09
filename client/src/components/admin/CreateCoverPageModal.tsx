@@ -5,7 +5,7 @@ import { useToast } from "@/context/toast";
 import {
   createCoverPage,
   type CreateCoverPagePayload,
-} from "@/utils/admin-api";
+} from "@/api/admin-api";
 
 interface CreateCoverPageModalProps {
   isOpen: boolean;

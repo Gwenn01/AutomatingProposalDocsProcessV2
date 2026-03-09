@@ -13,7 +13,7 @@ import {
   Briefcase,
   MapPin,
 } from "lucide-react";
-import { type ApiUser, updateAdminAccount } from "@/utils/admin-api";
+import { type ApiUser, updateAdminAccount } from "@/api/admin-api";
 
 export type UserRole = "reviewer" | "admin" | "implementor";
 

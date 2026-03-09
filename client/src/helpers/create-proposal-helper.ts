@@ -1,4 +1,4 @@
-import type { ActivityFormData, ProgramFormData, ProjectFormData } from "@/utils/implementor-api";
+import type { ActivityFormData, ProgramFormData, ProjectFormData } from "@/api/implementor-api";
 
 export const getProgramCompletion = (data: ProgramFormData): number => {
   const fields: (keyof ProgramFormData)[] = ['program_title', 'program_leader', 'implementing_agency', 'rationale', 'significance', 'general_objectives', 'specific_objectives', 'methodology', 'sustainability_plan'];

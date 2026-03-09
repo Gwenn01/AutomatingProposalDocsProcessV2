@@ -8,7 +8,7 @@ import {
   type ProgramFormData,
   type ProjectFormData,
   type ActivityFormData,
-} from '@/utils/implementor-api';
+} from '@/api/implementor-api';
 import { defaultActivityFormData, defaultProgramFormData, defaultProjectFormData } from '@/constants/defaults';
 import { ProgramProposalForm } from '@/components/implementor/create-proposal/program-form';
 import { Spinner } from '@/components/implementor/create-proposal/ui/Spinner';

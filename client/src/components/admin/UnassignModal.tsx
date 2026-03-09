@@ -15,7 +15,7 @@ import {
   getAssignedReviewers,
   unassignReviewer,
   type ReviewerAssignment,
-} from "@/utils/admin-api";
+} from "@/api/admin-api";
 
 interface UnassignModalPropos {
   isOpen: boolean;

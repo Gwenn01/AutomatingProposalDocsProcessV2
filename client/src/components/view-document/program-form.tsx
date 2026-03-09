@@ -3,6 +3,7 @@ import React from "react";
 import { CheckboxList } from "../view-review/checkbox-list";
 import type { ApiProposalDetail } from "../reviewer/ReviewerCommentModal";
 import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
+import { formatDate } from "@/utils/dateFormat";
 
 export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalData }) => {
   const workplanMap: Record<string, string> = {};
@@ -32,8 +33,8 @@ export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> 
                 <p className="font-bold">Project Members: <span className="font-normal">{val(proj.project_member.map((m: any) => m).join(", "))}</span></p>
                 <br />
                 <p className="font-bold">Project Duration: <span className="font-normal">{val(proj.project_duration)}</span></p>
-                <p className="font-bold">Project Start Date: <span className="font-normal">{val(proj.project_start_date)}</span></p>
-                <p className="font-bold">Project End Date: <span className="font-normal">{val(proj.project_end_date)}</span></p>
+                <p className="font-bold">Project Start Date: <span className="font-normal">{val(formatDate(proj.project_start_date))}</span></p>
+                <p className="font-bold">Project End Date: <span className="font-normal">{val(formatDate(proj.project_end_date))}</span></p>
                 <br />
               </div>
             </React.Fragment>

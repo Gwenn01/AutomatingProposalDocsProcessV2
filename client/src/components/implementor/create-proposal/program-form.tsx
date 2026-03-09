@@ -1,5 +1,5 @@
 import { getProgramCompletion } from "@/helpers/create-proposal-helper";
-import type { ProgramBudgetRow, ProgramFormData, ProjectItem } from "@/utils/implementor-api";
+import type { ProgramBudgetRow, ProgramFormData, ProjectItem } from "@/api/implementor-api";
 import { Card } from "./ui/card";
 import { SectionHeader } from "./ui/section-header";
 import { CompletionBadge } from "./ui/completion-badge";

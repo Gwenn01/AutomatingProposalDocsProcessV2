@@ -10,7 +10,7 @@ import {
   type ApiActivityListResponse,
   type ApiProject,
   type ApiActivity,
-} from "@/utils/reviewer-api";
+} from "@/api/reviewer-api";
 import FormSkeleton from "../skeletons/FormSkeleton";
 
 // ================= TYPE DEFINITIONS =================

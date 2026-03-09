@@ -11,7 +11,7 @@ import {
 import EditProfileAdmin from "@/components/admin/EditProfileAdminModal";
 import AddAccountModal from "@/components/admin/AddAccountModal";
 import DeleteAccountConfirmationModal from "@/components/admin/DeleteAccountConfirmationModal";
-import { getAllAccounts, type ApiUser } from "@/utils/admin-api";
+import { getAllAccounts, type ApiUser } from "@/api/admin-api";
 import { useToast } from "@/context/toast";
 import Loading from "@/components/Loading";
 

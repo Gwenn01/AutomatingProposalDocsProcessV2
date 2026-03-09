@@ -7,7 +7,7 @@ import {
   fetchProjectList,
   type ApiProjectListResponse,
   type ApiActivity,
-} from "@/utils/reviewer-api";
+} from "@/api/reviewer-api";
 import {
   fetchActivityList,
   fetchActivityProposalDetail,
@@ -16,7 +16,7 @@ import {
   fetchProjectHistoryList,
   fetchActivityHistoryList,
   type ApiActivityListResponse,
-} from "@/utils/implementor-api";
+} from "@/api/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import { ActivityForm } from "./view-review-forms/activity-form";
 import { ProjectForm } from "./view-review-forms/project-form";
@@ -24,7 +24,7 @@ import { ProgramForm } from "./view-review-forms/program-form";
 import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
 import { useProposalEdit } from "@/hooks/useProposalEdit";
-import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/utils/get-history-data-api";
+import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/api/get-history-data-api";
 
 // ================= TYPES =================
 
