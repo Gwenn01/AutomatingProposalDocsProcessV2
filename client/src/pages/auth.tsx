@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/context/toast";
 import { useAuth } from "@/context/auth-context"; // 👈 import the hook
-import { loginUser, registerUser, getUserProfile } from "@/utils/auth-api";
+import { loginUser, registerUser, getUserProfile } from "@/api/auth-api";
 
 interface LoginData {
   identifier: string;

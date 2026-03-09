@@ -18,7 +18,7 @@ import {
   assignReviewer,
   type ApiUser,
   type ReviewerAssignment,
-} from "@/utils/admin-api";
+} from "@/api/admin-api";
 
 interface AssignModalProps {
   isOpen: boolean;

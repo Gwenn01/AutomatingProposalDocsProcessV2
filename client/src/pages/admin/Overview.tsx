@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from "recharts";
 import { Users, FileText, CheckCircle, Zap } from "lucide-react";
-import { getUsersOverview, getProposalsOverview } from "@/utils/admin-api";
+import { getUsersOverview, getProposalsOverview } from "@/api/admin-api";
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 import { getWorkflowCardStyle } from "@/utils/statusCardStyle";
 import Loading from "@/components/Loading";

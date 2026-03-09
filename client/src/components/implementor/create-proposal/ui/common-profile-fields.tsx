@@ -1,4 +1,4 @@
-import type { ActivityFormData, ProjectFormData } from "@/utils/implementor-api";
+import type { ActivityFormData, ProjectFormData } from "@/api/implementor-api";
 import { Field } from "./Field";
 import { AGENDA_OPTIONS, CLUSTER_OPTIONS, TAGGING_OPTIONS } from "@/constants";
 import { CheckboxGroup } from "./checkbox-group";

@@ -11,7 +11,7 @@ import {
   type ApiActivityListResponse,
   type ApiProject,
   type ApiActivity,
-} from "@/utils/implementor-api";
+} from "@/api/implementor-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 
 import { ProgramFormDocument } from "../view-document/program-form";

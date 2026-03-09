@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, User, ChevronDown, Save, Loader2, Mail, User2, Shield } from "lucide-react";
 import { useToast } from "@/context/toast";
-import { updateProfile, type UpdateProfilePayload } from "@/utils/profile-api";
+import { updateProfile, type UpdateProfilePayload } from "@/api/profile-api";
 
 interface Profile {
   role: string;

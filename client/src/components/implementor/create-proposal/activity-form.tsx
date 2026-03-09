@@ -1,5 +1,5 @@
 import { getActivityCompletion } from "@/helpers/create-proposal-helper";
-import type { ActivityFormData, ActivityScheduleRow } from "@/utils/implementor-api";
+import type { ActivityFormData, ActivityScheduleRow } from "@/api/implementor-api";
 import { SectionHeader } from "./ui/section-header";
 import { CompletionBadge } from "./ui/completion-badge";
 import { Card } from "./ui/card";

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { clearAuthData } from "@/utils/auth-api";
+import { clearAuthData } from "@/api/auth-api";
 
 // ================= TYPES =================
 

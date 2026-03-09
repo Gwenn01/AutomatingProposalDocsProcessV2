@@ -13,7 +13,7 @@ import {
   getProposals,
   getAllReviewerAssignments,
   type ProgramProposal,
-} from "@/utils/admin-api";
+} from "@/api/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";

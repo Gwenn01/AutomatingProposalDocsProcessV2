@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { X, User, CheckCircle2, Clock } from "lucide-react";
-import { getListofReviewer } from "@/utils/implementor-api";
+import { getListofReviewer } from "@/api/implementor-api";
 
 interface Reviewer {
   fullname: string;

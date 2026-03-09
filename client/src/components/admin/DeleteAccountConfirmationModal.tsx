@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Loader2, X } from "lucide-react";
-import { deleteAdminAccount } from "@/utils/admin-api";
+import { deleteAdminAccount } from "@/api/admin-api";
 
 interface DeleteModalProps {
   isOpen: boolean;

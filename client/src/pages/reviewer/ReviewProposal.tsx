@@ -22,9 +22,17 @@ import {
   fetchReviewerProposals,
   fetchProgramProposalDetail,
   type ReviewerProposal,
-} from "@/utils/reviewer-api";
+} from "@/api/reviewer-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
+import { getNotifications } from "@/api/get-notification-api";
+
+interface Notification {
+  id: string | number;
+  is_read: 0 | 1;
+  message: string;
+  created_at: string;
+}
 
 interface User {
   user_id: string;
@@ -94,6 +102,10 @@ const ReviewProposal: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [proposalDetail, setProposalDetail] = useState<any | null>(null);
   const [actionProgress, setActionProgress] = useState<number>(0);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotif, setShowNotif] = useState<boolean>(false);
+
+  const unreadCount = notifications.filter((n) => n.is_read === 0).length;
 
   // ── Progress bar while loading ──────────────────────────────────────────
   useEffect(() => {
@@ -145,24 +157,34 @@ useEffect(() => {
   }, []);
 
   // ── Fetch proposals once user is available ──────────────────────────────
-  useEffect(() => {
-    if (!user) return;
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const apiProposals = await fetchReviewerProposals();
-        setProposalsData(apiProposals.map(mapApiProposal));
-      } catch (err: any) {
-        console.error("[ReviewProposal] Failed to load data:", err);
-        setError(err?.message ?? "Failed to load proposals.");
-      } finally {
-        setProgress(100);
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [user]);
+useEffect(() => {
+  if (!user) return;
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [apiProposals, notifData] = await Promise.all([
+        fetchReviewerProposals(),
+        getNotifications(),
+      ]);
+
+      setProposalsData(apiProposals.map(mapApiProposal));
+
+      // Normalize boolean is_read → 0 | 1
+      setNotifications(
+        notifData.map((n: any) => ({ ...n, is_read: n.is_read ? 1 : 0 }))
+      );
+    } catch (err: any) {
+      console.error("[ReviewProposal] Failed to load data:", err);
+      setError(err?.message ?? "Failed to load proposals.");
+    } finally {
+      setProgress(100);
+      setLoading(false);
+    }
+  };
+  loadData();
+}, [user]);
 
   // ── Filtering ───────────────────────────────────────────────────────────
   const filteredProposals = useMemo(() => {
@@ -229,6 +251,21 @@ const handleViewReview = async (doc: Proposal): Promise<void> => {
     console.error("[ViewProposal] Failed to fetch proposal detail:", err);
   } finally {
     setActionLoading(false);
+  }
+};
+
+const handleRead = async (id: string | number): Promise<void> => {
+  const target = notifications.find((n) => n.id === id);
+  if (!target || target.is_read === 1) return;
+  setNotifications((prev) =>
+    prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+  );
+  try {
+    // call markNotificationRead(id) here if you have that endpoint
+  } catch {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: 0 } : n))
+    );
   }
 };
 
@@ -309,14 +346,14 @@ const handleViewReview = async (doc: Proposal): Promise<void> => {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8 relative">
                   <h1 className="text-[32px] font-bold text-gray-900">Review Proposal</h1>
-                  <NotificationBell
-                    notifications={[]}
-                    unreadCount={0}
-                    show={false}
-                    onToggle={() => {}}
-                    onClose={() => {}}
-                    onRead={() => {}}
-                  />
+                    <NotificationBell
+                      notifications={notifications}
+                      unreadCount={unreadCount}
+                      show={showNotif}
+                      onToggle={() => setShowNotif((p) => !p)}
+                      onClose={() => setShowNotif(false)}
+                      onRead={handleRead}
+                    />
                 </div>
 
                 {/* Controls */}

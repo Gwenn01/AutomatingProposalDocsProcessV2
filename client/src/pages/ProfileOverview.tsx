@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { User, Mail, MapPin, Briefcase, GraduationCap, LogOut, Edit3, Shield, Calendar } from "lucide-react";
 import EditProfileModal from "@/components/EditProfileModal";
-import { fetchProfile } from "@/utils/profile-api";
+import { fetchProfile } from "@/api/profile-api";
 import { useToast } from "@/context/toast";
 
 // 1. Interfaces matching your API response

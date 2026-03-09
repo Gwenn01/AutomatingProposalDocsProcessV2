@@ -24,17 +24,17 @@ import {
   fetchReviewerProjectProposal,
   type ReviewerProjectList,
   fetchReviewerActivityProposal,
-} from "@/utils/reviewer-api";
+} from "@/api/reviewer-api";
 import {
   fetchProgramHistoryList,
   fetchProjectHistoryList,
   fetchActivityHistoryList,
-} from "@/utils/implementor-api";
+} from "@/api/implementor-api";
 import {
   fetchProgramHistoryData,
   fetchProjectHistoryData,
   fetchActivityHistoryData,
-} from "@/utils/get-history-data-api";
+} from "@/api/get-history-data-api";
 import { ActivityForm } from "../view-review/activity-form";
 import { ProjectForm } from "../view-review/project-form";
 import { ProgramForm } from "../view-review/program-form";

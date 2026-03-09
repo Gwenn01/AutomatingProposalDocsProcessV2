@@ -2,7 +2,7 @@
 // implementor-api.ts
 // ─────────────────────────────────────────────
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+export const BASE_URL = 'http://127.0.0.1:8000/api';
 
 // ─────────────────────────────────────────────
 // AUTH HELPERS
@@ -53,7 +53,7 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
+export async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let errorBody: any = {};
     let message = `Request failed with status ${res.status}`;
@@ -76,7 +76,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const makeRequest = () =>
     fetch(url, { ...options, headers: { ...getAuthHeaders(), ...(options.headers ?? {}) } });
 
@@ -691,5 +691,10 @@ interface ListOfReviewer {
 }
 export async function getListofReviewer(proposal_id: number): Promise<any> {
   const res = await authFetch(`${BASE_URL}/reviewer-proposal-list/${proposal_id}`)
+  return handleResponse<any>(res);
+}
+
+export async function getNotifications(): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/admin/notifications/`)
   return handleResponse<any>(res);
 }

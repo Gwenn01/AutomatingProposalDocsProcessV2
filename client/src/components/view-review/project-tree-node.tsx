@@ -1,4 +1,4 @@
-import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/utils/reviewer-api";
+import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/api/reviewer-api";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
 type ProjectItem = ReviewerProjectList;

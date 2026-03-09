@@ -4,7 +4,7 @@ import { X, Users, Mail, FileText, Loader2, Calendar } from "lucide-react";
 import {
   getAssignedReviewers,
   type ReviewerAssignment,
-} from "@/utils/admin-api";
+} from "@/api/admin-api";
 
 interface ReviewerAssignedModalProps {
   isOpen: boolean;

@@ -12,7 +12,7 @@ import {
   Check,
   XCircle,
 } from "lucide-react";
-import { getProposals, type ProgramProposal } from "@/utils/admin-api";
+import { getProposals, type ProgramProposal } from "@/api/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
 import Loading from "@/components/Loading";
 import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";

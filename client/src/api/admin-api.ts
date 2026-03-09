@@ -1,4 +1,4 @@
-import { type ProposalStatus } from "./statusStyles";
+import { type ProposalStatus } from "../utils/statusStyles";
 export interface ApiUser {
   id: number;
   username: string;
