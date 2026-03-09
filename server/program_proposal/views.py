@@ -102,6 +102,22 @@ class ProgramProposalDetail(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# check if the proposal is already reviewed by all reviewers, so that implementor can edit it
+class ProgramProposalCheckReviews(APIView):
+    def get(self, request, proposal_id):
+        reviewers = ProposalReviewer.objects.filter(proposal_id=proposal_id)
+        # Check if there is any reviewer who has not reviewed yet
+        has_pending = reviewers.filter(is_reviewed=False).exists()
+        if has_pending:
+            return Response({
+                "all_reviewed": False,
+                "message": "Not all reviewers have submitted their reviews."
+            })
+        return Response({
+            "all_reviewed": True,
+            "message": "All reviewers have completed their reviews."
+        })
     
 # list of project proposal under a program proposal
 class ProgramProjectsView(APIView):
@@ -109,8 +125,7 @@ class ProgramProjectsView(APIView):
     def get(self, request, program_proposal_id):
         program_proposal = ProgramProposal.objects.get(id=program_proposal_id)
         serializer = ProgramProjectsSerializer(program_proposal)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        return Response(serializer.data, status=status.HTTP_200_OK)   
     
 # get the list of proposal history under a program proposal
 class ProgramListHistoryView(APIView):
