@@ -180,7 +180,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     setProjectDetail(null);
     setProjectDetailLoading(true);
     try {
-      const detail = await fetchProjectProposalDetail(project.id);
+      const detail = await fetchProjectProposalDetail(project.child_id);
       console.log("DETAIL", detail)
       setProjectDetail(detail);
     } catch (err) {

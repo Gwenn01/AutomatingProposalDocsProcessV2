@@ -2,6 +2,7 @@ import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
 import type { BudgetItem, MethodologyPhase, WorkplanItem } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "../view-review/checkbox-list";
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
+import { formatDate } from "@/utils/dateFormat";
 
 export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: string }> = ({ projectData, programTitle }) => {
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
@@ -32,10 +33,9 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
               <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members.map((m: any) => m).join(", "))}</span></p>
               <br />
               <p className="font-bold">Project Duration: <span className="font-normal">{val(projectData.duration_months)}</span></p>
-              <p className="font-bold">Project Start Date: <span className="font-normal">{val(projectData.start_date)}</span></p>
-              <p className="font-bold">Project End Date: <span className="font-normal">{val(projectData.end_date)}</span></p>
+              <p className="font-bold">Project Start Date: <span className="font-normal">{val(formatDate(projectData.start_date))}</span></p>
+              <p className="font-bold">Project End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
             </div>
-
         </div>
 
             <div className="overflow-x-auto mt-6">
@@ -45,20 +45,17 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
                     <td>
                       <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
                       <p className="px-3 mb-2">{arrVal(projectData.implementing_agency)}</p>
-                      {/* <td className="px-4 py-3">{arrVal(proposalData.implementing_agency)}</td> */}
                     </td>
                     </tr>
                     <tr className="border-b border-black">
                       <td>
-                        <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
-                        <p className="   px-3 mb-2 font-normal">{arrVal(projectData.cooperating_agencies)}</p>
+                        <p className="px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
+                        <p className="px-3 mb-2 font-normal">{arrVal(projectData.cooperating_agencies)}</p>
                       </td>
                     </tr>
                 </tbody>
               </table>
             </div>
-
-
         <p className="font-bold mt-2 mb-2 px-3">Extension Site/s or Venue/s</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
