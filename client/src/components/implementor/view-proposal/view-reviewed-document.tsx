@@ -931,7 +931,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
             </div>
 
             {/* Footer — shown when a version is selected */}
-            {selectedHistoryVersion && (
+            {/* {selectedHistoryVersion && (
               <div className="px-4 py-3 border-t border-gray-100">
                 <button
                   onClick={() => {
@@ -943,7 +943,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   Clear selection
                 </button>
               </div>
-            )}
+            )} */}
           </div>
 
         </div>
