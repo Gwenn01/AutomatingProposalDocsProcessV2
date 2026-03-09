@@ -24,6 +24,7 @@ import { ProgramForm } from "./view-review-forms/program-form";
 import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
 import { useProposalEdit } from "@/hooks/useProposalEdit";
+import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/utils/get-history-data-api";
 
 // ================= TYPES =================
 
@@ -89,6 +90,7 @@ interface History {
   project_title: string;
   project_leader: string;
   activity_title: string;
+  created_at: any;
 }
 
 export interface ViewReviewedDocumentsProps {
@@ -206,8 +208,8 @@ function normalizeHistoryList(raw: any): History[] {
     history_id:  String(item.history_id ?? item.id ?? ""),
     proposal_id: String(item.proposal_id ?? item.proposal ?? ""),
     status:      item.status ?? "unknown",
-    version:  item.version ?? item.version_no ?? 0,
-    program_title:  String(item.program_title ?? item.project_title ?? item.activity_title),
+    version:     item.version ?? item.version_no ?? 0,
+    program_title:  String(item.program_title ?? item.project_title ?? item.activity_title ?? ""),
   }));
 }
 
@@ -245,6 +247,10 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [historyLoading,         setHistoryLoading]         = useState(false);
   const [selectedHistoryVersion, setSelectedHistoryVersion] = useState<History | null>(null);
 
+  // ── History snapshot data ─────────────────────────────────────────────────
+  const [historySnapshotData,    setHistorySnapshotData]    = useState<any | null>(null);
+  const [historySnapshotLoading, setHistorySnapshotLoading] = useState(false);
+
   // ── Edit state ────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
 
@@ -256,8 +262,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const [activityDetail,        setActivityDetail]        = useState<any | null>(null);
   const [activityDetailLoading, setActivityDetailLoading] = useState(false);
 
-  const showCommentInputs =
-    !selectedHistoryVersion || selectedHistoryVersion.status === "current";
+  const showCommentInputs = selectedHistoryVersion?.status === "current" || !selectedHistoryVersion;
 
   const statusStyle = proposalData
     ? getStatusStyle(proposalData.status ?? "")
@@ -271,26 +276,18 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     activeTab === "project"  ? projectHistory  :
     programHistory;
 
-  // ── Mapped form data (memoized to prevent infinite re-render loops) ─────────
-  // Without useMemo, mapReviewedTo* creates new object references every render,
-  // which causes the useEffect deps in useProposalEdit to fire endlessly.
-  const mappedProgram  = React.useMemo(() => mapReviewedToProgram(programReviewedData),  [programReviewedData]);
-  const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),  [projectReviewedData]);
+  // ── Mapped form data (memoized to prevent infinite re-render loops) ────────
+  const mappedProgram  = React.useMemo(() => mapReviewedToProgram(programReviewedData),   [programReviewedData]);
+  const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),   [projectReviewedData]);
   const mappedActivity = React.useMemo(() => mapReviewedToActivity(activityReviewedData), [activityReviewedData]);
 
-  // ── Resolved IDs for each PUT endpoint ──────────────────────────────────
-  // Program  → nodeId (proposal_id)             → PUT /program-proposal/{nodeId}/
-  //            payload: proposal = nodeId
-  // Project  → selectedProject.child_id         → PUT /project-proposal/{child_id}/update-project-save-history/
-  //            payload: proposal = selectedProject.proposal_id
-  // Activity → selectedActivity.child_id        → PUT /activity-proposal/{child_id}/update-activity-save-history/
-  //            payload: proposal = selectedActivity.proposal_id
-  const programChildId   = proposalData?.child_id;  
-  const programProposalId = nodeId;                                                           // payload proposal field
-  const projectChildId   = selectedProject  ? Number(selectedProject.child_id)   : null;     // URL id for project
-  const projectProposalId = selectedProject ? Number(selectedProject.proposal_id) : null;     // payload proposal field
-  const activityChildId  = selectedActivity ? Number(selectedActivity.child_id)  : null;     // URL id for activity
-  const activityProposalId = selectedActivity ? Number(selectedActivity.proposal_id) : null; // payload proposal field
+  // ── Resolved IDs for each PUT endpoint ───────────────────────────────────
+  const programChildId    = proposalData?.child_id;
+  const programProposalId = nodeId;
+  const projectChildId    = selectedProject  ? Number(selectedProject.child_id)    : null;
+  const projectProposalId = selectedProject  ? Number(selectedProject.proposal_id) : null;
+  const activityChildId   = selectedActivity ? Number(selectedActivity.child_id)   : null;
+  const activityProposalId = selectedActivity ? Number(selectedActivity.proposal_id) : null;
 
   // ── Edit hook ─────────────────────────────────────────────────────────────
   const {
@@ -331,12 +328,17 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
     setHistoryLoading(true);
     fetchProgramHistoryList(nodeId)
-      .then((raw) => setProgramHistory(normalizeHistoryList(raw)))
+      .then((raw) => {
+        const list = normalizeHistoryList(raw);
+        setProgramHistory(list);
+        const current = list.find((h) => h.status === "current") ?? list[0] ?? null;
+        setSelectedHistoryVersion(current);
+      })
       .catch((err) => { console.error("[ProgramHistory] fetch failed:", err); setProgramHistory([]); })
       .finally(() => setHistoryLoading(false));
   }, [isOpen, nodeId]);
 
-  // ── 2. Sidebar project list ────────────────────────────────────────────────
+  // ── 2. Sidebar project list ───────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen || !childId) return;
     setProjectListLoading(true);
@@ -346,7 +348,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
       .finally(() => setProjectListLoading(false));
   }, [isOpen, childId]);
 
-  // ── 3. Project reviewed data + history ────────────────────────────────────
+  // ── 3. Project reviewed data + history ───────────────────────────────────
   useEffect(() => {
     if (!selectedProject?.proposal_id) {
       setProjectReviewedData(null);
@@ -364,12 +366,17 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
     setHistoryLoading(true);
     fetchProjectHistoryList(proposalId)
-      .then((raw) => setProjectHistory(normalizeHistoryList(raw)))
+      .then((raw) => {
+        const list = normalizeHistoryList(raw);
+        setProjectHistory(list);
+        const current = list.find((h) => h.status === "current") ?? list[0] ?? null;
+        setSelectedHistoryVersion(current);
+      })
       .catch((err) => { console.error("[ProjectHistory] fetch failed:", err); setProjectHistory([]); })
       .finally(() => setHistoryLoading(false));
   }, [selectedProject?.proposal_id]);
 
-  // ── 4. Activity reviewed data + history ───────────────────────────────────
+  // ── 4. Activity reviewed data + history ──────────────────────────────────
   useEffect(() => {
     if (!selectedActivity?.proposal_id) {
       setActivityReviewedData(null);
@@ -387,10 +394,51 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
     setHistoryLoading(true);
     fetchActivityHistoryList(proposalId)
-      .then((raw) => setActivityHistory(normalizeHistoryList(raw)))
+      .then((raw) => {
+        const list = normalizeHistoryList(raw);
+        setActivityHistory(list);
+        const current = list.find((h) => h.status === "current") ?? list[0] ?? null;
+        setSelectedHistoryVersion(current);
+      })
       .catch((err) => { console.error("[ActivityHistory] fetch failed:", err); setActivityHistory([]); })
       .finally(() => setHistoryLoading(false));
   }, [selectedActivity?.proposal_id]);
+
+  // ── 5. Fetch history snapshot when a version is selected ─────────────────
+  // If the selected version is "current", skip the API call entirely —
+  // the existing programReviewedData / projectReviewedData / activityReviewedData
+  // already holds the current data, so historySnapshotData stays null and
+  // the active* derived values fall through to the base reviewed data.
+  useEffect(() => {
+    if (!selectedHistoryVersion || selectedHistoryVersion.status === "current") {
+      setHistorySnapshotData(null);
+      return;
+    }
+
+    const { history_id, proposal_id, version } = selectedHistoryVersion;
+
+    const resolvedProposalId =
+      activeTab === "project"  ? (selectedProject?.proposal_id  ?? proposal_id) :
+      activeTab === "activity" ? (selectedActivity?.proposal_id ?? proposal_id) :
+      nodeId ?? proposal_id;
+
+    const fetcher =
+      activeTab === "project"  ? fetchProjectHistoryData  :
+      activeTab === "activity" ? fetchActivityHistoryData :
+      fetchProgramHistoryData;
+
+    setHistorySnapshotLoading(true);
+    setHistorySnapshotData(null);
+
+    fetcher(Number(resolvedProposalId), Number(history_id), version)
+      .then(setHistorySnapshotData)
+      .catch((err) => {
+        console.error("[HistorySnapshot] fetch failed:", err);
+        setHistorySnapshotData(null);
+      })
+      .finally(() => setHistorySnapshotLoading(false));
+
+  }, [selectedHistoryVersion, activeTab, nodeId, selectedProject?.proposal_id, selectedActivity?.proposal_id]);
 
   // ── Reset on close ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -402,6 +450,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setActivitiesLoadingCache({});
     setComments({});
     setSelectedHistoryVersion(null);
+    setHistorySnapshotData(null);
     setProgramReviewedData(null);
     setProjectReviewedData(null);
     setActivityReviewedData(null);
@@ -412,9 +461,15 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setIsEditing(false);
   }, [isOpen]);
 
-  // ── Reset edit state when navigating between tabs / items ─────────────────
+  // ── Reset edit + history state when navigating between tabs / items ───────
   useEffect(() => {
-    setSelectedHistoryVersion(null);
+    const list =
+      activeTab === "activity" ? activityHistory :
+      activeTab === "project"  ? projectHistory  :
+      programHistory;
+    const current = list.find((h) => h.status === "current") ?? list[0] ?? null;
+    setSelectedHistoryVersion(current);
+    setHistorySnapshotData(null);
     setIsEditing(false);
   }, [activeTab, selectedProject?.proposal_id, selectedActivity?.proposal_id]);
 
@@ -480,6 +535,17 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     }
   }, []);
 
+  // ── Resolved reviewed data: history snapshot takes priority ───────────────
+  const activeProgramReviewedData  = historySnapshotData ?? programReviewedData;
+  const activeProjectReviewedData  = historySnapshotData ?? projectReviewedData;
+  const activeActivityReviewedData = historySnapshotData ?? activityReviewedData;
+
+  // ── Resolved mapped data when a history snapshot is active ────────────────
+  const activeMappedProgram  = historySnapshotData ? mapReviewedToProgram(historySnapshotData)  : mappedProgram;
+  const activeMappedProject  = historySnapshotData ? mapReviewedToProject(historySnapshotData)  : mappedProject;
+  const activeMappedActivity = historySnapshotData ? mapReviewedToActivity(historySnapshotData) : mappedActivity;
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const goToProjectTab = () => {
     setActiveTab("project");
     setComments({});
@@ -496,15 +562,13 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   const handleCommentChange = (key: string, val: string) =>
     setComments((prev) => ({ ...prev, [key]: val }));
 
+  // ── ALL HOOKS ARE DONE — early return is now safe ─────────────────────────
   if (!isOpen || !proposalData) return null;
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
-  // Shared props passed to every form
   const commentProps = { comments, onCommentChange: handleCommentChange };
   const reviewProps  = { alreadyReviewed: false, showCommentInputs };
-
-  console.log("History Data", activeHistory)
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -615,6 +679,13 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
           {/* Document content */}
           <div className="flex-1 overflow-y-auto relative bg-white">
+            {/* History snapshot loading overlay */}
+            {historySnapshotLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm gap-3">
+                <div className="w-7 h-7 border-[3px] border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
+                <p className="text-sm text-gray-500 font-medium">Loading version…</p>
+              </div>
+            )}
             <div className="p-5">
 
               {/* ── Save error banner ── */}
@@ -633,22 +704,22 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   <div className="bg-white rounded-2xl border border-gray-100 p-8">
                     <FormSkeleton lines={6} />
                   </div>
-                ) : mappedProgram ? (
+                ) : activeMappedProgram ? (
                   <div className="flex flex-col items-end justify-center relative">
                     <ProgramForm
-                      proposalData={mappedProgram}
+                      proposalData={activeMappedProgram}
                       draft={programDraft}
                       onDraftChange={setProgramDraft}
-                      isEditing={isEditing}
-                      reviewedData={programReviewedData}
+                      isEditing={isEditing && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
+                      reviewedData={activeProgramReviewedData}
                       {...commentProps}
                       {...reviewProps}
                     />
                     <EditSaveButton
                       isEditing={isEditing}
                       isSaving={isSaving}
-                      canEdit={true}
-                      isDocumentReady={!!mappedProgram}
+                      canEdit={!selectedHistoryVersion || selectedHistoryVersion.status === "current"}
+                      isDocumentReady={!!activeMappedProgram}
                       onEdit={() => setIsEditing(true)}
                       onSave={handleSave}
                       onCancel={handleCancel}
@@ -673,23 +744,23 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   <div className="bg-white rounded-2xl border border-gray-100 p-8">
                     <FormSkeleton lines={6} />
                   </div>
-                ) : mappedProject ? (
+                ) : activeMappedProject ? (
                   <div className="flex flex-col items-end justify-center relative">
                     <ProjectForm
-                      projectData={mappedProject}
+                      projectData={activeMappedProject}
                       programTitle={programTitle}
                       draft={projectDraft}
                       onDraftChange={setProjectDraft}
-                      isEditing={isEditing}
-                      reviewedData={projectReviewedData}
+                      isEditing={isEditing && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
+                      reviewedData={activeProjectReviewedData}
                       {...commentProps}
                       {...reviewProps}
                     />
                     <EditSaveButton
                       isEditing={isEditing}
                       isSaving={isSaving}
-                      canEdit={true}
-                      isDocumentReady={!!mappedProject}
+                      canEdit={!selectedHistoryVersion || selectedHistoryVersion.status === "current"}
+                      isDocumentReady={!!activeMappedProject}
                       onEdit={() => setIsEditing(true)}
                       onSave={handleSave}
                       onCancel={handleCancel}
@@ -720,24 +791,24 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                   <div className="bg-white rounded-2xl border border-gray-100 p-8">
                     <FormSkeleton lines={6} />
                   </div>
-                ) : mappedActivity ? (
+                ) : activeMappedActivity ? (
                   <div className="flex flex-col items-end justify-center relative">
                     <ActivityForm
-                      activityData={mappedActivity}
+                      activityData={activeMappedActivity}
                       programTitle={programTitle}
                       projectTitle={selectedProject.project_title}
                       draft={activityDraft}
                       onDraftChange={setActivityDraft}
-                      isEditing={isEditing}
-                      reviewedData={activityReviewedData}
+                      isEditing={isEditing && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
+                      reviewedData={activeActivityReviewedData}
                       {...commentProps}
                       {...reviewProps}
                     />
                     <EditSaveButton
                       isEditing={isEditing}
                       isSaving={isSaving}
-                      canEdit={true}
-                      isDocumentReady={!!mappedActivity}
+                      canEdit={!selectedHistoryVersion || selectedHistoryVersion.status === "current"}
+                      isDocumentReady={!!activeMappedActivity}
                       onEdit={() => setIsEditing(true)}
                       onSave={handleSave}
                       onCancel={handleCancel}
@@ -756,116 +827,123 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
           {/* ── History panel ── */}
           <div
-              style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}
-              className="bg-white h-full w-72 flex-shrink-0 flex flex-col border-l border-gray-100"
-            >
-              {/* Header */}
-              <div className="px-5 pt-6 pb-4 border-b border-gray-100">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-base font-semibold text-gray-900 tracking-tight">Version History</span>
-                  {!historyLoading && activeHistory.length > 0 && (
-                    <span className="ml-auto text-[10px] font-semibold bg-gray-100 text-gray-400 rounded-full px-2 py-0.5">
-                      {activeHistory.length}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-gray-400 leading-tight">Track changes to this proposal</p>
-              </div>
-
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-                {historyLoading ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-3">
-                    <div className="w-5 h-5 border-[2.5px] border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
-                    <p className="text-xs text-gray-400 tracking-wide">Loading history…</p>
-                  </div>
-                ) : activeHistory.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-2">
-                    <svg className="w-8 h-8 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" />
-                    </svg>
-                    <p className="text-xs text-gray-400 text-center">No history available yet</p>
-                  </div>
-                ) : (
-                  activeHistory.map((item, index) => {
-                    const isSelected = selectedHistoryVersion?.history_id === item.history_id;
-                    const isCurrent = item.status === "current";
-                    const date = new Date(item.created_at).toLocaleDateString("en-US", {
-                      year: "numeric", month: "short", day: "numeric",
-                    });
-
-                    return (
-                      <div
-                        key={item.history_id}
-                        onClick={() => setSelectedHistoryVersion(isSelected ? null : item)}
-                        className={`group relative flex items-start gap-3 px-3.5 py-3 rounded-xl cursor-pointer transition-all duration-150 ${
-                          isSelected
-                            ? "bg-emerald-50 ring-1 ring-emerald-400/60"
-                            : "hover:bg-gray-50"
-                        }`}
-                      >
-                        {/* Timeline dot + line */}
-                        <div className="flex flex-col items-center pt-0.5 gap-0">
-                          <div
-                            className={`w-2 h-2 rounded-full mt-1 shrink-0 transition-colors duration-150 ${
-                              isCurrent
-                                ? "bg-emerald-500 ring-2 ring-emerald-200"
-                                : isSelected
-                                ? "bg-emerald-400"
-                                : "bg-gray-300 group-hover:bg-gray-400"
-                            }`}
-                          />
-                          {index < activeHistory.length - 1 && (
-                            <div className="w-px flex-1 bg-gray-100 mt-1" style={{ minHeight: 24 }} />
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0 pb-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span
-                              className={`text-sm font-medium leading-snug truncate ${
-                                isSelected ? "text-emerald-800" : "text-gray-800"
-                              }`}
-                            >
-                              {isCurrent ? "Current Version" : `Revision ${item.version_no}`}
-                            </span>
-                            {isCurrent && (
-                              <span className="shrink-0 text-[9px] font-semibold uppercase tracking-widest bg-emerald-100 text-emerald-600 rounded-full px-1.5 py-0.5">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                          <p className={`text-[11px] mt-0.5 ${isSelected ? "text-emerald-600/70" : "text-gray-400"}`}>
-                            {date}
-                          </p>
-                        </div>
-
-                        {/* Selection indicator */}
-                        {isSelected && (
-                          <div className="shrink-0 self-center">
-                            <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
+            style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}
+            className="bg-white h-full w-72 flex-shrink-0 flex flex-col border-l border-gray-100"
+          >
+            {/* Header */}
+            <div className="px-5 pt-6 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-base font-semibold text-gray-900 tracking-tight">Version History</span>
+                {!historyLoading && activeHistory.length > 0 && (
+                  <span className="ml-auto text-[10px] font-semibold bg-gray-100 text-gray-400 rounded-full px-2 py-0.5">
+                    {activeHistory.length}
+                  </span>
                 )}
               </div>
+              <p className="text-[11px] text-gray-400 leading-tight">Track changes to this proposal</p>
+            </div>
 
-              {/* Footer — shown when a version is selected */}
-              {selectedHistoryVersion && (
-                <div className="px-4 py-3 border-t border-gray-100">
-                  <button
-                    onClick={() => setSelectedHistoryVersion(null)}
-                    className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors text-center"
-                  >
-                    Clear selection
-                  </button>
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+              {historyLoading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="w-5 h-5 border-[2.5px] border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
+                  <p className="text-xs text-gray-400 tracking-wide">Loading history…</p>
                 </div>
+              ) : activeHistory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <svg className="w-8 h-8 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" />
+                  </svg>
+                  <p className="text-xs text-gray-400 text-center">No history available yet</p>
+                </div>
+              ) : (
+                activeHistory.map((item, index) => {
+                  const isSelected = selectedHistoryVersion?.history_id === item.history_id;
+                  const isCurrent  = item.status === "current";
+                  const date = item.created_at
+                    ? new Date(item.created_at).toLocaleDateString("en-US", {
+                        year: "numeric", month: "short", day: "numeric",
+                      })
+                    : "";
+
+                  return (
+                    <div
+                      key={item.history_id}
+                      onClick={() => {
+                        if (isSelected) {
+                          // Deselecting: snap back to current version
+                          const current = activeHistory.find((h) => h.status === "current") ?? null;
+                          setSelectedHistoryVersion(current);
+                        } else {
+                          setSelectedHistoryVersion(item);
+                        }
+                      }}
+                      className={`group relative flex items-start gap-3 px-3.5 py-3 rounded-xl cursor-pointer transition-all duration-150 ${
+                        isSelected ? "bg-emerald-50 ring-1 ring-emerald-400/60" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {/* Timeline dot + line */}
+                      <div className="flex flex-col items-center pt-0.5 gap-0">
+                        <div
+                          className={`w-2 h-2 rounded-full mt-1 shrink-0 transition-colors duration-150 ${
+                            isCurrent
+                              ? "bg-emerald-500 ring-2 ring-emerald-200"
+                              : isSelected
+                              ? "bg-emerald-400"
+                              : "bg-gray-300 group-hover:bg-gray-400"
+                          }`}
+                        />
+                        {index < activeHistory.length - 1 && (
+                          <div className="w-px flex-1 bg-gray-100 mt-1" style={{ minHeight: 24 }} />
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 pb-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`text-sm font-medium leading-snug truncate ${isSelected ? "text-emerald-800" : "text-gray-800"}`}>
+                            {isCurrent ? "Current Version" : `Revision ${item.version}`}
+                          </span>
+                          {isCurrent && (
+                            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-widest bg-emerald-100 text-emerald-600 rounded-full px-1.5 py-0.5">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-[10px] mt-0.5 ${isSelected ? "text-emerald-600/70" : "text-gray-400"}`}>
+                           Title: <span>{item.program_title || item.project_title || item.activity_title}</span>
+                        </p>
+                      </div>
+
+                      {/* Selection indicator */}
+                      {isSelected && (
+                        <div className="shrink-0 self-center">
+                          <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
               )}
+            </div>
+
+            {/* Footer — shown when a version is selected */}
+            {selectedHistoryVersion && (
+              <div className="px-4 py-3 border-t border-gray-100">
+                <button
+                  onClick={() => {
+                    const current = activeHistory.find((h) => h.status === "current") ?? null;
+                    setSelectedHistoryVersion(current);
+                  }}
+                  className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors text-center"
+                >
+                  Clear selection
+                </button>
+              </div>
+            )}
           </div>
 
         </div>
