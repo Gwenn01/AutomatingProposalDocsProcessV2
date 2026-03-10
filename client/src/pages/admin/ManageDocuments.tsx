@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   FileText,
@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import { getProposals, type ProgramProposal } from "@/api/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
+import { getNotifications } from "@/api/get-notification-api";
+import NotificationBell, {
+  type Notification,
+} from "@/components/NotificationBell";
 import Loading from "@/components/Loading";
 import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";
 
@@ -30,6 +34,9 @@ const ManageDocuments = () => {
     title: string;
   } | null>(null);
   const itemsPerPage = viewMode === "table" ? 10 : 12;
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Loading animation
   useEffect(() => {
@@ -77,6 +84,29 @@ const ManageDocuments = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, viewMode]);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(data || []);
+      setUnreadCount(
+        (data || []).filter((n: Notification) => n.is_read === 0).length,
+      );
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleReadNotification = (id: string | number) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n)),
+    );
+    setUnreadCount((prev) => Math.max(prev - 1, 0));
+  };
 
   if (loading) {
     return (
@@ -139,6 +169,18 @@ const ManageDocuments = () => {
               >
                 <Grid size={16} />
               </button>
+            </div>
+
+            {/* Notification Bell */}
+            <div className="ml-4">
+              <NotificationBell
+                notifications={notifications}
+                unreadCount={unreadCount}
+                show={showNotifications}
+                onToggle={() => setShowNotifications((prev) => !prev)}
+                onClose={() => setShowNotifications(false)}
+                onRead={handleReadNotification}
+              />
             </div>
           </div>
         </div>
