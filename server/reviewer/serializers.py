@@ -86,10 +86,14 @@ class ReviewerSerializer(serializers.ModelSerializer):
 # get the my proposal of reviewer
 class ReviewerProposalSerializer(serializers.ModelSerializer):
     proposal = ProposalSerializer(read_only=True)
+    implementor_name = serializers.SerializerMethodField()
     class Meta:
         model = ProposalReviewer
-        fields = ['id', 'proposal', 'is_review', 'assigned_at']
+        fields = ['id', 'proposal', 'implementor_name', 'is_review', 'assigned_at']
         read_only_fields = ['assigned_by', 'assigned_at']
+        
+    def get_implementor_name(self, obj):
+        return obj.proposal.user.profile.name
         
 # get the list of assigned reviewers for a proposal
 class ReviewerAssignedProposalSerializer(serializers.ModelSerializer):
