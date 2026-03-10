@@ -8,7 +8,8 @@ from .views import (
     MyAssignedProgramProposalsView,
     MyAssignedProjectProposalsView,
     MyAssignedActivityProposalsView,
-    AssignedReviewerProposalView
+    AssignedReviewerProposalView,
+    ProposalCheckIfAllReviews
 )
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     
     # general get the list of assigned reviewers for a proposal
     path('reviewer-proposal-list/<int:proposal_id>/', AssignedReviewerProposalView.as_view(), name='assigned-reviewer-proposal-list'),
+    path('proposal/<int:proposal_id>/check-reviews/', ProposalCheckIfAllReviews.as_view(), name="proposal-check-reviews"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

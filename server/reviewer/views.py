@@ -150,3 +150,21 @@ class AssignedReviewerProposalView(APIView):
         )
         serializer = ReviewerAssignedProposalSerializer(proposals, many=True)
         return Response(serializer.data)
+
+
+# check if the proposal is already reviewed by all reviewers, so that implementor can edit it
+class ProposalCheckIfAllReviews(APIView):
+    def get(self, request, proposal_id):
+        reviewers = ProposalReviewer.objects.filter(proposal_id=proposal_id)
+        # Check if there is any reviewer who has not reviewed yet
+        has_pending = reviewers.filter(is_review=False).exists()
+        if has_pending:
+            return Response({
+                "all_reviewed": False,
+                "message": "Not all reviewers have submitted their reviews."
+            })
+        return Response({
+            "all_reviewed": True,
+            "message": "All reviewers have completed their reviews."
+        })
+    
