@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Eye,
   ChevronLeft,
@@ -14,208 +14,60 @@ import {
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
-import { fetchProposalsNode, fetchProgramProposalDetail } from "@/api/implementor-api";
-import { useAuth } from "@/context/auth-context";
 import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
-import { getNotifications } from "@/api/get-notification-api";
-import { markNotificationRead } from "@/api/reviewer-api";
-
-// ================= TYPE DEFINITIONS =================
-interface Document {
-  proposal_id: string | number;   // ← node PK (p.id  e.g. 124) — used for review API
-  child_id?: string | number;     // ← program-proposal PK (p.child_id e.g. 32) — used for detail API
-  reviewer_count: number;
-  reviewed_count: number;
-  review_progress: number;
-  title: string;
-  file_path: string;
-  status: string;
-  submitted_at: string | null;
-  reviews: any[] | number;
-
-}
-
-interface Notification {
-  id: string | number;
-  is_read: 0 | 1 | boolean;  // API returns boolean
-  message: string;
-  created_at: string;
-  [key: string]: any;
-}
-
-interface StatusStyle {
-  label: string;
-  className: string;
-}
-
-type ViewMode = "grid" | "table";
+import { useProposals, type Document, type ViewMode } from "@/hooks/useViewProposal";
 
 // ================= COMPONENT =================
-
 const ViewProposal: React.FC = () => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [pageLoading, setPageLoading] = useState<boolean>(false);
-  const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [showViewerModal, setShowViewerModal] = useState<boolean>(false);
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
-  const [showReviewerStatus, setShowReviewerStatus] = useState<boolean>(false);
-  const [showNotif, setShowNotif] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [progress, setProgress] = useState<number>(0);
-  const [proposalDetail, setProposalDetail] = useState<any | null>(null);
+  const {
+    currentDocuments,
+    filteredDocuments,
+    documents,
+    notifications,
+    proposalDetail,
+    pageLoading,
+    actionLoading,
+    progress,
+    searchQuery,
+    currentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    unreadCount,
+    setSearchQuery,
+    fetchProposalDetail,
+    markNotifRead,
+    getStatusStyle,
+    formatDate,
+    goToNextPage,
+    goToPreviousPage,
+  } = useProposals("Program");
 
-  // ── Review modal state ────────────────────────────────────────────────────
-  const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
+  // ── Local UI state (view-specific, not reusable) ─────────────────────────
+  const [viewMode, setViewMode]                   = useState<ViewMode>("grid");
+  const [showNotif, setShowNotif]                 = useState<boolean>(false);
+  const [selectedDoc, setSelectedDoc]             = useState<Document | null>(null);
+  const [showViewerModal, setShowViewerModal]     = useState<boolean>(false);
+  const [showReviewerStatus, setShowReviewerStatus] = useState<boolean>(false);
+  const [showReviewModal, setShowReviewModal]     = useState<boolean>(false);
   const [reviewProposalData, setReviewProposalData] = useState<any | null>(null);
 
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const rowsPerPage: number = 10;
-
-  const { user } = useAuth();
-
-  // ================= PROGRESS BAR =================
-  useEffect(() => {
-    if (!actionLoading) return;
-    setProgress(0);
-    let value = 0;
-    const interval = setInterval(() => {
-      value += Math.random() * 10;
-      setProgress(Math.min(value, 95));
-    }, 300);
-    return () => clearInterval(interval);
-  }, [actionLoading]);
-
-  // ================= NOTIFICATIONS =================
-  const unreadCount: number = notifications.filter((n) => n.is_read === 0).length;
-const handleRead = async (id: string | number): Promise<void> => {
-  const target = notifications.find((n) => n.id === id);
-  if (!target || target.is_read === 1) return;
-
-  // Optimistic update
-  setNotifications((prev) =>
-    prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
-  );
-  try {
-    await markNotificationRead(id); // add this endpoint if available
-  } catch (error) {
-    console.error(error);
-    // Rollback
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: 0 } : n))
-    );
-  }
-};
-
-  // ================= FETCH PROPOSALS LIST =================
-  useEffect(() => {
-    if (!user?.user_id) return;
-    const load = async () => {
-      setPageLoading(true);
-      try {
-        const data: any[] = await fetchProposalsNode("Program");
-        const mapped: Document[] = data.map((p) => ({
-          proposal_id: p.id,         // ← node PK  (124) — for review API
-          child_id:    p.child_id,   // ← detail PK (32) — for program-proposal detail API
-          reviewer_count: p.reviewer_count,
-          reviewed_count: p.reviewed_count,
-          review_progress: p.review_progress,
-          title:       p.title,
-          file_path:   p.file_path ?? "",
-          status:      p.status ?? "unknown",
-          submitted_at: p.created_at ?? null,
-          reviews:     p.reviews ?? 0,
-        }));
-        setDocuments(mapped);
-        // ✅ Fetch notifications
-        const notifData = await getNotifications();
-        // Normalize boolean is_read → 0 | 1
-        const mapped_notifs: Notification[] = notifData.map((n: any) => ({
-          ...n,
-          is_read: n.is_read ? 1 : 0,
-        }));
-        setNotifications(mapped_notifs);
-      } catch (err) {
-        console.error("[ViewProposal] Failed to fetch proposals:", err);
-      } finally {
-        setPageLoading(false);
-      }
-    };
-    load();
-  }, [user]);
-
-  // ================= VIEW PROPOSAL (uses child_id for detail API) =================
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleViewProposal = async (doc: Document): Promise<void> => {
-    setActionLoading(true);
     setSelectedDoc(doc);
-    setProposalDetail(null);
-    try {
-      const childId = doc.child_id ?? doc.proposal_id;
-      const detail = await fetchProgramProposalDetail(childId);
-      console.log("Detail", detail)
-      setProposalDetail(detail);
-      setShowViewerModal(true);
-    } catch (err) {
-      console.error("[ViewProposal] Failed to fetch proposal detail:", err);
-    } finally {
-      setActionLoading(false);
-    }
+    const detail = await fetchProposalDetail(doc);
+    if (detail) setShowViewerModal(true);
   };
 
-  // ================= OPEN REVIEW MODAL (uses proposal_id = node PK for review API) =================
   const handleOpenReview = (doc: Document): void => {
     setReviewProposalData({
       title:       doc.title,
       status:      doc.status,
-      proposal_id: doc.proposal_id,   // ← node PK (124) — what review API expects
-      child_id:    doc.child_id,      // ← detail PK (32) — for fetching project list sidebar
+      proposal_id: doc.proposal_id,
+      child_id:    doc.child_id,
     });
     setShowReviewModal(true);
   };
-
-  // ================= STATUS STYLE =================
-  const getStatusStyle = (status: string): StatusStyle => {
-    switch (status) {
-      case "submitted":    return { label: "Initial Review", className: "bg-[#FFC107] text-white" };
-      case "for_review":   return { label: "For Review",     className: "bg-[#38BDF8] text-white" };
-      case "under_review": return { label: "Under Review",   className: "bg-[#FFC107] text-white" };
-      case "final_review": return { label: "Final Review",   className: "bg-[#FBBF24] text-white" };
-      case "for_approval": return { label: "For Approval",   className: "bg-[#6366F1] text-white" };
-      case "approved":     return { label: "Completed",      className: "bg-[#22C55E] text-white" };
-      case "for_revision": return { label: "For Revision",   className: "bg-[#F97316] text-white" };
-      case "rejected":     return { label: "Rejected",       className: "bg-[#EF4444] text-white" };
-      default:             return { label: status,           className: "bg-gray-400 text-white" };
-    }
-  };
-
-  // ================= FILTER & PAGINATION =================
-  const filteredDocuments = useMemo(() => {
-    if (!searchQuery.trim()) return documents;
-    const query = searchQuery.toLowerCase();
-    return documents.filter(
-      (doc) =>
-        doc.title.toLowerCase().includes(query) ||
-        doc.status.toLowerCase().includes(query)
-    );
-  }, [documents, searchQuery]);
-
-  const totalPages: number = Math.ceil(filteredDocuments.length / rowsPerPage);
-  const startIndex: number = (currentPage - 1) * rowsPerPage;
-  const endIndex: number   = startIndex + rowsPerPage;
-  const currentDocuments: Document[] = filteredDocuments.slice(startIndex, endIndex);
-
-  const goToNextPage     = () => { if (currentPage < totalPages) setCurrentPage(currentPage + 1); };
-  const goToPreviousPage = () => { if (currentPage > 1) setCurrentPage(currentPage - 1); };
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric", month: "long", day: "numeric",
-    });
-  };
-
-  useEffect(() => { setCurrentPage(1); }, [documents.length, searchQuery]);
 
   // ================= PAGE LOADING SKELETON =================
   if (pageLoading) {
@@ -322,7 +174,7 @@ const handleRead = async (id: string | number): Promise<void> => {
               show={showNotif}
               onToggle={() => setShowNotif((p) => !p)}
               onClose={() => setShowNotif(false)}
-              onRead={handleRead}
+              onRead={markNotifRead}
             />
           </div>
         </div>
@@ -518,7 +370,7 @@ const handleRead = async (id: string | number): Promise<void> => {
         proposalData={proposalDetail}
         proposalStatus={selectedDoc?.status ?? ""}
         proposalTitle={selectedDoc?.title ?? ""}
-        onClose={() => { setShowViewerModal(false); setProposalDetail(null); }}
+        onClose={() => setShowViewerModal(false)}
       />
 
       <ReviewerListStatus
