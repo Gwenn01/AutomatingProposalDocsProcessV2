@@ -9,7 +9,7 @@ type ProjectListFields = {
   implementor: number;
   project_title: string;
   project_leader: string;
-  activity_title?: string;
+  activity_title: string;
   activity_date: string;
   type: string;
   status: string;
@@ -41,9 +41,9 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
   project, activeTab, selectedProject, selectedActivity,
   onSelectProject, onSelectActivity, activitiesCache, loadingCache, onExpandProject,
 }) => {
-  const isProjectSelected = selectedProject?.id === project.id;
-  const activities = activitiesCache[project.id] ?? [];
-  const isLoadingActivities = loadingCache[project.id] ?? false;
+  const isProjectSelected = selectedProject?.child_id === project.child_id;
+  const activities = activitiesCache[project.child_id] ?? [];
+  const isLoadingActivities = loadingCache[project.child_id] ?? false;
 
   return (
     <div className="border-b border-gray-100 last:border-b-0">
@@ -77,10 +77,10 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
             <p className="text-[10px] text-gray-400 py-2 pl-10 italic">No activities</p>
           ) : (
             activities.map((act) => {
-              const isActSelected = selectedActivity?.id === act.id;
+              const isActSelected = selectedActivity?.child_id === act.child_id;
               return (
                 <button
-                  key={act.id}
+                  key={act.child_id}
                   onClick={() => onSelectActivity(project, act)}
                   className={`w-full text-left pl-10 pr-4 py-2.5 transition-colors flex items-start gap-2 border-l-2 ${
                     isActSelected ? "bg-blue-50 border-blue-500" : "border-transparent hover:bg-gray-50 hover:border-gray-200"
@@ -92,7 +92,7 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
                       {act.activity_title}
                     </p>
                     {act.activity_date && <p className="text-[9px] text-gray-400 mt-0.5">{act.activity_date}</p>}
-                    {act.activity_duration_hours > 0 && <p className="text-[9px] text-gray-400">{act.activity_duration_hours}h</p>}
+                    {/* {act.activity_duration_hours > 0 && <p className="text-[9px] text-gray-400">{act.activity_duration_hours}h</p>} */}
                   </div>
                 </button>
               );

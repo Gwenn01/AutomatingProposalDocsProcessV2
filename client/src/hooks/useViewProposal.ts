@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { fetchProposalsNode, fetchProgramProposalDetail } from "@/api/implementor-api";
-import { getNotifications } from "@/api/get-notification-api";
+import { getNotifications, type Notification } from "@/api/get-notification-api";
 import { markNotificationRead } from "@/api/reviewer-api";
 import { useAuth } from "@/context/auth-context";
 
@@ -18,14 +18,6 @@ export interface Document {
   status: string;
   submitted_at: string | null;
   reviews: any[] | number;
-}
-
-export interface Notification {
-  id: string | number;
-  is_read: 0 | 1 | boolean;
-  message: string;
-  created_at: string;
-  [key: string]: any;
 }
 
 export interface StatusStyle {
@@ -126,22 +118,24 @@ export const useProposals = (proposalType: ProposalType = "Program") => {
     }
   }, []);
 
-  const markNotifRead = useCallback(async (id: string | number): Promise<void> => {
-    const target = notifications.find((n) => n.id === id);
-    if (!target || target.is_read === 1) return;
+const markNotifRead = useCallback(async (id: string | number): Promise<void> => {
+  const target = notifications.find((n) => n.id === id);
+  if (!target || target.is_read) return;
+
+  setNotifications((prev) =>
+    prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+  );
+
+  try {
+    await markNotificationRead(id);
+  } catch (error) {
+    console.error(error);
 
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+      prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
     );
-    try {
-      await markNotificationRead(id);
-    } catch (error) {
-      console.error(error);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: 0 } : n))
-      );
-    }
-  }, [notifications]);
+  }
+}, [notifications]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getStatusStyle = useCallback((status: string): StatusStyle => {
@@ -180,7 +174,7 @@ export const useProposals = (proposalType: ProposalType = "Program") => {
   const startIndex: number         = (currentPage - 1) * rowsPerPage;
   const endIndex: number           = startIndex + rowsPerPage;
   const currentDocuments: Document[] = filteredDocuments.slice(startIndex, endIndex);
-  const unreadCount: number        = notifications.filter((n) => n.is_read === 0).length;
+  const unreadCount: number        = notifications.filter((n) => !n.is_read).length;
 
   return {
     // State

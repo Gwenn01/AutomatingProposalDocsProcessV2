@@ -15,7 +15,7 @@ interface Reviewer {
 interface ReviewerListStatusProps {
   isOpen: boolean;
   onClose: () => void;
-  proposalId: number;
+  proposalId: number | undefined;
 }
 
 
@@ -37,24 +37,23 @@ const ReviewerListStatus: React.FC<ReviewerListStatusProps> = ({
   const [reviewers, setReviewers] = useState<Reviewer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   // Simulate loading reviewers (replace with API later)
-    useEffect(() => {
-      if (!isOpen) return;
+  useEffect(() => {
+    if (!isOpen || proposalId === undefined) return;  // ← add this guard
 
-      const load = async () => {
-        setLoading(true);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data: Reviewer[] = await getListofReviewer(proposalId);
+        setReviewers(data);
+      } catch (error) {
+        console.error("Failed to fetch reviewers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        try {
-          const data: Reviewer[] = await getListofReviewer(proposalId);
-          setReviewers(data);
-        } catch (error) {
-          console.error("Failed to fetch reviewers:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      load();
-    }, [isOpen, proposalId]);
+    load();
+  }, [isOpen, proposalId]);
 
   const reviewedCount = useMemo(
     () => reviewers.filter((r) => r.is_reviewed === 1).length,
@@ -62,6 +61,8 @@ const ReviewerListStatus: React.FC<ReviewerListStatusProps> = ({
   );
 
   if (!isOpen) return null;
+
+  console.log("Proposal ID", proposalId)
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-md flex items-center justify-center px-6">

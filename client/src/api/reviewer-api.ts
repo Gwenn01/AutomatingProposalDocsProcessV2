@@ -76,7 +76,7 @@ export interface ReviewerProposal {
 
 export interface ReviewerNotification {
   id: string;
-  is_read: number;
+  is_read: boolean;
   message: string;
   created_at: string;
 }

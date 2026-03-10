@@ -3,10 +3,12 @@ import { Bell, BellOff, Clock, X, CheckCheck, Filter } from "lucide-react";
 
 // Notification type
 export interface Notification {
-  id: string | number;
+  id: number;
   message: string;
-  is_read: 0 | 1;
-  created_at: string; // ISO string
+  is_read: boolean;
+  created_at: string; 
+  updated_at: string;
+  user: number;
 }
 
 interface NotificationBellProps {
@@ -85,12 +87,12 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   };
 
   const filteredNotifications = notifications.filter((n) => {
-    if (filter === "unread") return n.is_read === 0;
-    if (filter === "read") return n.is_read === 1;
+    if (filter === "unread") return !n.is_read;
+    if (filter === "read") return n.is_read;
     return true;
   });
 
-  const readCount = notifications.filter((n) => n.is_read === 1).length;
+  const readCount = notifications.filter((n) => n.is_read).length;
 
   return (
     <>
@@ -151,21 +153,21 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                       key={notif.id}
                       onClick={() => onRead(notif.id)}
                       className={`group relative px-5 py-4 cursor-pointer transition-colors ${
-                        notif.is_read === 0
+                        !notif.is_read
                           ? "bg-red-50/40 hover:bg-red-50"
                           : "bg-white hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex gap-3">
                         {/* Unread indicator */}
-                        {notif.is_read === 0 && (
+                        {!notif.is_read && (
                           <div className="mt-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
                         )}
 
                         <div className="flex-1">
                           <p
                             className={`text-sm leading-relaxed ${
-                              notif.is_read === 0 ? "font-semibold text-gray-900" : "text-gray-600"
+                              !notif.is_read ? "font-semibold text-gray-900" : "text-gray-600"
                             }`}
                           >
                             {notif.message}
@@ -282,7 +284,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                       key={notif.id}
                       onClick={() => onRead(notif.id)}
                       className={`group relative px-6 py-4 cursor-pointer transition-colors ${
-                        notif.is_read === 0
+                        !notif.is_read
                           ? "bg-red-50/40 hover:bg-red-50/70"
                           : "bg-white hover:bg-gray-50"
                       }`}
@@ -290,7 +292,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                       <div className="flex gap-3 items-start">
                         {/* Status dot */}
                         <div className="mt-1.5 shrink-0">
-                          {notif.is_read === 0 ? (
+                          {notif.is_read ? (
                             <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                           ) : (
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-200" />
@@ -300,7 +302,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                         <div className="flex-1 min-w-0">
                           <p
                             className={`text-sm leading-relaxed ${
-                              notif.is_read === 0
+                              !notif.is_read
                                 ? "font-semibold text-gray-900"
                                 : "font-normal text-gray-500"
                             }`}
@@ -314,7 +316,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                         </div>
 
                         {/* Mark as read label */}
-                        {notif.is_read === 0 && (
+                        {!notif.is_read && (
                           <span className="shrink-0 text-[10px] font-semibold text-red-400 group-hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 mt-0.5">
                             Mark read
                           </span>

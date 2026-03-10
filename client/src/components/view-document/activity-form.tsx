@@ -2,6 +2,7 @@ import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
 import { CheckboxList } from "../view-review/checkbox-list";
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
 import type { BudgetItem } from "../reviewer/ReviewerCommentModal";
+import { formatDate } from "@/utils/dateFormat";
 
 export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: string; projectTitle: string }> = ({ activityData, programTitle, projectTitle }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
@@ -30,7 +31,7 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
 
             <div>
               <p className="font-bold">Activity Duration <span className="font-normal italic">( 8 hours ): </span> <span className="font-normal">{val(activityData.activity_duration_hours)}</span></p>
-              <p className="font-normal">Date:<span className="font-normal">{val(activityData.activity_date)}</span></p>
+              <p className="font-normal">Date:<span className="font-normal">{val(formatDate(activityData.activity_date))}</span></p>
               <br />
 
             </div>
@@ -39,14 +40,18 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
         <div className="overflow-x-auto">
           <table className="w-full border-t border-black text-sm">
             <tbody>
-              <tr className="border-b border-t border-black p-5">
-                <p className="px-3 py-2 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
-                <p className="px-3 mb-4">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
-                <p className="px-3 mb-2">{arrVal(activityData.implementing_agency)}</p>
+              <tr className="border-b border-t border-black">
+                <td className="px-3 py-3">
+                  <p className="font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
+                  <p className="mb-1">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
+                  <p>{arrVal(activityData.implementing_agency)}</p>
+                </td>
               </tr>
               <tr className="border-b border-black">
-                <p className="  px-3 py-2 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
-                <p className="   px-3 mb-2 font-normal">{arrVal(activityData.cooperating_agencies)}</p>
+                <td className="px-3 py-3">
+                  <p className="font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
+                  <p className="font-normal">{arrVal(activityData.cooperating_agencies)}</p>
+                </td>
               </tr>
             </tbody>
           </table>

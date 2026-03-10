@@ -25,14 +25,8 @@ import {
 } from "@/api/reviewer-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
-import { getNotifications } from "@/api/get-notification-api";
+import { getNotifications, type Notification } from "@/api/get-notification-api";
 
-interface Notification {
-  id: string | number;
-  is_read: 0 | 1;
-  message: string;
-  created_at: string;
-}
 
 interface User {
   user_id: string;
@@ -105,7 +99,7 @@ const ReviewProposal: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotif, setShowNotif] = useState<boolean>(false);
 
-  const unreadCount = notifications.filter((n) => n.is_read === 0).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   // ── Progress bar while loading ──────────────────────────────────────────
   useEffect(() => {
@@ -225,7 +219,6 @@ useEffect(() => {
 const handleViewProposal = async (doc: Proposal): Promise<void> => {
   setActionLoading(true);
   setProposalDetail(null);
-  console.log(Number(doc.child_id))
   try {
     const detail = await fetchProgramProposalDetail(Number(doc.child_id)); // ← was doc.child_id
     setSelectedDoc(doc);
@@ -256,15 +249,17 @@ const handleViewReview = async (doc: Proposal): Promise<void> => {
 
 const handleRead = async (id: string | number): Promise<void> => {
   const target = notifications.find((n) => n.id === id);
-  if (!target || target.is_read === 1) return;
+  if (!target || target.is_read) return;
+
   setNotifications((prev) =>
-    prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n))
+    prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
   );
+
   try {
     // call markNotificationRead(id) here if you have that endpoint
   } catch {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: 0 } : n))
+      prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
     );
   }
 };
@@ -447,9 +442,6 @@ const handleRead = async (id: string | number): Promise<void> => {
                               >
                                 {statusStyle.label}
                               </span>
-                              <button className="text-gray-300 hover:text-gray-500 transition-colors">
-                                <MoreVertical className="w-6 h-6" />
-                              </button>
                             </div>
                             <h3
                               className="text-base font-bold text-gray-900 mb-3 leading-tight"

@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 .screen-center {
     display: flex;
     align-items: center;

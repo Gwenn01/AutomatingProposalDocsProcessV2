@@ -5,6 +5,8 @@ import type { ApiProposalDetail } from "../reviewer/ReviewerCommentModal";
 import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
 
+
+
 export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> = ({ proposalData }) => {
   const workplanMap: Record<string, string> = {};
   (proposalData.workplan || []).forEach(({ month, activity }) => { workplanMap[month] = activity; });
@@ -43,17 +45,18 @@ export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> 
           <div className="">
             <table className="w-full text-sm">
               <tbody>
-
                 <tr className="border-b border-t border-black">
-                  <p className="px-3 mt-3 font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
-                  <p className="px-3 mb-3">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
-                  <p className="px-3 mb-2 text-base">{arrVal(proposalData.implementing_agency)}</p>
-                  {/* <td className="px-4 py-3">{arrVal(proposalData.implementing_agency)}</td> */}
+                  <td className="px-3 py-3">
+                    <p className="font-bold">IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
+                    <p className="mb-1">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
+                    <p className="text-base">{arrVal(proposalData.implementing_agency)}</p>
+                  </td>
                 </tr>
                 <tr className="border-b border-black">
-                  <p className="p-3 font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
-                  <p className="px-3 mb-2 font-normal text-base">{arrVal(proposalData.cooperating_agencies)}</p>
-                  {/* <td className="px-4 py-3"></td> */}
+                  <td className="px-3 py-3">
+                    <p className="font-bold">COOPERATING AGENCY/IES /Program/College <span className="font-normal">(Name/s and Address/es)</span></p>
+                    <p className="font-normal text-base">{arrVal(proposalData.cooperating_agencies)}</p>
+                  </td>
                 </tr>
               </tbody>
             </table>
