@@ -16,6 +16,7 @@ import {
   fetchProjectHistoryList,
   fetchActivityHistoryList,
   type ApiActivityListResponse,
+  checkReviews,
 } from "@/api/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import { ActivityForm } from "./view-review-forms/activity-form";
@@ -254,6 +255,10 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   // ── Edit state ────────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
 
+const [programAllReviewed,  setProgramAllReviewed]  = useState<boolean>(false);
+const [projectAllReviewed,  setProjectAllReviewed]  = useState<boolean>(false);
+const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
+
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [comments, setComments] = useState<Comments>({});
 
@@ -319,6 +324,10 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
   useEffect(() => {
     if (!isOpen || !nodeId) return;
 
+    checkReviews(nodeId)
+    .then((data) => setProgramAllReviewed(data.all_reviewed ?? false))
+    .catch(() => setProgramAllReviewed(false));
+
     setProgramLoading(true);
     setProgramReviewedData(null);
     fetchReviewedProposal(nodeId, "program")
@@ -353,9 +362,14 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     if (!selectedProject?.proposal_id) {
       setProjectReviewedData(null);
       setProjectHistory([]);
+      setProjectAllReviewed(false);
       return;
     }
     const proposalId = selectedProject.proposal_id;
+
+    checkReviews(proposalId)
+      .then((data) => setProjectAllReviewed(data.all_reviewed ?? false))
+      .catch(() => setProjectAllReviewed(false));
 
     setProjectLoading(true);
     setProjectReviewedData(null);
@@ -381,9 +395,13 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     if (!selectedActivity?.proposal_id) {
       setActivityReviewedData(null);
       setActivityHistory([]);
+      setActivityAllReviewed(false);
       return;
     }
     const proposalId = selectedActivity.proposal_id;
+  checkReviews(proposalId)
+    .then((data) => setActivityAllReviewed(data.all_reviewed ?? false))
+    .catch(() => setActivityAllReviewed(false));
 
     setActivityLoading(true);
     setActivityReviewedData(null);
@@ -459,6 +477,9 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
     setProjectHistory([]);
     setActivityHistory([]);
     setIsEditing(false);
+    setProgramAllReviewed(false); 
+    setProjectAllReviewed(false);  
+    setActivityAllReviewed(false); 
   }, [isOpen]);
 
   // ── Reset edit + history state when navigating between tabs / items ───────
@@ -569,6 +590,10 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 
   const commentProps = { comments, onCommentChange: handleCommentChange };
   const reviewProps  = { alreadyReviewed: false, showCommentInputs };
+
+
+
+
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -718,7 +743,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                     <EditSaveButton
                       isEditing={isEditing}
                       isSaving={isSaving}
-                      canEdit={!selectedHistoryVersion || selectedHistoryVersion.status === "current"}
+                      canEdit={programAllReviewed  && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
                       isDocumentReady={!!activeMappedProgram}
                       onEdit={() => setIsEditing(true)}
                       onSave={handleSave}
@@ -759,7 +784,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                     <EditSaveButton
                       isEditing={isEditing}
                       isSaving={isSaving}
-                      canEdit={!selectedHistoryVersion || selectedHistoryVersion.status === "current"}
+                      canEdit={projectAllReviewed  && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
                       isDocumentReady={!!activeMappedProject}
                       onEdit={() => setIsEditing(true)}
                       onSave={handleSave}
@@ -807,7 +832,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
                     <EditSaveButton
                       isEditing={isEditing}
                       isSaving={isSaving}
-                      canEdit={!selectedHistoryVersion || selectedHistoryVersion.status === "current"}
+                      canEdit={activityAllReviewed  && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
                       isDocumentReady={!!activeMappedActivity}
                       onEdit={() => setIsEditing(true)}
                       onSave={handleSave}

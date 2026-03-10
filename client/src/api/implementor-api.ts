@@ -608,3 +608,8 @@ export async function getNotifications(): Promise<any> {
   const res = await authFetch(`${BASE_URL}/admin/notifications/`)
   return handleResponse<any>(res);
 }
+
+export async function checkReviews(proposal_id: number): Promise<any> {
+  const res = await authFetch(`${BASE_URL}/proposal/${proposal_id}/check-reviews/`)
+  return handleResponse<any>(res);
+}

@@ -1,9 +1,28 @@
-import type { ProjectItem } from "@/api/implementor-api";
+
 import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/api/reviewer-api";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
+type ProjectListFields = {
+  assignment: number;
+  proposal: number;
+  child_id: number;
+  implementor: number;
+  project_title: string;
+  project_leader: string;
+  activity_title?: string;
+  activity_date: string;
+  type: string;
+  status: string;
+  reviewer_count: number;
+  version_no: number;
+  is_reviewed: boolean;
+  assigned_at: string | null;
+  activities?: ApiActivity[];
+}
 
-type ActivityItem = ApiActivity;
+
+type ProjectItem = ProjectListFields;
+type ActivityItem = ProjectListFields;
 type TabType = "program" | "project" | "activity";
 
 interface ProjectTreeNodeProps {
