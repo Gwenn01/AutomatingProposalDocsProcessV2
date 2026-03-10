@@ -7,7 +7,6 @@ import {
   ChevronRight,
   ChevronLeft,
   FilePlus,
-  Lock,
 } from "lucide-react";
 import { getProposals, type ProgramProposal } from "@/api/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
@@ -199,36 +198,23 @@ const CreateCoverPage = () => {
                         {/* 3. Action - Premium Minimalist Right Module */}
                         <td className="px-8 py-5 bg-white rounded-r-[28px] border-y border-r border-slate-100 shadow-sm group-hover:shadow-md transition-all text-right">
                           <div className="flex justify-end items-center">
-                            {isApproved ? (
-                              <button
-                                onClick={() => {
-                                  setSelectedProposal(doc);
-                                  setIsModalOpen(true);
-                                }}
-                                className="group/action relative inline-flex items-center gap-2.5 px-5 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-emerald-600 shadow-lg shadow-slate-200 hover:shadow-emerald-200/40 transition-all duration-300 active:scale-95 overflow-hidden"
-                              >
-                                {/* Shine Effect Animation */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/action:animate-[shimmer_1.5s_infinite]" />
+                            <button
+                              onClick={() => {
+                                setSelectedProposal(doc);
+                                setIsModalOpen(true);
+                              }}
+                              className="group/action relative inline-flex items-center gap-2.5 px-5 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-emerald-600 shadow-lg shadow-slate-200 hover:shadow-emerald-200/40 transition-all duration-300 active:scale-95 overflow-hidden"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/action:animate-[shimmer_1.5s_infinite]" />
 
-                                <FilePlus
-                                  size={15}
-                                  className="text-emerald-400 group-hover/action:text-white transition-colors"
-                                />
-                                <span className="text-[10px] font-black uppercase tracking-widest">
-                                  Create Cover
-                                </span>
-                              </button>
-                            ) : (
-                              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100/50 group/locked select-none cursor-default">
-                                <Lock
-                                  size={14}
-                                  className="text-slate-300 group-hover:text-amber-400 transition-colors"
-                                />
-                                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                                  Pending Approval
-                                </span>
-                              </div>
-                            )}
+                              <FilePlus
+                                size={15}
+                                className="text-emerald-400 group-hover/action:text-white transition-colors"
+                              />
+                              <span className="text-[10px] font-black uppercase tracking-widest">
+                                Create Cover
+                              </span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -243,7 +229,6 @@ const CreateCoverPage = () => {
                 const status = getStatusStyleAdmin(
                   doc.status as ProposalStatus,
                 );
-                const isApproved = doc.status === "approved";
 
                 return (
                   <div
@@ -281,32 +266,23 @@ const CreateCoverPage = () => {
 
                     {/* Lower Action Section (Bento Bottom Bar) */}
                     <div className="mt-auto">
-                      {isApproved ? (
-                        <button
-                          onClick={() => {
-                            setSelectedProposal(doc);
-                            setIsModalOpen(true);
-                          }}
-                          className="w-full flex items-center justify-center gap-3 py-5 rounded-[28px] bg-slate-900 text-white hover:bg-emerald-600 transition-all duration-300 group/btn shadow-xl shadow-slate-200 hover:shadow-emerald-200/50"
-                        >
-                          <div className="p-1.5 bg-white/10 rounded-lg group-hover/btn:bg-white/20 transition-colors">
-                            <FilePlus
-                              size={16}
-                              className="text-emerald-400 group-hover/btn:text-white"
-                            />
-                          </div>
-                          <span className="text-[11px] font-black uppercase tracking-[0.2em]">
-                            Create Cover
-                          </span>
-                        </button>
-                      ) : (
-                        <div className="w-full flex items-center justify-center gap-3 py-5 rounded-[28px] bg-slate-50 text-slate-300 border border-slate-100/50 cursor-not-allowed select-none">
-                          <Lock size={16} className="opacity-40" />
-                          <span className="text-[11px] font-black uppercase tracking-[0.2em]">
-                            Locked
-                          </span>
+                      <button
+                        onClick={() => {
+                          setSelectedProposal(doc);
+                          setIsModalOpen(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-3 py-5 rounded-[28px] bg-slate-900 text-white hover:bg-emerald-600 transition-all duration-300 group/btn shadow-xl shadow-slate-200 hover:shadow-emerald-200/50"
+                      >
+                        <div className="p-1.5 bg-white/10 rounded-lg group-hover/btn:bg-white/20 transition-colors">
+                          <FilePlus
+                            size={16}
+                            className="text-emerald-400 group-hover/btn:text-white"
+                          />
                         </div>
-                      )}
+                        <span className="text-[11px] font-black uppercase tracking-[0.2em]">
+                          Create Cover
+                        </span>
+                      </button>
                     </div>
                   </div>
                 );
