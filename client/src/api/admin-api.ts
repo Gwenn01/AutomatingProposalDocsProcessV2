@@ -233,7 +233,7 @@ export const unassignReviewer = async (proposalId: number ): Promise<void> => {
 
 // Create Cover Page
 export const createCoverPage = async (payload: CreateCoverPagePayload): Promise<CreateCoverPageResponse> => {
-  const response = await fetch(`${API_URL}/cover-pages/`, {
+  const response = await fetch(`${API_URL}/proposal-cover/`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
