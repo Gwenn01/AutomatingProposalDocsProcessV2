@@ -131,7 +131,7 @@ class ProposalReviewUpdate(APIView):
             
             Notification.objects.create(
                 user=proposal.user,
-                message=f"{reviewer.reviewer.username} has submitted a review for your proposal."
+                message=f"Mr/Mrs. {reviewer.reviewer.profile.name} has submitted a review for your proposal."
             )
 
             return Response(serializer.data, status=status.HTTP_200_OK)

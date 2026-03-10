@@ -16,44 +16,18 @@ class NotificationList(APIView):
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-class NotificationDetail(APIView):
+class NotificationDetails(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk, user):
+    def get_object(self, pk):
         notification = get_object_or_404(
             Notification,
-            id=pk,
-            user=user
+            id=pk
         )
         return notification
     
-    def get(self, request, pk):
-        try:
-            notification = self.get_object(pk, request.user)
-        except Notification.DoesNotExist:
-            return Response({"message": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = NotificationSerializer(
-            notification,
-            context={"request": request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def put(self, request, pk):
-        try:
-            notification = self.get_object(pk, request.user)
-        except Notification.DoesNotExist:
-            return Response({"message": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        notification = self.get_object(pk)
         notification.is_read = True
         notification.save()
-
-        serializer = NotificationSerializer(
-            notification,
-            context={"request": request}
-        )
-        if serializer.is_valid():
-            serializer.save() 
-            return Response({"message": "Notification marked as read",
-                             "data": serializer.data}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Notification Read Successfully"}, status=status.HTTP_200_OK)
