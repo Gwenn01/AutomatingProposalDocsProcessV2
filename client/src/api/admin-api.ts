@@ -94,7 +94,7 @@ export interface CreateCoverPagePayload {
   submission_date: string; 
 }
 
-export interface ProposaLCoverPage {
+export interface ProposalCoverPage {
   id: number;
   cover_page_body: string;
   submission_date: string;
@@ -256,7 +256,8 @@ export const createCoverPage = async (payload: CreateCoverPagePayload): Promise<
   return resJson as CreateCoverPageResponse;
 }
 
-export const getAllCoverPage = async (): Promise<ProposaLCoverPage[]> => {
+// Get All Cover Page
+export const getAllCoverPage = async (): Promise<ProposalCoverPage[]> => {
   const response = await fetch(`${API_URL}/proposal-cover/`, {
     method: "GET",
     headers: getAuthHeaders(),
@@ -269,6 +270,21 @@ export const getAllCoverPage = async (): Promise<ProposaLCoverPage[]> => {
 
   return response.json()
 }
+
+// Get Single Cover Page
+export const getCoverPage = async (coverPageId: number): Promise<ProposalCoverPage> => {
+  const response = await fetch(`${API_URL}/proposal-cover/${coverPageId}/`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch cover page");
+  }
+
+  return response.json();
+};
 
 // Get All Accounts (Manage Account)
 export const getAllAccounts = async (): Promise<ApiUser[]> => {

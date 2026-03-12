@@ -7,11 +7,19 @@ import {
   ChevronRight,
   ChevronLeft,
   FilePlus,
+  Eye,
+  Users,
 } from "lucide-react";
-import { getProposals, type ProgramProposal } from "@/api/admin-api";
+import {
+  getProposals,
+  getAllCoverPage,
+  type ProgramProposal,
+  type ProposalCoverPage,
+} from "@/api/admin-api";
 import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
 import Loading from "@/components/Loading";
 import CreateCoverPageModal from "@/components/admin/CreateCoverPageModal";
+import ViewCoverPageModal from "@/components/admin/ViewCoverPageModal";
 
 const CreateCoverPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +32,9 @@ const CreateCoverPage = () => {
   const [selectedProposal, setSelectedProposal] =
     useState<ProgramProposal | null>(null);
   const itemsPerPage = viewMode === "table" ? 10 : 12;
+  const [coverPages, setCoverPages] = useState<ProposalCoverPage[]>([]);
+  const [viewCoverId, setViewCoverId] = useState<number | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
 
   // Loading animation (clean deterministic version)
   useEffect(() => {
@@ -38,8 +49,12 @@ const CreateCoverPage = () => {
     const fetchDocs = async () => {
       try {
         setLoading(true);
-        const proposals = await getProposals();
+        const [proposals, covers] = await Promise.all([
+          getProposals(),
+          getAllCoverPage(),
+        ]);
         setAllDocs(proposals);
+        setCoverPages(covers);
       } catch (error) {
         console.error("Failed to fetch proposals", error);
       } finally {
@@ -63,6 +78,10 @@ const CreateCoverPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, viewMode]);
+
+  const hasCoverPage = (proposalId: number) => {
+    return coverPages.some((c) => c.proposal === proposalId);
+  };
 
   if (loading) {
     return (
@@ -148,6 +167,7 @@ const CreateCoverPage = () => {
                   <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
                     <th className="px-8 pb-4 text-left">Proposal Details</th>
                     <th className="px-8 pb-4 text-center">Current Status</th>
+                    <th className="px-8 pb-4 text-center">Current Status</th>
                     <th className="px-8 pb-4 text-right">Quick Action</th>
                   </tr>
                 </thead>
@@ -182,6 +202,18 @@ const CreateCoverPage = () => {
                           </div>
                         </td>
 
+                        <td className="px-8 py-5 bg-white border-y border-slate-100 shadow-sm text-center">
+                          {hasCoverPage(doc.id) ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200">
+                              Created
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200">
+                              Not Created
+                            </span>
+                          )}
+                        </td>
+
                         {/* 2. Status - Middle Module */}
                         <td className="px-8 py-5 bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all text-center">
                           <div
@@ -197,23 +229,55 @@ const CreateCoverPage = () => {
 
                         {/* 3. Action - Premium Minimalist Right Module */}
                         <td className="px-8 py-5 bg-white rounded-r-[28px] border-y border-r border-slate-100 shadow-sm group-hover:shadow-md transition-all text-right">
-                          <div className="flex justify-end items-center">
-                            <button
-                              onClick={() => {
-                                setSelectedProposal(doc);
-                                setIsModalOpen(true);
-                              }}
-                              className="group/action relative inline-flex items-center gap-2.5 px-5 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-emerald-600 shadow-lg shadow-slate-200 hover:shadow-emerald-200/40 transition-all duration-300 active:scale-95 overflow-hidden"
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/action:animate-[shimmer_1.5s_infinite]" />
+                          <div className="flex justify-end items-center gap-3">
+                            {/* VIEW COVER (Secondary Action - Subtle Icon Box) */}
+                            {hasCoverPage(doc.id) && (
+                              <button
+                                onClick={() => {
+                                  const cover = coverPages.find(
+                                    (c) => c.proposal === doc.id,
+                                  );
+                                  if (cover) {
+                                    setViewCoverId(cover.id);
+                                    setIsViewOpen(true);
+                                  }
+                                }}
+                                title="View Cover Page"
+                                className="p-3 rounded-2xl bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all duration-300 border border-transparent hover:border-slate-200"
+                              >
+                                <Eye size={18} strokeWidth={2.5} />
+                              </button>
+                            )}
 
-                              <FilePlus
-                                size={15}
-                                className="text-emerald-400 group-hover/action:text-white transition-colors"
-                              />
-                              <span className="text-[10px] font-black uppercase tracking-widest">
-                                Create Cover
-                              </span>
+                            {/* CREATE/VIEW STATUS (Primary Action - The Pill Button) */}
+                            <button
+                              disabled={hasCoverPage(doc.id)}
+                              onClick={() => {
+                                if (!hasCoverPage(doc.id)) {
+                                  setSelectedProposal(doc);
+                                  setIsModalOpen(true);
+                                }
+                              }}
+                              className={`
+        flex items-center gap-3 px-6 py-3 rounded-full font-bold text-[13px] tracking-wider uppercase transition-all duration-300
+        ${
+          hasCoverPage(doc.id)
+            ? "bg-emerald-50 text-emerald-700 opacity-80 cursor-default"
+            : "bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white shadow-sm hover:shadow-emerald-200"
+        }
+      `}
+                            >
+                              {hasCoverPage(doc.id) ? (
+                                <>
+                                  <Users size={18} strokeWidth={2.5} />
+                                  <span>Cover Created</span>
+                                </>
+                              ) : (
+                                <>
+                                  <FilePlus size={18} strokeWidth={2.5} />
+                                  <span>Create Cover</span>
+                                </>
+                              )}
                             </button>
                           </div>
                         </td>
@@ -322,6 +386,11 @@ const CreateCoverPage = () => {
         onClose={() => setIsModalOpen(false)}
         proposalId={selectedProposal?.id || null}
         proposalTitle={selectedProposal?.title}
+      />
+      <ViewCoverPageModal
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+        coverPageId={viewCoverId}
       />
     </>
   );
