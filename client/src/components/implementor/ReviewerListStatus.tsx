@@ -62,8 +62,6 @@ const ReviewerListStatus: React.FC<ReviewerListStatusProps> = ({
 
   if (!isOpen) return null;
 
-  console.log("Proposal ID", proposalId)
-
   return (
     <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-md flex items-center justify-center px-6">
       <div className="relative w-full max-w-lg rounded-2xl bg-white/95 shadow-2xl animate-pop-out">

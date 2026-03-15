@@ -31,7 +31,7 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
 
             <div>
               <p className="font-bold">Activity Duration <span className="font-normal italic">( 8 hours ): </span> <span className="font-normal">{val(activityData.activity_duration_hours)}</span></p>
-              <p className="font-normal">Date:<span className="font-normal">{val(formatDate(activityData.activity_date))}</span></p>
+              <p className="font-normal">Date: <span className="font-normal">{val(formatDate(activityData.activity_date))}</span></p>
               <br />
 
             </div>

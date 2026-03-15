@@ -5,6 +5,7 @@ import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
 import { formatDate } from "@/utils/dateFormat";
 
 export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: string }> = ({ projectData, programTitle }) => {
+  
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
 
   const workplanMap: Record<string, string> = {};
@@ -24,17 +25,17 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
 
             <div className="my-4">
               <p className="font-bold">Program Title 1: <span className="font-normal">{val(programTitle)}</span></p>
-              <p className="font-bold">Program Leader: <span className="font-normal">{val(projectData.program_leader)}</span></p>
+              <p className="">Program Leader:  <span className="font-normal">{val(projectData.program_leader)}</span></p>
             </div>
 
             <div>
               <p className="font-bold">Project Title: <span className="font-normal">{val(projectData.project_title)}</span></p>
-              <p className="font-bold">Project Leader: <span className="font-normal">{val(projectData.project_leader)}</span></p>
-              <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members.map((m: any) => m).join(", "))}</span></p>
+              <p className="">Project Leader: <span className="font-normal">{val(projectData.project_leader)}</span></p>
+              <p className="">Project Members: <span className="font-normal">{val(projectData.members.map((m: any) => m).join(", "))}</span></p>
               <br />
               <p className="font-bold">Project Duration: <span className="font-normal">{val(projectData.duration_months)}</span></p>
-              <p className="font-bold">Project Start Date: <span className="font-normal">{val(formatDate(projectData.start_date))}</span></p>
-              <p className="font-bold">Project End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
+              <p className="">Project Start Date: <span className="font-normal">{val(formatDate(projectData.start_date))}</span></p>
+              <p className="">Project End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
             </div>
         </div>
 

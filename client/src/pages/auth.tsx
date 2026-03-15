@@ -194,7 +194,7 @@ const Auth: React.FC = () => {
               </div>
             </div>
           </Motion.div>
-
+{/* 
           {mode === "login" && (
             <Motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -207,7 +207,7 @@ const Auth: React.FC = () => {
                 <li>• <strong>Password:</strong> arnel123</li>
               </ul>
             </Motion.div>
-          )}
+          )} */}
 
           <form
             onSubmit={(e: React.FormEvent<HTMLFormElement>) => {

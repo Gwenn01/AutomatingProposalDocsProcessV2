@@ -80,11 +80,15 @@ type ProjectListFields = {
   version_no: number;
   is_reviewed: boolean;
   assigned_at: string | null;
-  activities?: ApiActivity[];
+  //activities?: ApiActivity[];
+  assignment: number;
+  proposal: number;
+  activity_title: string;
+  activity_date: string;
 };
 
 type ProjectItem  = ProjectListFields;
-type ActivityItem = ApiActivity;
+type ActivityItem = ProjectListFields;
 
 interface DocumentViewerModalProps {
   isOpen: boolean;
@@ -256,6 +260,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     setActivityDetail(null);
     setProjectDetail(null);
     setProjectDetailLoading(true);
+    
     try {
       const detail = await fetchProjectProposalDetail(project.child_id);
       setProjectDetail(detail);

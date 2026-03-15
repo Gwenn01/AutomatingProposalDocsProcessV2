@@ -25,18 +25,19 @@ export const ProgramFormDocument: React.FC<{ proposalData: ApiProposalDetail }> 
 
           <div className="my-2">
             <p className="font-bold">Program Title 1: <span className="font-normal">{val(proposalData.program_title)}</span></p>
-            <p className="font-bold">Program Leader: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
+            <p className="">Program Leader: <span className="font-normal">{val(proposalData.program_leader)}</span></p>
+            <br />
           </div>
           {(proposalData.project_list || []).map((proj: any, i: number) => (
             <React.Fragment key={i}>
               <div >
                 <p className="font-bold">Project Title {i + 1}: <span className="font-normal">{val(proj.project_title)}</span></p>
-                <p className="font-bold">Project Leader: <span className="font-normal">{val(proj.project_leader)}</span></p>
-                <p className="font-bold">Project Members: <span className="font-normal">{val(proj.project_member.map((m: any) => m).join(", "))}</span></p>
+                <p className="">Project Leader: <span className="font-normal">{val(proj.project_leader)}</span></p>
+                <p className="">Project Members: <span className="font-normal">{val(proj.project_member.map((m: any) => m).join(", "))}</span></p>
                 <br />
                 <p className="font-bold">Project Duration: <span className="font-normal">{val(proj.project_duration)}</span></p>
-                <p className="font-bold">Project Start Date: <span className="font-normal">{val(formatDate(proj.project_start_date))}</span></p>
-                <p className="font-bold">Project End Date: <span className="font-normal">{val(formatDate(proj.project_end_date))}</span></p>
+                <p className="">Project Start Date: <span className="font-normal">{val(formatDate(proj.project_start_date))}</span></p>
+                <p className="">Project End Date: <span className="font-normal">{val(formatDate(proj.project_end_date))}</span></p>
                 <br />
               </div>
             </React.Fragment>

@@ -9,6 +9,6 @@ export interface Notification {
 }
 
 export async function getNotifications(): Promise<any> {
-  const res = await authFetch(`${BASE_URL}/admin/notifications/`)
+  const res = await authFetch(`${BASE_URL}/notifications/`)
   return handleResponse<any>(res);
 }

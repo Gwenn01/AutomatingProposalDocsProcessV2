@@ -3,6 +3,7 @@ import CommentInput from "../reviewer/CommentInput";
 import { type BudgetItem, type Comments, type MethodologyPhase, type WorkplanItem } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
+import { formatDate } from "@/utils/dateFormat";
 
 export const ProjectForm: React.FC<{
   projectData: any;
@@ -35,8 +36,8 @@ export const ProjectForm: React.FC<{
             <p className="font-bold">Project Members: <span className="font-normal">{val(projectData.members?.map((m: any) => m).join(", "))}</span></p>
             <br />
             <p className="font-bold">Project Duration: <span className="font-normal">{val(projectData.duration_months)}</span></p>
-            <p className="font-bold">Start Date: <span className="font-normal">{val(projectData.start_date)}</span></p>
-            <p className="font-bold">End Date: <span className="font-normal">{val(projectData.end_date)}</span></p>
+            <p className="font-bold">Start Date: <span className="font-normal">{val(formatDate(projectData.start_date))}</span></p>
+            <p className="font-bold">End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
           </div>
         </div>
           {showCommentInputs && (

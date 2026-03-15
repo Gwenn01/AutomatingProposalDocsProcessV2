@@ -3,6 +3,7 @@ import CommentInput from "../reviewer/CommentInput";
 import { type ApiProposalDetail, type Comments } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
 import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
+import { formatDate } from "@/utils/dateFormat";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 
@@ -42,8 +43,8 @@ export const ProgramForm: React.FC<{
                   <p className="font-bold">Project Members: <span className="font-normal">{val(proj.project_member.map((m: any) => m).join(", "))}</span></p>
                   <br />
                   <p className="font-bold">Project Duration: <span className="font-normal">{val(proj.project_duration)}</span></p>
-                  <p className="font-bold">Project Start Date: <span className="font-normal">{val(proj.project_start_date)}</span></p>
-                  <p className="font-bold">Project End Date: <span className="font-normal">{val(proj.project_end_date)}</span></p>
+                  <p className="font-bold">Project Start Date: <span className="font-normal">{val(formatDate(proj.project_start_date))}</span></p>
+                  <p className="font-bold">Project End Date: <span className="font-normal">{val(formatDate(proj.project_end_date))}</span></p>
                   <br />
                 </div>
               </React.Fragment>

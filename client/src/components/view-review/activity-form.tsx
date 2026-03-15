@@ -3,6 +3,7 @@ import CommentInput from "../reviewer/CommentInput";
 import { type BudgetItem } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
+import { formatDate } from "@/utils/dateFormat";
 
 interface Comments {
   [key: string]: string;
@@ -39,7 +40,7 @@ export const ActivityForm: React.FC<{
             <p className="font-normal">Members: <span className="font-normal">{val(activityData.members?.join(", ") || NA)}</span></p>
             <br />
             <p className="font-bold">Activity Duration: <span className="font-normal">{val(activityData.activity_duration_hours)} hours</span></p>
-            <p className="font-normal">Date: <span className="font-normal">{val(activityData.activity_date)}</span></p>
+            <p className="font-normal">Date: {" "} <span className="font-normal"> {val(formatDate(activityData.activity_date))}</span></p>
           </div>
         </div>
         {showCommentInputs && (
