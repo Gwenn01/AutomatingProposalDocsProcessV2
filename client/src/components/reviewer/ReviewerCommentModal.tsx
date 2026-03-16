@@ -701,7 +701,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
             {/* ── Project/Activity Sidebar ── */}
             {showProjectSidebar && (
-              <div className="w-64 flex-shrink-0 bg-gray-50/80 border-r border-gray-200 flex flex-col overflow-hidden">
+              <div className="w-64 flex-shrink-0 bg-gray-50/80 border-r border-gray-200 flex flex-col overflow-y-scroll">
                 <div className="sticky top-0 z-10 px-5 py-4 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center gap-2">
                   <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-primaryGreen/10">
                     <FolderOpen size={14} className="text-primaryGreen" />
@@ -824,11 +824,11 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                     />
                   )
                 )}
-
-                {/* ── Action Buttons (only on current version) ── */}
+                
+              </div>
                 {showCommentInputs && (
-                  <div className="mt-10 pt-6 border-t border-gray-100">
-                    <div className="flex items-center gap-4 mb-5 flex-wrap">
+                  <div className={`fixed z-50 bottom-2 ${activeTab === "project" || activeTab === "activity" ? "left-1/4 -translate-x-1/4" : "left-0"} px-5`}>
+                    {/* <div className="flex items-center gap-4 mb-5 flex-wrap">
                       <div className="flex items-center gap-2">
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                           Review Round
@@ -857,37 +857,66 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
                           {Object.values(comments).filter((c) => c?.trim()).length} comment(s) — will submit as <strong>Needs Revision</strong>
                         </span>
                       )}
-                    </div>
-                    <div className="flex justify-end gap-4">
-                      <button onClick={onClose}
-                        className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
-                        Cancel
-                      </button>
+                    </div> */}
+                    <div className="flex justify-end gap-3 p-3 rounded-2xl bg-gray-100">
                       <button
                         onClick={handleSubmitReview}
                         disabled={isSubmitting || alreadyReviewed || !hasAnyComment}
-                        className="px-8 py-3 bg-primaryGreen text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                         title={!hasAnyComment ? "Add at least one comment to submit a revision request" : ""}
+                        className="px-6 py-2.5 rounded-xl bg-primaryGreen text-white text-xs font-semibold
+                        flex items-center gap-2 shadow-sm
+                        hover:bg-green-700 hover:shadow-md
+                        active:scale-[0.97]
+                        transition-all duration-200
+                        disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
                       >
                         {isSubmitting ? (
-                          <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Submitting...</>
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Submitting...
+                          </>
                         ) : (
-                          <><Send className="w-5 h-5" />Submit Review</>
+                          <>
+                            <Send className="w-4 h-4" />
+                            Submit Review
+                          </>
                         )}
                       </button>
+
+                      {/* Approve */}
                       <button
                         onClick={() => setShowApproveConfirm(true)}
                         disabled={alreadyReviewed || hasAnyComment || isApproving}
-                        className="px-8 py-3 bg-emerald-700 text-white rounded-lg font-semibold hover:bg-emerald-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                         title={hasAnyComment ? "Clear all comments before approving" : ""}
+                        className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold
+                        flex items-center gap-2 shadow-sm
+                        hover:bg-emerald-700 hover:shadow-md
+                        active:scale-[0.97]
+                        transition-all duration-200
+                        disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
                       >
-                        Approve
+                        {isApproving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Approving...
+                          </>
+                        ) : (
+                          <>Approve</>
+                        )}
                       </button>
+
+                      <button
+                        onClick={onClose}
+                        className="px-6 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-xs font-medium
+                        hover:bg-gray-50 hover:border-gray-400
+                        active:scale-[0.97] transition-all duration-200 shadow-sm"
+                      >
+                        Cancel
+                      </button>
+
                     </div>
                   </div>
                 )}
-
-              </div>
             </div>
 
             {/* ── History Panel ── */}
@@ -992,6 +1021,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
 
           </div>
         </div>
+
       </div>
 
       {/* ── Approve Confirm Dialog ── */}

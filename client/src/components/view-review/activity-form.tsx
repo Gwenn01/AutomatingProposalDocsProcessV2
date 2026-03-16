@@ -20,6 +20,9 @@ export const ActivityForm: React.FC<{
 }> = ({ activityData, programTitle, projectTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
+  console.log("Activity Data", activityData)
+  console.log("Reviewed", alreadyReviewed)
+
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
       <div className="text-center mb-8 space-y-1">

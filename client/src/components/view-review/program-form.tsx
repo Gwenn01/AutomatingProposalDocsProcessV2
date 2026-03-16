@@ -19,6 +19,8 @@ export const ProgramForm: React.FC<{
     workplanMap[month] = activity;
   });
 
+  console.log("Program Data", proposalData)
+
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">

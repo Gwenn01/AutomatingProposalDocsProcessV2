@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { fetchProposalsNode, fetchProgramProposalDetail } from "@/api/implementor-api";
-import { getNotifications, type Notification } from "@/api/get-notification-api";
-import { markNotificationRead } from "@/api/reviewer-api";
+import { getNotifications, markNotificationRead, type Notification } from "@/api/get-notification-api";
 import { useAuth } from "@/context/auth-context";
 
 // ================= TYPE DEFINITIONS =================
@@ -81,7 +80,7 @@ export const useProposals = (proposalType: ProposalType = "Program") => {
       const notifData = await getNotifications();
       const mappedNotifs: Notification[] = notifData.map((n: any) => ({
         ...n,
-        is_read: n.is_read ? 1 : 0,
+        is_read: Boolean(n.is_read),
       }));
       setNotifications(mappedNotifs);
     } catch (err) {
@@ -118,24 +117,25 @@ export const useProposals = (proposalType: ProposalType = "Program") => {
     }
   }, []);
 
-const markNotifRead = useCallback(async (id: string | number): Promise<void> => {
-  const target = notifications.find((n) => n.id === id);
-  if (!target || target.is_read) return;
+  const markNotifRead = useCallback(async (id: string | number): Promise<void> => {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.is_read) return;
 
-  setNotifications((prev) =>
-    prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-  );
-
-  try {
-    await markNotificationRead(id);
-  } catch (error) {
-    console.error(error);
-
+    // Optimistic update
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
-  }
-}, [notifications]);
+
+    try {
+      await markNotificationRead(id);
+    } catch (err) {
+      console.error("[useProposals] Failed to mark notification read:", err);
+      // Rollback on failure
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
+      );
+    }
+  }, [notifications]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getStatusStyle = useCallback((status: string): StatusStyle => {
@@ -170,11 +170,11 @@ const markNotifRead = useCallback(async (id: string | number): Promise<void> => 
     );
   }, [documents, searchQuery]);
 
-  const totalPages: number         = Math.ceil(filteredDocuments.length / rowsPerPage);
-  const startIndex: number         = (currentPage - 1) * rowsPerPage;
-  const endIndex: number           = startIndex + rowsPerPage;
+  const totalPages: number           = Math.ceil(filteredDocuments.length / rowsPerPage);
+  const startIndex: number           = (currentPage - 1) * rowsPerPage;
+  const endIndex: number             = startIndex + rowsPerPage;
   const currentDocuments: Document[] = filteredDocuments.slice(startIndex, endIndex);
-  const unreadCount: number        = notifications.filter((n) => !n.is_read).length;
+  const unreadCount: number          = notifications.filter((n) => !n.is_read).length;
 
   return {
     // State

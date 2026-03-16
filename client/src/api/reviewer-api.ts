@@ -43,6 +43,7 @@ export type ReviewerProjectList = {
   version_no: number;
   is_reviewed: boolean;
   assigned_at: string | null;
+  child_title: string;
   activities?: ApiActivity[];
 }
 
@@ -72,6 +73,7 @@ export interface ReviewerProposal {
   version_no: number;
   is_reviewed: boolean;
   assigned_at: string;
+  child_title: string;
 }
 
 export interface ReviewerNotification {
@@ -325,3 +327,4 @@ export async function submitProposalReview(
 
   return data;
 }
+

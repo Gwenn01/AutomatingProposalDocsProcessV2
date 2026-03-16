@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellOff, Clock, X, CheckCheck, Filter } from "lucide-react";
+import { Bell, BellOff, Clock, X, CheckCheck } from "lucide-react";
 
 // Notification type
 export interface Notification {
   id: number;
   message: string;
   is_read: boolean;
-  created_at: string; 
+  created_at: string;
   updated_at: string;
   user: number;
 }
@@ -39,11 +39,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
         onClose();
       }
     };
-
     if (show) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -78,7 +76,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
 
   const handleViewAll = () => {
     setShowModal(true);
-    onClose(); // close the dropdown
+    onClose();
   };
 
   const handleCloseModal = () => {
@@ -159,7 +157,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                       }`}
                     >
                       <div className="flex gap-3">
-                        {/* Unread indicator */}
+                        {/* Unread indicator dot */}
                         {!notif.is_read && (
                           <div className="mt-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
                         )}
@@ -228,7 +226,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
               {/* Filter Tabs */}
               <div className="flex items-center gap-1 mt-4 bg-gray-50 rounded-xl p-1">
                 {(["all", "unread", "read"] as const).map((tab) => {
-                  const counts = {
+                  const tabCounts = {
                     all: notifications.length,
                     unread: unreadCount,
                     read: readCount,
@@ -253,7 +251,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                             : "bg-transparent text-gray-400"
                         }`}
                       >
-                        {counts[tab]}
+                        {tabCounts[tab]}
                       </span>
                     </button>
                   );
@@ -290,9 +288,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                       }`}
                     >
                       <div className="flex gap-3 items-start">
-                        {/* Status dot */}
+                        {/* ✅ FIXED: dot is red+pulsing for UNREAD, gray for READ */}
                         <div className="mt-1.5 shrink-0">
-                          {notif.is_read ? (
+                          {!notif.is_read ? (
                             <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                           ) : (
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-200" />
@@ -315,7 +313,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                           </p>
                         </div>
 
-                        {/* Mark as read label */}
+                        {/* Mark as read label — only on unread */}
                         {!notif.is_read && (
                           <span className="shrink-0 text-[10px] font-semibold text-red-400 group-hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 mt-0.5">
                             Mark read

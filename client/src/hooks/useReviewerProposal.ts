@@ -2,10 +2,13 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   fetchReviewerProposals,
   fetchProgramProposalDetail,
-  markNotificationRead,
   type ReviewerProposal,
 } from "@/api/reviewer-api";
-import { getNotifications, type Notification } from "@/api/get-notification-api";
+import {
+  getNotifications,
+  markNotificationRead,
+  type Notification,
+} from "@/api/get-notification-api";
 
 // ================= TYPE DEFINITIONS =================
 export interface Proposal {
@@ -111,7 +114,7 @@ export const useReviewerProposals = () => {
       ]);
       setProposals(apiProposals.map(mapApiProposal));
       setNotifications(
-        notifData.map((n: any) => ({ ...n, is_read: n.is_read ? 1 : 0 }))
+        notifData.map((n: any) => ({ ...n, is_read: Boolean(n.is_read) }))
       );
     } catch (err: any) {
       console.error("[useReviewerProposals] Failed to load data:", err);
@@ -147,13 +150,16 @@ export const useReviewerProposals = () => {
     const target = notifications.find((n) => n.id === id);
     if (!target || target.is_read) return;
 
+    // Optimistic update
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
+
     try {
       await markNotificationRead(id);
     } catch (err) {
-      console.error(err);
+      console.error("[useReviewerProposals] Failed to mark notification read:", err);
+      // Rollback on failure
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
       );
