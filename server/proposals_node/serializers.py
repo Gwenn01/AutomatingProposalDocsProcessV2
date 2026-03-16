@@ -8,6 +8,7 @@ class ProposalSerializer(serializers.ModelSerializer):
     reviewer_count = serializers.SerializerMethodField()
     reviewed_count = serializers.SerializerMethodField()
     review_progress = serializers.SerializerMethodField()
+    child_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Proposal
@@ -32,3 +33,11 @@ class ProposalSerializer(serializers.ModelSerializer):
         total = obj.assigned_reviewers.count()
         reviewed = obj.assigned_reviewers.filter(is_review=True).count()
         return f"{reviewed} out of {total}"
+    
+    def get_child_title(self, obj):
+        if obj.proposal_type == "Program" and hasattr(obj, 'program_details'):
+            return obj.program_details.program_title
+        if obj.proposal_type == "Project" and hasattr(obj, 'project_details'):
+            return obj.project_details.project_title
+        if obj.proposal_type == "Activity" and hasattr(obj, 'activity_details'):
+            return obj.activity_details.activity_title

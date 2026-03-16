@@ -77,11 +77,13 @@ class ActivityListDataSerializer(serializers.ModelSerializer):
 
     child_id = serializers.IntegerField(source='id', read_only=True)
     proposal_id = serializers.IntegerField(source='proposal.id', read_only=True)
+    title = serializers.CharField(source='proposal.title', read_only=True)
     class Meta:
         model = ActivityProposal
         fields = [
             'child_id',
             'proposal_id',  # auto-created by Django
+            'title',
             'activity_title',
             'project_leader',
             'members',

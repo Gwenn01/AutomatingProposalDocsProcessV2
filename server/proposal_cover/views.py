@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -33,10 +34,7 @@ class ProposalCoverDetail(APIView):
     permission_classes = [IsAdminUser]
 
     def get_object(self, pk):
-        try:
-            return  ProposalCoverPage.objects.get(pk=pk)
-        except ProposalCover.DoesNotExist:
-            raise Http404
+        return get_object_or_404(ProposalCoverPage, pk=pk)
 
     def get(self, request, pk, format=None):
         try:
