@@ -19,6 +19,7 @@ import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import { useReviewerProposals, type Proposal } from "@/hooks/useReviewerProposal";
+import GridSkeleton from "@/components/skeletons/GridSkeleton";
 
 const ReviewProposal: React.FC = () => {
   const { showToast } = useToast();
@@ -72,8 +73,8 @@ const ReviewProposal: React.FC = () => {
   // ── Loading screen ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="w-full h-full p-20 bg-white/80 inset-0 z-[60] backdrop-blur-md animate-fade-in">
-        <FormSkeleton lines={5} />
+      <div className="flex-1 bg-white p-10 min-h-screen animate-pulse">
+        <GridSkeleton />
       </div>
     );
   }
@@ -231,7 +232,7 @@ const ReviewProposal: React.FC = () => {
                           {proposal.title}
                         </h3>
                         <p className="text-gray-500 text-xs leading-relaxed mb-1 font-semibold">
-                          Implementor: <span className="font-normal">{proposal.description}</span>
+                          Implementor: <span className="font-normal">{proposal.implementor_name}</span>
                         </p>
                         {proposal.review_status && (
                           <p className={`flex items-center gap-2 text-xs rounded-md px-3 py-2 mt-1 mb-3 border ${
@@ -295,7 +296,7 @@ const ReviewProposal: React.FC = () => {
                       <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Status</th>
                       <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Title</th>
                       <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Type</th>
-                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Date</th>
+                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Assigned Date</th>
                       <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Actions</th>
                     </tr>
                   </thead>

@@ -74,6 +74,7 @@ export interface ReviewerProposal {
   is_reviewed: boolean;
   assigned_at: string;
   child_title: string;
+  implementor_name: string;
 }
 
 export interface ReviewerNotification {

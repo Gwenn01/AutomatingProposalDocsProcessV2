@@ -28,6 +28,7 @@ export interface Proposal {
   implementor_id: string;
   type: string;
   version_no: number;
+  implementor_name: string;
 }
 
 export type ReviewFilter = "all" | "completed" | "pending";
@@ -53,6 +54,7 @@ function mapApiProposal(p: ReviewerProposal): Proposal {
     implementor_id: String(p.implementor),
     type:           p.type,
     version_no:     p.version_no,
+    implementor_name: p.implementor_name,
   };
 }
 

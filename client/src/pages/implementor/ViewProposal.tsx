@@ -16,6 +16,7 @@ import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
 import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
 import { useProposals, type Document, type ViewMode } from "@/hooks/useViewProposal";
+import GridSkeleton from "@/components/skeletons/GridSkeleton";
 
 // ================= COMPONENT =================
 const ViewProposal: React.FC = () => {
@@ -73,7 +74,7 @@ const ViewProposal: React.FC = () => {
   if (pageLoading) {
     return (
       <div className="flex-1 bg-white p-10 min-h-screen animate-pulse">
-        <div className="mb-10">
+        {/* <div className="mb-10">
           <div className="h-8 w-56 bg-gray-200 rounded mb-3"></div>
           <div className="h-4 w-72 bg-gray-200 rounded"></div>
         </div>
@@ -100,7 +101,8 @@ const ViewProposal: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </div> */}
+        <GridSkeleton />
       </div>
     );
   }
