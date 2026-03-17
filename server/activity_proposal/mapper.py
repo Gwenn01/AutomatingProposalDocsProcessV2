@@ -11,7 +11,7 @@ class ActivityHistoryMapper:
         })
         for h in history:
             data.append({
-                "proposal_id": activity['proposal_id'],
+                "proposal_id": activity['proposal'],
                 "history_id": h['history_id'],
                 "activity_title": h['activity_title'],
                 "project_leader": h['project_leader'],

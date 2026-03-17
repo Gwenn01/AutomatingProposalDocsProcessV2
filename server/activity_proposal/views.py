@@ -129,5 +129,4 @@ class ActivityListHistoryView(APIView):
         
         activity_serializer = ActivityProposalSerializer(activity_proposals)
         history_serializer = ActivityProposalHistoryListSerializer(history, many=True)
-        
         return Response(ActivityHistoryMapper.history_list_mapper(activity_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
