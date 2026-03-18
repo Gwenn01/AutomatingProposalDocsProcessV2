@@ -108,6 +108,8 @@ class UpdateActivitySaveHistoryView(APIView):
                     user= r.reviewer,
                     message=f"The proposal '{activity_data.activity_title}' has been revised by the implementor and is ready for your review."
                 )
+            # remove the reviewed indicator for reviewer
+            proposal_reviewer.update(is_review=False)
             
             return Response({"message": "Activity proposal updated successfully",  
                              "data": serializer.data}, status=status.HTTP_200_OK

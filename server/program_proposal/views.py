@@ -96,6 +96,8 @@ class ProgramProposalDetail(APIView):
                     user= r.reviewer,
                     message=f"The proposal '{program_data.program_title}' has been revised by the implementor and is ready for your review."
                 )
+            # remove the reviewed indicator for reviewer
+            proposal_reviewer.update(is_review=False)
             
             return Response(
                 {"detail": "Program proposal updated successfully"},

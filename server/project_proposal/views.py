@@ -123,6 +123,8 @@ class UpdateProjectSaveHistoryView(APIView):
                     user= r.reviewer,
                     message=f"The proposal '{project_data.project_title}' has been revised by the implementor and is ready for your review."
                 )
+            # remove the reviewed indicator for reviewer
+            proposal_reviewer.update(is_review=False)
             
             return Response({"message": "Project proposal updated successfully",
                          "data": serializer.data}, status=status.HTTP_200_OK)
