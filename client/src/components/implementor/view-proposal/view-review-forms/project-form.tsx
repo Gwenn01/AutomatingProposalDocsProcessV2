@@ -324,7 +324,10 @@ export const ProjectForm: React.FC<{
         {/* V. METHODOLOGY */}
         <div className="border-b border-black p-2">
           <h3 className="font-bold text-gray-900 text-base mb-5 flex"><VerticalLine />V. METHODOLOGY</h3>
-          {isEditing ? (
+            {isEditing
+              ? <EditableTextarea value={draft.methodology} onChange={(v) => set("methodology", v)} isEditing={isEditing} rows={5} />
+              : <p className="text-base whitespace-pre-line">{val(projectData.methodology)}</p>}
+          {/* {isEditing ? (
             <div className="space-y-4">
               {draft.methodology.map((phase, pi) => (
                 <div key={pi} className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-3 space-y-2">
@@ -372,7 +375,7 @@ export const ProjectForm: React.FC<{
                 </div>
               ))
               : <p className="text-base">{NA}</p>
-          )}
+          )} */}
         </div>
         <CommentHeader sectionName="Project Methodology">
           <SectionReviews reviews={methodologyReviews} sectionName="Project Methodology" {...sectionProps} />

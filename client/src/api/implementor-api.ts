@@ -89,6 +89,7 @@ export interface ActivityItem {
 // API response shapes
 export interface ApiProject {
   id: number;
+  child_id: number;
   project_title: string;
   project_leader: string;
   members: string[];
@@ -104,7 +105,7 @@ export interface ApiProjectListResponse {
 }
 
 export interface ApiActivity {
-  id: number;
+  child_id: number;
   activity_title: string;
   project_leader: string;
   members: string[];
@@ -147,6 +148,7 @@ export interface ProgramFormData {
 export interface ProjectFormData {
   // From API (pre-filled, read-only)
   apiProjectId: number;
+  apiProjectNodeId: number;
   project_title: string;
   project_leader: string;
 
@@ -345,7 +347,7 @@ export async function submitProgramProposal(
     specific_objectives: programData.specific_objectives,
 
     // Structured fields via mappers
-    methodology: mapMethodology(programData.methodology),
+    methodology: programData.methodology,
     expected_output_6ps: mapExpectedOutput(programData.expected_output),
     sustainability_plan: programData.sustainability_plan,
     org_and_staffing: mapOrgStaffing(programData.org_staffing),
@@ -425,7 +427,7 @@ export async function saveProjectProposal(projectId: number, form: ProjectFormDa
     significance: form.significance,
     general_objectives: form.general_objectives,
     specific_objectives: form.specific_objectives,
-    methodology: mapMethodology(form.methodology),
+    methodology: form.methodology,
     expected_output_6ps: mapExpectedOutput(form.expected_output),
     sustainability_plan: form.sustainability_plan,
     org_and_staffing: mapOrgStaffing(form.org_staffing),

@@ -347,55 +347,10 @@ export const ProgramForm: React.FC<{
         {/* V. METHODOLOGY */}
         <div className="p-3 border-b border-black">
           <h3 className="font-bold text-gray-900 text-base mb-2 flex"><VerticalLine />V. METHODOLOGY</h3>
-          {isEditing ? (
-            <div className="space-y-4">
-              {draft.methodology.map((phase, pi) => (
-                <div key={pi} className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={phase.phase}
-                      placeholder="Phase name"
-                      onChange={(e) => {
-                        const next = [...draft.methodology];
-                        next[pi] = { ...next[pi], phase: e.target.value };
-                        set("methodology", next);
-                      }}
-                      className="flex-1 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-sm font-semibold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                    />
-                    <button type="button" onClick={() => set("methodology", draft.methodology.filter((_, i) => i !== pi))}
-                      className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50">Remove</button>
-                  </div>
-                  <EditableArray
-                    value={phase.activities}
-                    onChange={(acts) => {
-                      const next = [...draft.methodology];
-                      next[pi] = { ...next[pi], activities: acts };
-                      set("methodology", next);
-                    }}
-                    isEditing={isEditing}
-                    placeholder="Add activity…"
-                  />
-                </div>
-              ))}
-              <button type="button"
-                onClick={() => set("methodology", [...draft.methodology, { phase: "", activities: [] }])}
-                className="flex items-center gap-1 rounded-lg border border-dashed border-emerald-400 px-3 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-50">
-                + Add phase
-              </button>
-            </div>
-          ) : (
-            (proposalData.methodology || []).length > 0
-              ? proposalData.methodology.map((phase, pi) => (
-                <div key={pi} className="mb-4">
-                  <p className="font-semibold text-gray-800 mb-2">{phase.phase}</p>
-                  <ul className="list-disc list-inside space-y-1 pl-4">
-                    {(phase.activities || []).map((act, ai) => <li key={ai} className="text-base">{act}</li>)}
-                  </ul>
-                </div>
-              ))
-              : <p className="text-base">{NA}</p>
-          )}
+            {isEditing
+              ? <EditableTextarea value={draft.methodology} onChange={(v) => set("methodology", v)} isEditing={isEditing} rows={5} />
+              : <p className="text-base whitespace-pre-line">{val(proposalData.methodology)}</p>}
+
         </div>
         <CommentHeader sectionName="Methodology">
           <SectionReviews reviews={methodologyReviews} sectionName="Methodology" {...sectionProps} />

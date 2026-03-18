@@ -133,16 +133,7 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
 
           <div className="border-b border-black p-3">
             <h3 className="font-bold text-gray-900 text-base mb-5">V. METHODOLOGY</h3>
-            {(projectData.methodology || []).length > 0 ? (
-              projectData.methodology.map((phase: MethodologyPhase, pi: number) => (
-                <div key={pi} className="mb-4">
-                  <p className="font-semibold text-gray-800 mb-2">{phase.phase}</p>
-                  <ul className="list-disc list-inside space-y-1 pl-4">
-                    {(phase.activities || []).map((act, ai) => <li key={ai} className="text-base">{act}</li>)}
-                  </ul>
-                </div>
-              ))
-            ) : <p className="text-base">{NA}</p>}
+            <p className="text-base mt-3 whitespace-pre-line text-wrap">{val(projectData.methodology)}</p>
           </div>
 
           <div className="">

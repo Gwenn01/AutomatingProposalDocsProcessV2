@@ -33,7 +33,7 @@ export interface EditableProgram {
   significance: string;
   general_objectives: string;
   specific_objectives: string;
-  methodology: { phase: string; activities: string[] }[];
+  methodology: string;
   expected_output_6ps: string[];
   sustainability_plan: string;
   org_and_staffing: { name: string; role: string }[];
@@ -60,7 +60,7 @@ export interface EditableProject {
   significance: string;
   general_objectives: string;
   specific_objectives: string;
-  methodology: { phase: string; activities: string[] }[];
+  methodology: string;
   expected_output_6ps: string[];
   budget_requirements: { item: string; amount: string }[];
 }

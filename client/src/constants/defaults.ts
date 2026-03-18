@@ -73,7 +73,8 @@ export const defaultProgramFormData = (): ProgramFormData => ({
 });
 
 export const defaultProjectFormData = (apiProject: ApiProject): ProjectFormData => ({
-  apiProjectId: apiProject.id,
+  apiProjectId: apiProject.child_id,
+  apiProjectNodeId: apiProject.id,
   project_title: apiProject.project_title,
   project_leader: apiProject.project_leader,
   implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
@@ -90,7 +91,7 @@ export const defaultProjectFormData = (apiProject: ApiProject): ProjectFormData 
 });
 
 export const defaultActivityFormData = (apiActivity: ApiActivity): ActivityFormData => ({
-  apiActivityId: apiActivity.id,
+  apiActivityId: apiActivity.child_id,
   activity_title: apiActivity.activity_title,
   implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
   extension_site: '', tagging: [], cluster: [], extension_agenda: [],
