@@ -43,7 +43,7 @@ class ProjectProposal(models.Model):
    
    specific_objectives = models.TextField(null=True, blank=True)
 
-   methodology = models.JSONField(null=True, blank=True)
+   methodology = models.TextField(null=True, blank=True)
    
    expected_output_6ps = models.JSONField(null=True, blank=True)
 
