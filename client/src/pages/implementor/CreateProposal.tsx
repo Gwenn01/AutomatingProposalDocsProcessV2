@@ -248,7 +248,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Create Proposal</h1>
+          <h1 className="text-3xl font-bold text-black">Create Proposal</h1>
           <p className="text-gray-500 mt-1 text-sm">Build your program, projects, and activities step by step.</p>
           {programChildId && (
             <div className="mt-2 inline-flex items-center gap-2 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-full font-semibold">
@@ -271,11 +271,11 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
 
         {/* ══════════════ STEP 2 ══════════════ */}
         {step === 2 && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Project Proposals</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Configure each project under <span className="font-semibold text-emerald-700">{programData.program_title}</span></p>
+                <p className="text-sm text-gray-500 mt-0.5">Configure each project under this program titled <span className="font-semibold text-emerald-700">"{programData.program_title}"</span></p>
               </div>
               <div className="flex items-center gap-2">
                 {allProjectsSaved && <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">✓ All projects saved</span>}
@@ -290,7 +290,9 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
             ) : (
               <>
                 {/* Project tab list */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2.5 bg-gray-200/50 p-5 rounded-2xl">
+                  <h1 className="font-semibold text-base my-1 text-gray-700">Project list</h1>
+                  
                   {projectForms.map((pf, i) => {
                     const pct = getProjectCompletion(pf);
                     const isActive = activeProjectTab === i;
@@ -318,6 +320,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                   <div>
                     <div className="flex items-center gap-3 mb-5 px-1">
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-sm shadow-md">{activeProjectTab + 1}</div>
+                      <p className='text-base font-semibold text-gray-600'>Selected Project:</p>
                       <h3 className="text-lg font-bold text-gray-900">{projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}</h3>
                     </div>
                     <ProjectProposalForm
@@ -368,14 +371,16 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
               {projectForms.map((pf) => {
                 const activities = activityFormsByProject[pf.apiProjectId] || [];
                 return (
-                  <div key={pf.apiProjectId} className="space-y-1.5">
+                  <div key={pf.apiProjectId} 
+                    className="space-y-1.5 px-2 py-4 bg-gray-100 rounded-2xl border-2">
                     <div className="flex items-center gap-2 px-1">
-                      <div className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 text-xs font-black flex items-center justify-center">P</div>
-                      <h4 className="font-bold text-gray-800 text-sm">{pf.project_title}</h4>
+                      <p className='text-lg font-medium'>Project Title: </p>
+                      <h4 className="font-bold text-gray-800 text-lg">{pf.project_title}</h4>
                       <div className="flex-1 h-px bg-gray-100" />
                       {loadingActivities[pf.apiProjectId] && <span className="text-xs text-gray-400 flex items-center gap-1"><Spinner />Loading...</span>}
                     </div>
                     <div className="flex flex-col gap-1 pl-7">
+                      <h1>Hiii</h1>
                       {activities.map((act, ai) => {
                         const key = `${pf.apiProjectId}-${ai}`;
                         const isActive = activeActivityKey?.projectId === pf.apiProjectId && activeActivityKey?.activityIdx === ai;

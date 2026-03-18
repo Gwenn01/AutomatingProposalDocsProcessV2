@@ -293,6 +293,16 @@ export function mapMethodology(text: string): { phase: string; activities: strin
   return [{ phase: 'Methodology', activities: lines.length ? lines : [text || '—'] }];
 }
 
+export function mapExtensionSites(
+  sites: Array<{ country: string; region: string; province: string; district: string; municipality: string; barangay: string }>
+): { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[] {
+  return sites
+    .filter((s) => Object.values(s).some((v) => v.trim()))  // skip fully empty rows
+    .map(({ country, region, province, district, municipality, barangay }) => ({
+      country, region, province, district, municipality, barangay,
+    }));
+}
+
 // ─────────────────────────────────────────────
 // API FUNCTIONS
 // ─────────────────────────────────────────────
@@ -329,7 +339,8 @@ export async function submitProgramProposal(
     // Agency / site fields — single text box split on commas/newlines
     implementing_agency: toStringArray(programData.implementing_agency),
     cooperating_agencies: toStringArray(programData.cooperating_agencies),
-    extension_sites: toStringArray(programData.extension_site),
+    //extension_sites: toStringArray(programData.extension_site),
+    extension_sites: mapExtensionSites((programData as any).extension_sites ?? []),
 
     // Checkbox arrays sent directly
     tags: programData.tagging,
@@ -417,7 +428,7 @@ export async function saveProjectProposal(projectId: number, form: ProjectFormDa
     })),
     implementing_agency: toStringArray(form.implementing_agency),
     cooperating_agencies: toStringArray(form.cooperating_agencies),
-    extension_sites: toStringArray(form.extension_site),
+    extension_sites: mapExtensionSites((form as any).extension_sites ?? []),
     tags: form.tagging,
     clusters: form.cluster,
     agendas: form.extension_agenda,
@@ -456,7 +467,7 @@ export async function saveActivityProposal(activityId: number, form: ActivityFor
   const payload = {
     implementing_agency: toStringArray(form.implementing_agency),
     cooperating_agencies: toStringArray(form.cooperating_agencies),
-    extension_sites: toStringArray(form.extension_site),
+    extension_sites: mapExtensionSites((form as any).extension_sites ?? []),
     tags: form.tagging,
     clusters: form.cluster,
     agendas: form.extension_agenda,
