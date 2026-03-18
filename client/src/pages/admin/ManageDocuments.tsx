@@ -21,6 +21,13 @@ import NotificationBell, {
 import Loading from "@/components/Loading";
 import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";
 
+// ── NEW: Import both modals ──────────────────────────────────────────────────
+import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
+import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
+
+// ── NEW: Import both hooks ───────────────────────────────────────────────────
+import { useProposals } from "@/hooks/useViewProposal";
+
 const ManageDocuments = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -37,6 +44,27 @@ const ManageDocuments = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // ── NEW: DocumentViewerModal state ──────────────────────────────────────
+  const [isDocViewerOpen, setIsDocViewerOpen] = useState(false);
+  const [selectedProposalData, setSelectedProposalData] = useState<any | null>(
+    null,
+  );
+  const [selectedProposalStatus, setSelectedProposalStatus] = useState("");
+  const [selectedProposalTitle, setSelectedProposalTitle] = useState("");
+
+  // ── NEW: ViewReviewedDocuments state ────────────────────────────────────
+  const [isReviewedDocOpen, setIsReviewedDocOpen] = useState(false);
+  const [selectedReviewedProposal, setSelectedReviewedProposal] = useState<{
+    title: string;
+    status: string;
+    proposal_id: number | string;
+    child_id: number | string;
+  } | null>(null);
+
+  // ── NEW: Hook for DocumentViewerModal (fetches full proposal detail) ─────
+  const { fetchProposalDetail, actionLoading: docViewerLoading } =
+    useProposals("Program");
 
   // Loading animation
   useEffect(() => {
@@ -81,6 +109,41 @@ const ManageDocuments = () => {
     setIsReviewerModalOpen(true);
   };
 
+  // ── NEW: Open DocumentViewerModal — fetches full detail first ────────────
+  const openDocViewer = async (doc: ProgramProposal) => {
+    console.log("doc fields:", doc);
+    const detail = await fetchProposalDetail({
+      proposal_id: doc.id,
+      child_id: doc.child_id,
+      reviewer_count: doc.reviewer_count ?? 0,
+      reviewed_count: 0,
+      review_progress: 0,
+      title: doc.title,
+      file_path: "",
+      status: doc.status,
+      submitted_at: null,
+      reviews: 0,
+    });
+
+    if (detail) {
+      setSelectedProposalData(detail);
+      setSelectedProposalStatus(doc.status);
+      setSelectedProposalTitle(doc.title);
+      setIsDocViewerOpen(true);
+    }
+  };
+
+  // ── NEW: Open ViewReviewedDocuments — passes IDs, modal fetches its own data
+  const openReviewedDoc = (doc: ProgramProposal) => {
+    setSelectedReviewedProposal({
+      title: doc.title,
+      status: doc.status,
+      proposal_id: doc.id,
+      child_id: doc.child_id,
+    });
+    setIsReviewedDocOpen(true);
+  };
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, viewMode]);
@@ -90,7 +153,7 @@ const ManageDocuments = () => {
       const data = await getNotifications();
       setNotifications(data || []);
       setUnreadCount(
-        (data || []).filter((n: Notification) => n.is_read === 0).length,
+        (data || []).filter((n: Notification) => !n.is_read).length,
       );
     } catch (error) {
       console.error("Failed to fetch notifications", error);
@@ -103,7 +166,7 @@ const ManageDocuments = () => {
 
   const handleReadNotification = (id: string | number) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: 1 } : n)),
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
     );
     setUnreadCount((prev) => Math.max(prev - 1, 0));
   };
@@ -213,7 +276,7 @@ const ManageDocuments = () => {
 
                     return (
                       <tr key={doc.id} className="group">
-                        {/* 1. Proposal Info - Left "Pill" */}
+                        {/* 1. Proposal Info */}
                         <td className="pl-10 pr-6 py-6 bg-white border-y border-l border-slate-100 rounded-l-[32px] shadow-sm group-hover:shadow-md group-hover:bg-slate-50/50 transition-all duration-500">
                           <div className="flex items-center gap-5">
                             <div className="relative flex-shrink-0">
@@ -224,7 +287,6 @@ const ManageDocuments = () => {
                                 />
                               </div>
                             </div>
-
                             <div className="min-w-0 max-w-[280px]">
                               <div className="font-bold text-[16px] text-slate-800 tracking-tight group-hover:text-emerald-800 transition-colors duration-300 truncate">
                                 {doc.title}
@@ -242,7 +304,7 @@ const ManageDocuments = () => {
                           </div>
                         </td>
 
-                        {/* 2. Status - Middle Bento */}
+                        {/* 2. Status */}
                         <td className="px-6 py-6 text-center bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-500">
                           <div
                             className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${status.className} shadow-sm ring-4 ring-transparent group-hover:ring-slate-50 transition-all`}
@@ -252,7 +314,7 @@ const ManageDocuments = () => {
                           </div>
                         </td>
 
-                        {/* 3. Reviewers - Compact Pod */}
+                        {/* 3. Reviewers */}
                         <td className="px-6 py-6 bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all duration-500">
                           <div className="flex justify-center">
                             <button
@@ -277,33 +339,35 @@ const ManageDocuments = () => {
                           </div>
                         </td>
 
-                        {/* 4. Actions - Right "Pill" */}
+                        {/* 4. Actions */}
                         <td className="pl-6 pr-10 py-6 text-right bg-white border-y border-r border-slate-100 rounded-r-[32px] shadow-sm group-hover:shadow-md transition-all duration-500">
                           <div className="flex flex-col items-end gap-3 min-w-[200px]">
-                            {/* Secondary Actions Row */}
                             <div className="flex justify-end gap-2">
+                              {/* ── View Docs button → opens DocumentViewerModal ── */}
                               <div className="relative group/tooltip flex items-center justify-center">
-                                {/* The Tooltip */}
                                 <div className="absolute bottom-full mb-3 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-[-4px] transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
                                   View Docs
-                                  {/* Tooltip Arrow */}
                                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
                                 </div>
-
-                                {/* The Button */}
-                                <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white hover:shadow-lg hover:shadow-slate-200 active:scale-90 transition-all duration-300">
+                                <button
+                                  onClick={() => openDocViewer(doc)}
+                                  disabled={docViewerLoading}
+                                  className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white hover:shadow-lg hover:shadow-slate-200 active:scale-90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
                                   <FileText size={18} />
                                 </button>
                               </div>
+
+                              {/* ── View Reviews button → opens ViewReviewedDocuments ── */}
                               <div className="relative group/tooltip flex items-center justify-center">
-                                {/* The Tooltip */}
                                 <div className="absolute bottom-full mb-3 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/tooltip:opacity-100 group-hover/tooltip:translate-y-[-4px] transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
                                   Review Details
                                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
                                 </div>
-
-                                {/* The Button */}
-                                <button className="h-10 px-5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-[10px] uppercase tracking-[0.15em] hover:bg-emerald-600 hover:text-white transition-all duration-300 border border-emerald-100/50 flex items-center gap-2 group/rev active:scale-95 shadow-sm hover:shadow-emerald-200">
+                                <button
+                                  onClick={() => openReviewedDoc(doc)}
+                                  className="h-10 px-5 rounded-xl bg-emerald-50 text-emerald-600 font-black text-[10px] uppercase tracking-[0.15em] hover:bg-emerald-600 hover:text-white transition-all duration-300 border border-emerald-100/50 flex items-center gap-2 group/rev active:scale-95 shadow-sm hover:shadow-emerald-200"
+                                >
                                   <Users
                                     size={16}
                                     className="group-hover/rev:rotate-12 transition-transform duration-300"
@@ -317,11 +381,9 @@ const ManageDocuments = () => {
 
                             {doc.status === "for_approval" && (
                               <div className="flex items-center gap-3 mt-1 animate-in fade-in duration-500">
-                                {/* Subtle indicator text */}
                                 <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em] mr-1">
                                   Action Required
                                 </span>
-
                                 <div className="flex gap-2">
                                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all duration-300 group/app">
                                     <Check size={12} strokeWidth={4} />
@@ -329,7 +391,6 @@ const ManageDocuments = () => {
                                       Approve
                                     </span>
                                   </button>
-
                                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all duration-300 group/rej">
                                     <XCircle size={12} />
                                     <span className="text-[9px] font-black uppercase">
@@ -348,6 +409,7 @@ const ManageDocuments = () => {
               </table>
             </div>
           ) : (
+            /* ── Card View ── */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {currentData.map((doc) => {
                 const status = getStatusStyleAdmin(
@@ -379,14 +441,9 @@ const ManageDocuments = () => {
                             </p>
                           </div>
                         </div>
-
                         <div
-                          className={`
-    px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest shadow-sm transition-all duration-300
-    ${status.className}
-  `}
+                          className={`px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest shadow-sm transition-all duration-300 ${status.className}`}
                         >
-                          {/* Optional: Indicator dot na sumasabay sa kulay ng text */}
                           <div className="flex items-center gap-1.5">
                             <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
                             {status.label}
@@ -401,7 +458,7 @@ const ManageDocuments = () => {
                         </h3>
                       </div>
 
-                      {/* Stats Pod - Mini Bento Tile */}
+                      {/* Stats Pod */}
                       <div
                         onClick={() => openReviewerModal(doc.id, doc.title)}
                         className="bg-slate-50/50 rounded-[24px] p-4 flex items-center justify-between border border-slate-100/50 cursor-pointer"
@@ -430,13 +487,23 @@ const ManageDocuments = () => {
                       </div>
                     </div>
 
-                    {/* Action Footer - Split Layout */}
+                    {/* Action Footer */}
                     <div className="flex gap-2 p-2 mt-2">
-                      <button className="flex-1 inline-flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-[22px] bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all duration-300">
+                      {/* ── View Docs → DocumentViewerModal ── */}
+                      <button
+                        onClick={() => openDocViewer(doc)}
+                        disabled={docViewerLoading}
+                        className="flex-1 inline-flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-[22px] bg-slate-50 text-slate-500 hover:bg-slate-900 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                         <Eye size={14} />
                         View Docs
                       </button>
-                      <button className="flex-1 inline-flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-[22px] bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50 transition-all duration-300">
+
+                      {/* ── Reviews → ViewReviewedDocuments ── */}
+                      <button
+                        onClick={() => openReviewedDoc(doc)}
+                        className="flex-1 inline-flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-[22px] bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50 transition-all duration-300"
+                      >
                         <Users size={14} />
                         Reviews
                       </button>
@@ -450,10 +517,8 @@ const ManageDocuments = () => {
 
         {/* Pagination Controls */}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-4 py-6 bg-slate-50/50 rounded-[24px] border border-slate-100/80">
-          {/* Stats Section */}
           <div className="flex items-center gap-3">
             <div className="flex -space-x-1 overflow-hidden">
-              {/* Subtle visual indicator of data density */}
               <div className="h-2 w-8 rounded-full bg-indigo-500/20" />
             </div>
             <span className="text-[13px] text-slate-500 font-medium tracking-tight">
@@ -472,7 +537,6 @@ const ManageDocuments = () => {
           </div>
 
           <div className="flex items-center gap-8">
-            {/* Minimalist Page Counter */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-slate-200/60 shadow-sm">
               <span className="text-[11px] uppercase font-black tracking-widest text-slate-400 ml-1">
                 Page
@@ -485,9 +549,7 @@ const ManageDocuments = () => {
               </span>
             </div>
 
-            {/* Navigation Buttons */}
             <div className="flex items-center gap-3">
-              {/* Previous Button */}
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -503,7 +565,6 @@ const ManageDocuments = () => {
                 </span>
               </button>
 
-              {/* Next Button */}
               <button
                 onClick={() =>
                   setCurrentPage((prev) => Math.min(prev + 1, totalPages))
@@ -524,11 +585,35 @@ const ManageDocuments = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Existing: Reviewer Assigned Modal ── */}
       <ReviewerAssignedModal
         isOpen={isReviewerModalOpen}
         onClose={() => setIsReviewerModalOpen(false)}
         proposalId={selectedProposal?.id || null}
         proposalTitle={selectedProposal?.title}
+      />
+
+      {/* ── NEW: Document Viewer Modal ── */}
+      <DocumentViewerModal
+        isOpen={isDocViewerOpen}
+        onClose={() => {
+          setIsDocViewerOpen(false);
+          setSelectedProposalData(null);
+        }}
+        proposalData={selectedProposalData}
+        proposalStatus={selectedProposalStatus}
+        proposalTitle={selectedProposalTitle}
+      />
+
+      {/* ── NEW: View Reviewed Documents Modal ── */}
+      <ViewReviewedDocuments
+        isOpen={isReviewedDocOpen}
+        onClose={() => {
+          setIsReviewedDocOpen(false);
+          setSelectedReviewedProposal(null);
+        }}
+        proposalData={selectedReviewedProposal}
       />
     </>
   );
