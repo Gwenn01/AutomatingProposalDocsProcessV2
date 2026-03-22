@@ -57,23 +57,34 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
                 </tbody>
               </table>
             </div>
-        <p className="font-bold mt-2 mb-2 px-3">Extension Site/s or Venue/s</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <tbody>
-              <tr className="border-b border-t border-black">
-                <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-                <td className="px-4 py-3 font-bold">Site / Venue</td>
-              </tr>
-              {(projectData.extension_sites?.length ? projectData.extension_sites : ["—", "—"]).map((site: string, i: number) => (
-                <tr key={i} className="border-b border-black">
-                  <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="px-4 py-3">{site || ""}</td>
+
+          <p className="font-bold mt-2 mb-2 px-3">Extension Site/s or Venue/s</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-t border-black">
+                  <td className="border-r border-black px-4 py-3 font-bold text-center w-12">Sites No.</td>
+                  <td className="border-r border-black px-4 py-3 font-bold text-center">Country</td>
+                  <td className="border-r border-black px-4 py-3 font-bold text-center">Region</td>
+                  <td className="border-r border-black px-4 py-3 font-bold text-center">Province</td>
+                  <td className="border-r border-black px-4 py-3 font-bold text-center">District</td>
+                  <td className="border-r border-black px-4 py-3 font-bold text-center">Municipality</td>
+                  <td className="px-4 py-3 font-bold text-center">Barangay</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                {(projectData.extension_sites?.length ? projectData.extension_sites : [{}, {}]).map((site: any, i: number) => (
+                  <tr key={i} className="border-b border-black">
+                    <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
+                    <td className="border-r border-black px-4 py-3">{site.country || "—"}</td>
+                    <td className="border-r border-black px-4 py-3">{site.region || "—"}</td>
+                    <td className="border-r border-black px-4 py-3">{site.province || "—"}</td>
+                    <td className="border-r border-black px-4 py-3">{site.district || "—"}</td>
+                    <td className="border-r border-black px-4 py-3">{site.municipality || "—"}</td>
+                    <td className="px-4 py-3">{site.barangay || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
         <div className="overflow-x-auto">
           <table className="w-full  text-sm">
@@ -182,34 +193,55 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
               </tbody>
             </table>
           </div>
+          
           <div>
             <h3 className="font-bold text-gray-900 text-base p-2">IX. WORKPLAN</h3>
             <div className="overflow-x-auto">
-              <table className="text-sm" style={{ minWidth: "900px", width: "100%" }}>
+              <table className="border-t border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
+                <thead>
+                  <tr className="border-b border-black">
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Activity</th>
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[90px]">Expected Output</th>
+                    {['Year 1', 'Year 2', 'Year 3'].map((y) => (
+                      <th key={y} colSpan={4} className="border-r border-black px-3 py-2 text-center font-bold last:border-r-0">{y}</th>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-black">
+                    {[1, 2, 3].map((yr) =>
+                      ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => (
+                        <th key={`${yr}-${q}`} className={`px-2 py-1 text-center font-semibold w-8 ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>{q}</th>
+                      ))
+                    )}
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr className="border-b border-t border-black">
-                    <td className="border-r border-black px-4 py-3 font-bold text-center" colSpan={4}>Year 1</td>
-                    <td className="border-r border-black px-4 py-3 font-bold text-center" colSpan={4}>Year 2</td>
-                    <td className="px-4 py-3 font-bold text-center" colSpan={4}>Year 3</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    {QUARTERS.map((q, i) => (
-                      <td key={q} className={`px-2 py-2 font-bold text-center text-xs ${i < 11 ? "border-r border-black" : ""}`}>
-                        {q.split(" ").slice(-1)[0]}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-black">
-                    {QUARTERS.map((q, i) => (
-                      <td key={q} className={`px-2 py-3 text-center text-xs align-top ${i < 11 ? "border-r border-black" : ""}`}>
-                        {workplanMap[q] || ""}
-                      </td>
-                    ))}
-                  </tr>
+                  {(projectData.workplan || []).map((row: any, i: number) => (
+                    <tr key={i} className="border-b border-black">
+                      <td className="border-r border-black px-3 py-2 align-top">{row.objective || "—"}</td>
+                      <td className="border-r border-black px-3 py-2 align-top">{row.activity || "—"}</td>
+                      <td className="border-r border-black px-3 py-2 align-top">{row.expected_output || "—"}</td>
+                      {[1, 2, 3].map((yr) =>
+                        ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => {
+                          const quarterLabel = `Year ${yr} ${q}`;
+                          const boolKey = `year${yr}_${q.toLowerCase()}`;
+                          const isChecked = Array.isArray(row.timeline)
+                            ? row.timeline.includes(quarterLabel)
+                            : !!row[boolKey];
+                          return (
+                            <td key={`${yr}-${q}`} className={`px-2 py-2 text-center align-middle ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>
+                              <input type="checkbox" checked={isChecked} readOnly className="rounded" />
+                            </td>
+                          );
+                        })
+                      )}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
+
           <div>
             <h3 className="font-bold text-gray-900 text-base p-3">X. BUDGETARY REQUIREMENT</h3>
             <table className="w-full text-sm">

@@ -59,7 +59,7 @@ export const OrgStaffingTable = ({ rows, onChange }: { rows: OrgStaffingItem[]; 
 
       <div className="px-4 py-3 border-t border-[#f0f4f8]">
         <button
-          onClick={() => onChange([...rows, { activity: "", designation: "", terms: "" }])}
+          onClick={() => onChange([...rows, { designation: "", terms: "" }])}
           className="flex items-center gap-1.5 text-[11px] font-bold text-[#1a3a5c] border border-dashed border-[#c5d3df] hover:border-[#1a3a5c] hover:bg-[#f0f6fa] px-3 py-1.5 rounded-lg transition-all"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -11,9 +11,9 @@ import { OrgStaffingTable } from "./tables/OrgStaffingTable";
 import { BudgetTable } from "./tables/BudgetTable";
 import { Spinner } from "./ui/Spinner";
 
-interface ActivityFormProps { data: ActivityFormData; onChange: (v: ActivityFormData) => void; onSave: () => void; isSaving: boolean; }
+interface ActivityFormProps { data: ActivityFormData; onChange: (v: ActivityFormData) => void; onSave: () => void; isSaving: boolean; isSaved: boolean; }
 
-export const ActivityProposalForm = ({ data, onChange, onSave, isSaving }: ActivityFormProps) => {
+export const ActivityProposalForm = ({ data, onChange, onSave, isSaving, isSaved }: ActivityFormProps) => {
   const upd = (field: keyof ActivityFormData, val: any) => onChange({ ...data, [field]: val });
 
   const updateScheduleRow = (i: number, field: keyof ActivityScheduleRow, val: string) => {
@@ -83,8 +83,8 @@ export const ActivityProposalForm = ({ data, onChange, onSave, isSaving }: Activ
       <Card><SectionHeader title="IX. Budgetary Requirement" /><BudgetTable rows={data.budget} onChange={(val) => upd('budget', val)} /></Card>
 
       <div className="flex justify-end py-2">
-        <button onClick={onSave} disabled={isSaving}
-          className={`flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-200 transition-all hover:scale-[1.02] ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>
+        <button onClick={onSave} disabled={isSaving || isSaved}
+          className={`flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-orange-200 transition-all hover:scale-[1.02] ${isSaving || isSaved ? 'opacity-60 cursor-not-allowed' : ''}`}>
           {isSaving ? (<><Spinner />Saving Activity...</>) : (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save This Activity</>)}
         </button>
       </div>

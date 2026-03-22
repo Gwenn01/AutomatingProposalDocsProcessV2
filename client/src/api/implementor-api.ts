@@ -18,7 +18,7 @@ export interface ExpectedOutput6Ps {
 }
 
 export interface OrgStaffingItem {
-  activity: string;
+  //activity: string;
   designation: string;
   terms: string;
 }
@@ -152,6 +152,11 @@ export interface ProjectFormData {
   project_title: string;
   project_leader: string;
 
+  project_members: string;
+  project_duration_months: string;
+  project_start_date: string;
+  project_end_date: string;
+
   // User-filled fields
   implementing_agency: string;
   address_tel_email: string;
@@ -250,28 +255,34 @@ export function toStringArray(value: string): string[] {
   return value.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
 }
 
-export function mapWorkplanRows(rows: WorkplanRow[]): { month: string; activity: string }[] {
+export function mapWorkplanRows(rows: WorkplanRow[]): {
+  objective: string;
+  activity: string;
+  expected_output: string;
+  timeline: string[];
+}[] {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-  const result: { month: string; activity: string }[] = [];
-  rows.forEach((row) => {
-    if (!row.activity.trim() && !row.objective.trim()) return;
-    [1, 2, 3].forEach((yr) => {
-      quarters.forEach((q) => {
-        const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
-        if (row[key]) result.push({ month: `Year ${yr} ${q}`, activity: row.activity || row.objective });
+  return rows
+    .filter((row) => row.activity?.trim() || row.objective?.trim())
+    .map((row) => {
+      const timeline: string[] = [];
+      [1, 2, 3].forEach((yr) => {
+        quarters.forEach((q) => {
+          const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
+          if (row[key]) timeline.push(`Year ${yr} ${q}`);
+        });
       });
+      return {
+        objective: row.objective || '',
+        activity: row.activity || '',
+        expected_output: row.expected_output || '',
+        timeline,
+      };
     });
-  });
-  if (result.length === 0) {
-    rows.forEach((row) => {
-      if (row.activity || row.objective) result.push({ month: '—', activity: row.activity || row.objective });
-    });
-  }
-  return result;
 }
 
 export function mapOrgStaffing(rows: OrgStaffingItem[]): { role: string; name: string }[] {
-  return rows.filter((r) => r.designation?.trim()).map((r) => ({ role: r.activity, name: r.designation }));
+  return rows.filter((r) => r.designation?.trim()).map((r) => ({ role: r.terms, name: r.designation }));
 }
 
 export function mapBudgetRows(rows: BudgetRows): { item: string; amount: number }[] {

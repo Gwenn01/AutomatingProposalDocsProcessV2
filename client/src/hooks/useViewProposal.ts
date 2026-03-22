@@ -27,7 +27,7 @@ export interface StatusStyle {
 export type ViewMode = "grid" | "table";
 
 // ================= HOOK =================
-export const useProposals = (proposalType: ProposalType = "Program") => {
+export const useProposals = (proposalType: ProposalType = "Program", rowsPerPage: number = 10) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [pageLoading, setPageLoading] = useState<boolean>(false);
@@ -37,7 +37,7 @@ export const useProposals = (proposalType: ProposalType = "Program") => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const rowsPerPage: number = 10;
+  //const rowsPerPage: number = 10;
   const { user } = useAuth();
 
   // Use a ref so loadProposals can read the latest type without being a dep

@@ -12,33 +12,98 @@ import { OrgStaffingTable } from "./tables/OrgStaffingTable";
 import { WorkplanTable } from "./tables/WorkplanTable";
 import { BudgetTable } from "./tables/BudgetTable";
 import { Spinner } from "./ui/Spinner";
+import { formatDate } from "@/utils/dateFormat";
 
-interface ProjectFormProps { data: ProjectFormData; onChange: (v: ProjectFormData) => void; onSave: () => void; isSaving: boolean; }
+interface ProjectFormProps { data: ProjectFormData; onChange: (v: ProjectFormData) => void; onSave: () => void; isSaving: boolean; isSaved: boolean; programData?: any; }
 
-export const ProjectProposalForm = ({ data, onChange, onSave, isSaving }: ProjectFormProps) => {
+export const ProjectProposalForm = ({ data, onChange, onSave, isSaving, programData, isSaved }: ProjectFormProps) => {
   const upd = (field: keyof ProjectFormData, val: any) => onChange({ ...data, [field]: val });
 
   const updateActivity = (i: number, field: keyof ActivityItem, val: string) => {
     const u = [...data.activities]; u[i] = { ...u[i], [field]: val }; upd('activities', u);
   };
   const pct = getProjectCompletion(data);
-
+  
+  //console.log('Rendering ProjectProposalForm with data:', data);
+// At the top of ProjectProposalForm, find the matching project from programData
+const matchedProject = programData?.projects?.find(
+  (p: any) => p.project_title === data.project_title
+);
   return (
     <div className="space-y-5">
       {/* Project meta banner */}
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5">
+      {/* <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <h1 className="text-lg font-bold text-gray-900">{programData?.program_title}</h1>
           <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Project</span><span className="text-gray-900 font-semibold">{data.project_title}</span></div>
           <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Project Leader</span><span className="text-gray-900 font-semibold">{data.project_leader || '—'}</span></div>
           <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">API ID</span><span className="text-gray-900 font-semibold">#{data.apiProjectId}</span></div>
         </div>
+      </div> */}
+
+    <div className="px-8 py-6">
+      <div className="flex items-center justify-between mb-6">
+        <SectionHeader title="I. Project Profile" />
+        <CompletionBadge pct={pct} />
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between mb-4"><SectionHeader title="I. Project Profile" /><CompletionBadge pct={pct} /></div>
-        <CommonProfileFields data={data} onChange={onChange} />
-      </Card>
+      {/* Program Info */}
+      <div className="mb-5">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">Program</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Program Title</p>
+            <p className="text-sm font-semibold text-gray-800">{programData?.program_title || '—'}</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Program Leader</p>
+            <p className="text-sm font-semibold text-gray-800">{programData?.program_leader || '—'}</p>
+          </div>
+        </div>
+      </div>
 
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-5">
+        <div className="h-px flex-1 bg-gray-100" />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Project</span>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
+
+      {/* Project Info */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500 mb-1 text-wrap">Project Title</p>
+          <p className="text-sm font-semibold text-gray-800">{data.project_title || '—'}</p>
+        </div>
+        <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Project Leader</p>
+          <p className="text-sm font-semibold text-gray-800">{data.project_leader || '—'}</p>
+        </div>
+        <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Project Members</p>
+          <p className="text-sm font-semibold text-gray-800">{matchedProject?.project_members || '—'}</p>
+        </div>
+      </div>
+
+      {/* Duration & Dates */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Duration</p>
+          <p className="text-sm font-semibold text-gray-800">
+            {matchedProject?.project_duration_months ? `${matchedProject.project_duration_months} months` : '—'}
+          </p>
+        </div>
+        <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Start Date</p>
+          <p className="text-sm font-semibold text-gray-800">{formatDate(matchedProject?.project_start_date) || '—'}</p>
+        </div>
+        <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">End Date</p>
+          <p className="text-sm font-semibold text-gray-800">{formatDate(matchedProject?.project_end_date) || '—'}</p>
+        </div>
+      </div>
+    </div>
+              
       {/* Activities for this project */}
       <Card>
         <SectionHeader title="Activities Under This Project" subtitle="Define all activities. You'll fill in full activity details in the next step." />
@@ -71,6 +136,13 @@ export const ProjectProposalForm = ({ data, onChange, onSave, isSaving }: Projec
         </button>
       </Card>
 
+      <Card>
+
+        <CommonProfileFields data={data} onChange={onChange} />
+      </Card>
+
+
+
       <Card><SectionHeader title="II. Rationale" /><TextArea value={data.rationale} onChange={(e) => upd('rationale', e.target.value)} rows={7} required /></Card>
       <Card><SectionHeader title="III. Significance" /><TextArea value={data.significance} onChange={(e) => upd('significance', e.target.value)} rows={6} required /></Card>
       <Card>
@@ -88,8 +160,8 @@ export const ProjectProposalForm = ({ data, onChange, onSave, isSaving }: Projec
       <Card><SectionHeader title="X. Budgetary Requirement" /><BudgetTable rows={data.budget} onChange={(val) => upd('budget', val)} /></Card>
 
       <div className="flex justify-end py-2">
-        <button onClick={onSave} disabled={isSaving}
-          className={`flex items-center gap-2 bg-white border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>
+        <button onClick={onSave} disabled={isSaving || isSaved}
+          className={`flex items-center gap-2 bg-white border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${isSaving || isSaved ? 'opacity-60 cursor-not-allowed' : ''}`}>
           {isSaving ? (<><Spinner />Saving...</>) : (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save This Project</>)}
         </button>
       </div>

@@ -276,6 +276,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Project Proposals</h2>
                 <p className="text-sm text-gray-500 mt-0.5">Configure each project under this program titled <span className="font-semibold text-emerald-700">"{programData.program_title}"</span></p>
+
               </div>
               <div className="flex items-center gap-2">
                 {allProjectsSaved && <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">✓ All projects saved</span>}
@@ -313,33 +314,48 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                       </button>
                     );
                   })}
+                  
                 </div>
+
 
                 {/* Active project form */}
                 {projectForms[activeProjectTab] && (
-                  <div>
-                    <div className="flex items-center gap-3 mb-5 px-1">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-sm shadow-md">{activeProjectTab + 1}</div>
-                      <p className='text-base font-semibold text-gray-600'>Selected Project:</p>
-                      <h3 className="text-lg font-bold text-gray-900">{projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}</h3>
-                    </div>
+                  <div className=''>
+                      <div className="flex items-center gap-4 mb-5 px-5 py-3 rounded-2xl border border-emerald-100 bg-emerald-100/60 backdrop-blur-sm">
+                        <div className="w-9 h-9 flex items-center justify-center rounded-xl 
+                                        bg-gradient-to-br from-emerald-500 to-teal-600 
+                                        text-white font-semibold text-sm shadow-sm">
+                          {activeProjectTab + 1}
+                        </div>
+
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-xs font-medium text-emerald-700 tracking-wide uppercase">
+                            Selected Project
+                          </span>
+                          <h3 className="text-base font-semibold text-gray-900">
+                            {projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}
+                          </h3>
+                        </div>
+                      </div>
                     <ProjectProposalForm
                       data={projectForms[activeProjectTab]}
                       onChange={(newData) => updateProjectForm(activeProjectTab, newData)}
                       onSave={() => handleSaveProject(activeProjectTab)}
                       isSaving={!!projectSaving[activeProjectTab]}
+                      programData={programData}
+                      isSaved={projectForms[activeProjectTab].saved}
                     />
                   </div>
                 )}
               </>
             )}
 
-            <div className="flex items-center justify-between py-4">
-              <button onClick={() => { setStep(1); scrollToTop(); }}
+            <div className="flex items-center justify-end pb-10">
+              {/* <button onClick={() => { setStep(1); scrollToTop(); }}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold bg-white border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl transition-all">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
                 Back to Program
-              </button>
+              </button> */}
               <button onClick={handleGoToActivities} disabled={!allProjectsSaved}
                 title={!allProjectsSaved ? 'Save all projects before continuing' : ''}
                 className={`flex items-center gap-3 px-10 py-4 rounded-xl font-bold shadow-lg transition-all duration-200
@@ -380,7 +396,6 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                       {loadingActivities[pf.apiProjectId] && <span className="text-xs text-gray-400 flex items-center gap-1"><Spinner />Loading...</span>}
                     </div>
                     <div className="flex flex-col gap-1 pl-7">
-                      <h1>Hiii</h1>
                       {activities.map((act, ai) => {
                         const key = `${pf.apiProjectId}-${ai}`;
                         const isActive = activeActivityKey?.projectId === pf.apiProjectId && activeActivityKey?.activityIdx === ai;
@@ -433,6 +448,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                     onChange={(newData) => updateActivityForm(projectId, activityIdx, newData)}
                     onSave={() => handleSaveActivity(projectId, activityIdx)}
                     isSaving={!!activitySaving[key]}
+                    isSaved={form.saved}
                   />
                 </div>
               );
