@@ -48,6 +48,11 @@ class ProposalReviewMapper:
                 "reviews": reviews["profile"],
             },
             
+            "extension_sites": {
+                "extension_site": program_proposal.extension_sites,
+                "reviews": reviews["extension_site"],
+            },
+            
             "agencies": {
                 "implementing_agency": program_proposal.implementing_agency,
                 "cooperating_agency": program_proposal.cooperating_agencies,
