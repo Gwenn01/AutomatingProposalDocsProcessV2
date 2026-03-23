@@ -126,7 +126,7 @@ export interface ProgramFormData {
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
-  extension_site: string;
+  extension_site: { country: string; region: string; province: string; district: string; municipality:string; barangay: string }[];
   tagging: string[];
   cluster: string[];
   extension_agenda: string[];
@@ -143,6 +143,7 @@ export interface ProgramFormData {
   workplan: WorkplanRow[];
   program_budget: ProgramBudgetRow[];
   projects: ProjectItem[];
+  program_budget_total?: string;
 }
 
 export interface ProjectFormData {
@@ -161,7 +162,7 @@ export interface ProjectFormData {
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
-  extension_site: string;
+  extension_site: { country: string; region: string; province: string; district: string; municipality:string; barangay: string }[];
   tagging: string[];
   cluster: string[];
   extension_agenda: string[];
@@ -194,7 +195,7 @@ export interface ActivityFormData {
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
-  extension_site: string;
+  extension_site: { country: string; region: string; province: string; district: string; municipality:string; barangay: string }[];
   tagging: string[];
   cluster: string[];
   extension_agenda: string[];
@@ -323,15 +324,16 @@ export function mapExtensionSites(
  * Payload matches the Postman-verified structure exactly.
  * After POST, resolves child_id via GET /proposals-node/Program.
  */
+// ── Drop-in replacement for submitProgramProposal() in implementor-api.ts ──
+// Only budget_requirements changes. Everything else is identical to your original.
+
 export async function submitProgramProposal(
   programData: ProgramFormData,
 ): Promise<{ child_id: number; [key: string]: any }> {
 
-  // ── Build project_list from the program form's projects array ──────────
   const project_list = programData.projects.map((p) => ({
     project_title: p.project_title,
     project_leader: p.project_leader,
-    // project_members is a comma/newline-separated string → split into array
     project_member: toStringArray(p.project_members),
     project_duration: Number(p.project_duration_months) || 0,
     project_start_date: p.project_start_date || null,
@@ -339,64 +341,53 @@ export async function submitProgramProposal(
   }));
 
   const payload = {
-    // "title" mirrors program_title (used as the node title in the API)
     title: programData.program_title,
     program_title: programData.program_title,
     program_leader: programData.program_leader,
-
-    // Project list — required for the API to create child project proposals
     project_list,
-
-    // Agency / site fields — single text box split on commas/newlines
     implementing_agency: toStringArray(programData.implementing_agency),
     cooperating_agencies: toStringArray(programData.cooperating_agencies),
-    //extension_sites: toStringArray(programData.extension_site),
     extension_sites: mapExtensionSites((programData as any).extension_sites ?? []),
-
-    // Checkbox arrays sent directly
     tags: programData.tagging,
     clusters: programData.cluster,
     agendas: programData.extension_agenda,
-
-    // Single-value fields
     sdg_addressed: programData.sdg_addressed,
     mandated_academic_program: programData.college_mandated_program,
-
-    // Narrative fields
     rationale: programData.rationale,
     significance: programData.significance,
     general_objectives: programData.general_objectives,
     specific_objectives: programData.specific_objectives,
-
-    // Structured fields via mappers
     methodology: programData.methodology,
     expected_output_6ps: mapExpectedOutput(programData.expected_output),
     sustainability_plan: programData.sustainability_plan,
     org_and_staffing: mapOrgStaffing(programData.org_staffing),
     workplan: mapWorkplanRows(programData.workplan),
-    budget_requirements: mapProgramBudgetRows(programData.program_budget),
+
+    // ── Single total amount from Step 1's budget input ──────────────────
+    budget_requirements: [
+      {
+        item: 'Total Program Budget',
+        amount: parseFloat((programData as any).program_budget_total) || 0,
+      },
+    ],
   };
 
   if (import.meta.env.DEV) {
     console.log('[submitProgramProposal] payload:', JSON.stringify(payload, null, 2));
   }
 
-  // ── POST the program proposal ──────────────────────────────────────────
   const res = await authFetch(`${BASE_URL}/program-proposal/`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
   const postResult: any = await handleResponse(res);
 
-  // If the POST response already includes child_id, use it directly
   if (postResult?.child_id) return postResult;
 
-  // ── Fallback: fetch the proposals list and find the latest matching entry ──
   const listRes = await authFetch(`${BASE_URL}/proposals-node/Program`);
   const list: Array<{ id: number; child_id: number; title: string; created_at: string }> =
     await handleResponse(listRes);
 
-  // Prefer entries whose title matches; sort by id descending to get the latest
   const matching = list
     .filter((p) => p.title === programData.program_title)
     .sort((a, b) => b.id - a.id);
@@ -404,7 +395,6 @@ export async function submitProgramProposal(
   const found = matching[0];
 
   if (!found?.child_id) {
-    // Last-resort fallback: grab the overall latest entry
     const latest = [...list].sort((a, b) => b.id - a.id)[0];
     if (!latest?.child_id) {
       throw new Error('Could not resolve child_id for the created program proposal.');

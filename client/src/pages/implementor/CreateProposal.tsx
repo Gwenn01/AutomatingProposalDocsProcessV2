@@ -23,6 +23,15 @@ interface CreateProposalProps {
 
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+// ── Budget helper: sum all line items across meals / transport / supplies ──────
+function sumBudgetRows(budget: ProjectFormData['budget'] | ActivityFormData['budget']): number {
+  const cats = ['meals', 'transport', 'supplies'] as const;
+  return cats.reduce(
+    (acc, cat) => acc + budget[cat].reduce((s, r) => s + (parseFloat(String(r.amount)) || 0), 0),
+    0,
+  );
+}
+
 export default function CreateProposal({ onDirtyChange }: CreateProposalProps = {}) {
   const [isDirty, setIsDirty] = useState(false);
   const [step, setStep] = useState(1);
@@ -40,17 +49,15 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
   const [loadingProjects, setLoadingProjects] = useState(false);
 
   // Step 3
-  // activityForms: keyed by projectId (API id), array of activities per project
   const [activityFormsByProject, setActivityFormsByProject] = useState<Record<number, ActivityFormData[]>>({});
   const [activeActivityKey, setActiveActivityKey] = useState<{ projectId: number; activityIdx: number } | null>(null);
   const [activitySaving, setActivitySaving] = useState<Record<string, boolean>>({});
   const [loadingActivities, setLoadingActivities] = useState<Record<number, boolean>>({});
 
+  // Fix: keep side-effect outside setState to avoid "setState during render" warning
   const markDirty = useCallback(() => {
-    setIsDirty((prev) => {
-      if (!prev) onDirtyChange?.(true);
-      return true;
-    });
+    setIsDirty((prev) => { if (prev) return true; return true; });
+    onDirtyChange?.(true);
   }, [onDirtyChange]);
 
   const markClean = useCallback(() => {
@@ -58,30 +65,63 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     onDirtyChange?.(false);
   }, [onDirtyChange]);
 
-  // Warn on browser reload / tab close
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
+      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
 
-
-
   useEffect(() => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}, [step]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4500);
   };
 
-  // ── STEP 1: Save Program → GET project list ──────────────────────────────
+  // ── Derived budget values ──────────────────────────────────────────────────
+
+  /** Total program budget from the single ₱ input in Step 1 */
+  const programBudgetTotal = parseFloat((programData as any).program_budget_total) || 0;
+
+  /**
+   * Sum of budget for every project EXCEPT the one at excludeIndex.
+   * Passed to ProjectProposalForm so BudgetIndicator can show "used by other projects".
+   */
+  const getUsedByOtherProjects = (excludeIndex: number): number =>
+    projectForms.reduce(
+      (sum, pf, i) => (i === excludeIndex ? sum : sum + sumBudgetRows(pf.budget)),
+      0,
+    );
+
+  /**
+   * In Step 3, the remaining budget for any activity is:
+   *   programTotal − allProjectBudgets − otherActivitiesBudgets
+   *
+   * We include ALL project budgets (they were already committed in Step 2)
+   * PLUS every other activity's budget, excluding the one being edited.
+   */
+  const getUsedByOtherActivities = (excludeProjectId: number, excludeActIdx: number): number => {
+    // All project budgets (fully committed in Step 2)
+    const projectsTotal = projectForms.reduce((sum, pf) => sum + sumBudgetRows(pf.budget), 0);
+
+    // All OTHER activities (exclude current one)
+    let otherActivitiesTotal = 0;
+    for (const [pidStr, acts] of Object.entries(activityFormsByProject)) {
+      const pid = Number(pidStr);
+      acts.forEach((act, ai) => {
+        if (pid === excludeProjectId && ai === excludeActIdx) return;
+        otherActivitiesTotal += sumBudgetRows(act.budget);
+      });
+    }
+
+    return projectsTotal + otherActivitiesTotal;
+  };
+
+  // ── STEP 1: Save Program → GET project list ────────────────────────────────
   const handleProgramNext = async () => {
     if (!programData.program_title.trim()) { showToast('Please enter a Program Title.', 'error'); return; }
     if (programData.projects.some((p) => !p.project_title.trim())) { showToast('Please fill in all Project Titles.', 'error'); return; }
@@ -94,7 +134,6 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
       if (!childId) throw new Error('API did not return a program child_id.');
       setProgramChildId(Number(childId));
 
-      // Fetch the project list from the API
       setLoadingProjects(true);
       const projectListData = await fetchProjectList(Number(childId));
       const forms = projectListData.projects.map((p) => defaultProjectFormData(p));
@@ -111,11 +150,22 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     }
   };
 
-  // ── STEP 2: Save individual project via PUT /api/project-proposal/{id}/ ──
+  // ── STEP 2: Save individual project ───────────────────────────────────────
   const handleSaveProject = async (projectIndex: number) => {
     const form = projectForms[projectIndex];
     if (!form) return;
-    if (form.activities.some((a) => !a.activity_title.trim())) { showToast('Fill in all Activity Titles for this project.', 'error'); return; }
+    if (form.activities.some((a) => !a.activity_title.trim())) {
+      showToast('Fill in all Activity Titles for this project.', 'error'); return;
+    }
+
+    // Budget guard — server-side mirror of the client-side disable
+    if (programBudgetTotal > 0) {
+      const usedByOthers = getUsedByOtherProjects(projectIndex);
+      const current = sumBudgetRows(form.budget);
+      if (usedByOthers + current > programBudgetTotal) {
+        showToast('Cannot save: project budget exceeds the program total.', 'error'); return;
+      }
+    }
 
     setProjectSaving((prev) => ({ ...prev, [projectIndex]: true }));
     try {
@@ -130,15 +180,13 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     }
   };
 
-  // ── STEP 2 → STEP 3: All projects must be saved ───────────────────────────
+  // ── STEP 2 → STEP 3: All projects must be saved ────────────────────────────
   const handleGoToActivities = async () => {
     const unsaved = projectForms.filter((p) => !p.saved);
     if (unsaved.length > 0) {
-      showToast(`Please save all projects first. (${unsaved.length} unsaved)`, 'error');
-      return;
+      showToast(`Please save all projects first. (${unsaved.length} unsaved)`, 'error'); return;
     }
 
-    // Fetch activities for each project
     const newActivityForms: Record<number, ActivityFormData[]> = {};
     const loadingMap: Record<number, boolean> = {};
 
@@ -150,8 +198,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
         newActivityForms[pf.apiProjectId] = actData.activities.map((a) => defaultActivityFormData(a));
         scrollToTop();
       } catch (err: any) {
-        showToast(`Failed to load activities for "${pf.project_title}": ${err.message}`, 'error');
-        return;
+        showToast(`Failed to load activities for "${pf.project_title}": ${err.message}`, 'error'); return;
       } finally {
         loadingMap[pf.apiProjectId] = false;
         setLoadingActivities({ ...loadingMap });
@@ -160,22 +207,28 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     }
 
     setActivityFormsByProject(newActivityForms);
-
-    // Set first activity as active
     const firstProject = projectForms[0];
     if (firstProject && newActivityForms[firstProject.apiProjectId]?.length > 0) {
       setActiveActivityKey({ projectId: firstProject.apiProjectId, activityIdx: 0 });
     }
-
     setStep(3);
     scrollToTop();
   };
 
-  // ── STEP 3: Save activity via PATCH /api/activity-proposal/{id}/ ──────────
+  // ── STEP 3: Save activity ──────────────────────────────────────────────────
   const handleSaveActivity = async (projectId: number, activityIdx: number) => {
     const forms = activityFormsByProject[projectId];
     const form = forms?.[activityIdx];
     if (!form) return;
+
+    // Budget guard
+    if (programBudgetTotal > 0) {
+      const usedByOthers = getUsedByOtherActivities(projectId, activityIdx);
+      const current = sumBudgetRows(form.budget);
+      if (usedByOthers + current > programBudgetTotal) {
+        showToast('Cannot save: activity budget exceeds the program total.', 'error'); return;
+      }
+    }
 
     const key = `${projectId}-${activityIdx}`;
     setActivitySaving((prev) => ({ ...prev, [key]: true }));
@@ -200,12 +253,10 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     const allActivities = Object.values(activityFormsByProject).flat();
     const unsaved = allActivities.filter((a) => !a.saved);
     if (unsaved.length > 0) {
-      showToast(`Please save all activities first. (${unsaved.length} unsaved)`, 'error');
-      return;
+      showToast(`Please save all activities first. (${unsaved.length} unsaved)`, 'error'); return;
     }
     showToast('All proposals submitted successfully! 🎉');
     markClean();
-    // Reset everything
     setProgramData(defaultProgramFormData());
     setProgramChildId(null);
     setProjectForms([]);
@@ -230,9 +281,9 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
   };
 
   const allProjectsSaved = projectForms.length > 0 && projectForms.every((p) => p.saved);
-  const allActivitiesSaved = Object.values(activityFormsByProject).flat().length > 0 &&
+  const allActivitiesSaved =
+    Object.values(activityFormsByProject).flat().length > 0 &&
     Object.values(activityFormsByProject).flat().every((a) => a.saved);
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-4 md:p-8">
@@ -260,23 +311,31 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
 
         <StepIndicator currentStep={step} />
 
-        {/* ══════════════ STEP 1 ══════════════ */}
+        {/* ══ STEP 1 ══════════════════════════════════════════════════════════ */}
         {step === 1 && (
           <ProgramProposalForm
             data={programData}
             onChange={(v) => { setProgramData(v); markDirty(); }}
-            onNext={handleProgramNext} isSubmitting={isSubmittingProgram}
+            onNext={handleProgramNext}
+            isSubmitting={isSubmittingProgram}
           />
         )}
 
-        {/* ══════════════ STEP 2 ══════════════ */}
+        {/* ══ STEP 2 ══════════════════════════════════════════════════════════ */}
         {step === 2 && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Project Proposals</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Configure each project under this program titled <span className="font-semibold text-emerald-700">"{programData.program_title}"</span></p>
-
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Configure each project under{' '}
+                  <span className="font-semibold text-emerald-700">"{programData.program_title}"</span>
+                  {programBudgetTotal > 0 && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                      Program budget: {programBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {allProjectsSaved && <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">✓ All projects saved</span>}
@@ -293,10 +352,11 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                 {/* Project tab list */}
                 <div className="flex flex-col gap-2.5 bg-gray-200/50 p-5 rounded-2xl">
                   <h1 className="font-semibold text-base my-1 text-gray-700">Project list</h1>
-                  
                   {projectForms.map((pf, i) => {
                     const pct = getProjectCompletion(pf);
                     const isActive = activeProjectTab === i;
+                    const usedByOthers = getUsedByOtherProjects(i);
+                    const isOver = programBudgetTotal > 0 && (usedByOthers + sumBudgetRows(pf.budget)) > programBudgetTotal;
                     return (
                       <button key={pf.apiProjectId} onClick={() => setActiveProjectTab(i)}
                         className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-left
@@ -306,6 +366,9 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                           <span>{pf.project_title || `Project ${i + 1}`}</span>
                         </div>
                         <div className="flex items-center gap-2">
+                          {isOver && !isActive && (
+                            <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-medium">⚠ Over budget</span>
+                          )}
                           {pf.saved
                             ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'}`}>✓ Saved</span>
                             : !isActive && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">{pct}% filled</span>}
@@ -314,29 +377,23 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                       </button>
                     );
                   })}
-                  
                 </div>
-
 
                 {/* Active project form */}
                 {projectForms[activeProjectTab] && (
-                  <div className=''>
-                      <div className="flex items-center gap-4 mb-5 px-5 py-3 rounded-2xl border border-emerald-100 bg-emerald-100/60 backdrop-blur-sm">
-                        <div className="w-9 h-9 flex items-center justify-center rounded-xl 
-                                        bg-gradient-to-br from-emerald-500 to-teal-600 
-                                        text-white font-semibold text-sm shadow-sm">
-                          {activeProjectTab + 1}
-                        </div>
-
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-xs font-medium text-emerald-700 tracking-wide uppercase">
-                            Selected Project
-                          </span>
-                          <h3 className="text-base font-semibold text-gray-900">
-                            {projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}
-                          </h3>
-                        </div>
+                  <div>
+                    <div className="flex items-center gap-4 mb-5 px-5 py-3 rounded-2xl border border-emerald-100 bg-emerald-100/60 backdrop-blur-sm">
+                      <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-semibold text-sm shadow-sm">
+                        {activeProjectTab + 1}
                       </div>
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-xs font-medium text-emerald-700 tracking-wide uppercase">Selected Project</span>
+                        <h3 className="text-base font-semibold text-gray-900">
+                          {projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}
+                        </h3>
+                      </div>
+                    </div>
+                    {/* ↓↓ programBudgetTotal + usedByOtherProjects now passed here ↓↓ */}
                     <ProjectProposalForm
                       data={projectForms[activeProjectTab]}
                       onChange={(newData) => updateProjectForm(activeProjectTab, newData)}
@@ -344,6 +401,8 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                       isSaving={!!projectSaving[activeProjectTab]}
                       programData={programData}
                       isSaved={projectForms[activeProjectTab].saved}
+                      programBudgetTotal={programBudgetTotal}
+                      usedByOtherProjects={getUsedByOtherProjects(activeProjectTab)}
                     />
                   </div>
                 )}
@@ -351,28 +410,32 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
             )}
 
             <div className="flex items-center justify-end pb-10">
-              {/* <button onClick={() => { setStep(1); scrollToTop(); }}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold bg-white border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl transition-all">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
-                Back to Program
-              </button> */}
               <button onClick={handleGoToActivities} disabled={!allProjectsSaved}
                 title={!allProjectsSaved ? 'Save all projects before continuing' : ''}
                 className={`flex items-center gap-3 px-10 py-4 rounded-xl font-bold shadow-lg transition-all duration-200
                   ${allProjectsSaved ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 hover:scale-[1.02]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                {loadingActivities && Object.values(loadingActivities).some(Boolean) ? (<><Spinner />Loading Activities...</>) : (<>Continue to Activities <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>)}
+                {loadingActivities && Object.values(loadingActivities).some(Boolean)
+                  ? (<><Spinner />Loading Activities...</>)
+                  : (<>Continue to Activities <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>)}
               </button>
             </div>
           </div>
         )}
 
-        {/* ══════════════ STEP 3 ══════════════ */}
+        {/* ══ STEP 3 ══════════════════════════════════════════════════════════ */}
         {step === 3 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Activity Proposals</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Fill and save each activity individually</p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Fill and save each activity individually
+                  {programBudgetTotal > 0 && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                      Program budget: {programBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {allActivitiesSaved && <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">✓ All activities saved</span>}
@@ -387,19 +450,20 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
               {projectForms.map((pf) => {
                 const activities = activityFormsByProject[pf.apiProjectId] || [];
                 return (
-                  <div key={pf.apiProjectId} 
-                    className="space-y-1.5 px-2 py-4 bg-gray-100 rounded-2xl border-2">
+                  <div key={pf.apiProjectId} className="space-y-1.5 px-2 py-4 bg-gray-100 rounded-2xl border-2">
                     <div className="flex items-center gap-2 px-1">
-                      <p className='text-lg font-medium'>Project Title: </p>
+                      <p className="text-lg font-medium">Project Title: </p>
                       <h4 className="font-bold text-gray-800 text-lg">{pf.project_title}</h4>
                       <div className="flex-1 h-px bg-gray-100" />
                       {loadingActivities[pf.apiProjectId] && <span className="text-xs text-gray-400 flex items-center gap-1"><Spinner />Loading...</span>}
                     </div>
                     <div className="flex flex-col gap-1 pl-7">
                       {activities.map((act, ai) => {
-                        const key = `${pf.apiProjectId}-${ai}`;
                         const isActive = activeActivityKey?.projectId === pf.apiProjectId && activeActivityKey?.activityIdx === ai;
                         const pct = getActivityCompletion(act);
+                        const usedByOthers = getUsedByOtherActivities(pf.apiProjectId, ai);
+                        const isOver = programBudgetTotal > 0 && (usedByOthers + sumBudgetRows(act.budget)) > programBudgetTotal;
+                        // usedByOthers already includes all project budgets + other activities
                         return (
                           <button key={act.apiActivityId} onClick={() => setActiveActivityKey({ projectId: pf.apiProjectId, activityIdx: ai })}
                             className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-left
@@ -410,6 +474,9 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'text-gray-400 bg-gray-100'}`}>#{act.apiActivityId}</span>
                             </div>
                             <div className="flex items-center gap-2">
+                              {isOver && !isActive && (
+                                <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-medium">⚠ Over budget</span>
+                              )}
                               {act.saved
                                 ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'}`}>✓ Saved</span>
                                 : !isActive && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">{pct > 0 ? `${pct}%` : 'Not started'}</span>}
@@ -443,12 +510,15 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                       <p className="text-xs text-gray-500">Under: {projName}</p>
                     </div>
                   </div>
+                  {/* ↓↓ programBudgetTotal + usedByOtherActivities now passed here ↓↓ */}
                   <ActivityProposalForm
                     data={form}
                     onChange={(newData) => updateActivityForm(projectId, activityIdx, newData)}
                     onSave={() => handleSaveActivity(projectId, activityIdx)}
                     isSaving={!!activitySaving[key]}
                     isSaved={form.saved}
+                    programBudgetTotal={programBudgetTotal}
+                    usedByOtherActivities={getUsedByOtherActivities(projectId, activityIdx)}
                   />
                 </div>
               );

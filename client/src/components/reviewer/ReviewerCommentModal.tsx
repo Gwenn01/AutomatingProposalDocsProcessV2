@@ -16,6 +16,7 @@ import {
   fetchProjectProposalDetail,
   fetchActivityProposalDetail,
   submitProposalReview,
+  updateProposalReview,
   type ApiProjectListResponse,
   type ApiActivityListResponse,
   type ApiProject,
@@ -612,36 +613,69 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     };
   };
 
-  const handleSubmitReview = async () => {
-    const proposalNode = getProposalNode();
-    if (!proposalNode) { showToast("Could not determine proposal node. Please try again.", "error"); return; }
-    setIsSubmitting(true);
-    try {
-      await submitProposalReview(buildPayload("needs_revision"));
-      showToast("Review submitted successfully!", "success");
-      setComments({});
-      onClose();
-    } catch (err: any) {
-      showToast(err?.message ?? "Failed to submit review.", "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+const submitReview = async (overrideDecision: "needs_revision" | "approved") => {
+  const proposalNode = getProposalNode();
+  if (!proposalNode) {
+    showToast("Could not determine proposal node. Please try again.", "error");
+    return;
+  }
 
-  const handleApprove = async () => {
-    const proposalNode = getProposalNode();
-    if (!proposalNode) { showToast("Could not determine proposal node. Please try again.", "error"); return; }
-    setIsApproving(true);
-    try {
-      await submitProposalReview(buildPayload("approved"));
-      showToast("Proposal approved successfully!", "success");
-      onClose();
-    } catch (err: any) {
-      showToast(err?.message ?? "Failed to approve proposal.", "error");
-    } finally {
-      setIsApproving(false);
-    }
-  };
+  const payload = buildPayload(overrideDecision);
+
+  // Use active history list for the current tab
+  const currentHistory =
+    activeTab === "activity" ? activityHistory :
+    activeTab === "project"  ? projectHistory  :
+    programHistory;
+
+  const isFirstReview = currentHistory.length <= 1;
+
+  if (isFirstReview) {
+    // Only one history entry (the current version) — first time reviewing, use POST
+    await submitProposalReview(payload);
+  } else {
+    // More than one history entry means revisions have happened — use PUT
+    const resolvedReviewer =
+      activeTab === "activity" && selectedActivity
+        ? Number(selectedActivity.assignment)
+        : activeTab === "project" && selectedProject
+          ? Number(selectedProject.assignment)
+          : proposalData?.assignment_id
+            ? Number(proposalData.assignment_id)
+            : Number(user?.user_id);
+
+    await updateProposalReview(proposalNode, resolvedReviewer, payload);
+  }
+};
+
+const handleSubmitReview = async () => {
+  setIsSubmitting(true);
+  try {
+    await submitReview("needs_revision");
+    showToast("Review submitted successfully!", "success");
+    setComments({});
+    onClose();
+  } catch (err: any) {
+    showToast(err?.message ?? "Failed to submit review.", "error");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+//console.log("DATA", activeProgramData)
+
+const handleApprove = async () => {
+  setIsApproving(true);
+  try {
+    await submitReview("approved");
+    showToast("Proposal approved successfully!", "success");
+    onClose();
+  } catch (err: any) {
+    showToast(err?.message ?? "Failed to approve proposal.", "error");
+  } finally {
+    setIsApproving(false);
+  }
+};
 
   // ── ALL HOOKS DONE — safe to early-return ─────────────────────────────────
   if (!isOpen || !proposalData) return null;

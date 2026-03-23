@@ -1,5 +1,8 @@
 import type { ActivityFormData, ActivityItem, ActivityScheduleRow, ApiActivity, ApiProject, BudgetRows, ExpectedOutput6Ps, OrgStaffingItem, ProgramFormData, ProjectFormData, ProjectItem, WorkplanRow } from "@/api/implementor-api";
 
+export const defaultExtensionSite = () => ({
+  country: '', region: '', province: '', district: '', municipality: '', barangay: '',
+});
 
 export const defaultExpectedOutput = (): ExpectedOutput6Ps => ({
   publications: '', patents: '', products: '', people_services: '',
@@ -7,13 +10,13 @@ export const defaultExpectedOutput = (): ExpectedOutput6Ps => ({
 });
 
 export const defaultOrgStaffing = (): OrgStaffingItem[] => [
-  { activity: 'Proposal Preparation', designation: '', terms: '' },
-  { activity: 'Program/Certificates', designation: '', terms: '' },
-  { activity: 'Food Preparation', designation: '', terms: '' },
-  { activity: 'Resource Speakers', designation: '', terms: '' },
-  { activity: 'Masters of Ceremony', designation: '', terms: '' },
-  { activity: 'Secretariat for Attendance', designation: '', terms: '' },
-  { activity: 'Documentation/Technical', designation: '', terms: '' },
+  {  designation: '', terms: '' },
+  {  designation: '', terms: '' },
+  {  designation: '', terms: '' },
+  {  designation: '', terms: '' },
+  {  designation: '', terms: '' },
+  {  designation: '', terms: '' },
+  {  designation: '', terms: '' },
 ];
 
 export const defaultWorkplanRow = (): WorkplanRow => ({
@@ -61,7 +64,8 @@ export const defaultScheduleRows = (): ActivityScheduleRow[] => [
 export const defaultProgramFormData = (): ProgramFormData => ({
   program_title: '', program_leader: '', members: '',
   implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
-  extension_site: '', tagging: [], cluster: [], extension_agenda: [],
+  extension_site: [defaultExtensionSite(), defaultExtensionSite()],
+  tagging: [], cluster: [], extension_agenda: [],
   sdg_addressed: '', college_mandated_program: '',
   rationale: '', significance: '', general_objectives: '', specific_objectives: '',
   methodology: '', sustainability_plan: '',
@@ -70,6 +74,7 @@ export const defaultProgramFormData = (): ProgramFormData => ({
   workplan: [defaultWorkplanRow()],
   program_budget: [{ label: 'Project 1', qty: '', unit: '', unit_cost: '', prmsu: '', agency: '', total: '' }],
   projects: [defaultProjectItem(0)],
+  program_budget_total: '',
 });
 
 export const defaultProjectFormData = (apiProject: ApiProject): ProjectFormData => ({
@@ -78,7 +83,8 @@ export const defaultProjectFormData = (apiProject: ApiProject): ProjectFormData 
   project_title: apiProject.project_title,
   project_leader: apiProject.project_leader,
   implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
-  extension_site: '', tagging: [], cluster: [], extension_agenda: [],
+  extension_site: [defaultExtensionSite(), defaultExtensionSite()],
+  tagging: [], cluster: [], extension_agenda: [],
   sdg_addressed: '', college_mandated_program: '',
   rationale: '', significance: '', general_objectives: '', specific_objectives: '',
   methodology: '', sustainability_plan: '',
@@ -94,7 +100,8 @@ export const defaultActivityFormData = (apiActivity: ApiActivity): ActivityFormD
   apiActivityId: apiActivity.child_id,
   activity_title: apiActivity.activity_title,
   implementing_agency: '', address_tel_email: '', cooperating_agencies: '',
-  extension_site: '', tagging: [], cluster: [], extension_agenda: [],
+  extension_site: [defaultExtensionSite(), defaultExtensionSite()],
+  tagging: [], cluster: [], extension_agenda: [],
   sdg_addressed: '', college_mandated_program: '',
   activity_duration: String(apiActivity.activity_duration_hours || 8),
   rationale: '', significance: '', objectives: '', methodology: '', sustainability_plan: '',
