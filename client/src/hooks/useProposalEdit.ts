@@ -96,7 +96,7 @@ const defaultProgram  = (): EditableProgram  => ({
   sdg_addressed: "", mandated_academic_program: "",
   rationale: "", significance: "",
   general_objectives: "", specific_objectives: "",
-  methodology: [], expected_output_6ps: [],
+  methodology: "", expected_output_6ps: [],
   sustainability_plan: "",
   org_and_staffing: [],
   workplan: [],
@@ -111,7 +111,7 @@ const defaultProject  = (): EditableProject  => ({
   sdg_addressed: "", mandated_academic_program: "",
   rationale: "", significance: "",
   general_objectives: "", specific_objectives: "",
-  methodology: [], expected_output_6ps: [],
+  methodology: "", expected_output_6ps: [],
   budget_requirements: [],
 });
 
@@ -146,7 +146,7 @@ function hydrateProgram(d: any): EditableProgram {
     significance:              str(d.significance),
     general_objectives:        str(d.general_objectives),
     specific_objectives:       str(d.specific_objectives),
-    methodology:               rows(d.methodology, { phase: "", activities: [] }),
+    methodology:               str(d.methodology),
     expected_output_6ps:       arr(d.expected_output_6ps),
     sustainability_plan:       str(d.sustainability_plan),
     org_and_staffing:          rows(d.org_and_staffing, { name: "", role: "" }),
@@ -177,7 +177,7 @@ function hydrateProject(d: any): EditableProject {
     significance:              str(d.significance),
     general_objectives:        str(d.general_objectives),
     specific_objectives:       str(d.specific_objectives),
-    methodology:               rows(d.methodology, { phase: "", activities: [] }),
+    methodology:               str(d.methodology),
     expected_output_6ps:       arr(d.expected_output_6ps),
     budget_requirements:       rows(d.budget_requirements, { item: "", amount: "" })
                                  .map((r: any) => ({ ...r, amount: str(r.amount) })),

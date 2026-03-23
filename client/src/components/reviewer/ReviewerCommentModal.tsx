@@ -612,6 +612,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
       budget_requirements_feedback:       comments["act_budget_feedback"]                     || "",
     };
   };
+  
 
 const submitReview = async (overrideDecision: "needs_revision" | "approved") => {
   const proposalNode = getProposalNode();
@@ -622,7 +623,6 @@ const submitReview = async (overrideDecision: "needs_revision" | "approved") => 
 
   const payload = buildPayload(overrideDecision);
 
-  // Use active history list for the current tab
   const currentHistory =
     activeTab === "activity" ? activityHistory :
     activeTab === "project"  ? projectHistory  :
@@ -631,10 +631,11 @@ const submitReview = async (overrideDecision: "needs_revision" | "approved") => 
   const isFirstReview = currentHistory.length <= 1;
 
   if (isFirstReview) {
-    // Only one history entry (the current version) — first time reviewing, use POST
     await submitProposalReview(payload);
   } else {
-    // More than one history entry means revisions have happened — use PUT
+    // Use payload.proposal_node (the proposal ID) for the URL, not the detail/child ID
+    const reviewProposalNode = payload.proposal_node!;
+
     const resolvedReviewer =
       activeTab === "activity" && selectedActivity
         ? Number(selectedActivity.assignment)
@@ -644,7 +645,7 @@ const submitReview = async (overrideDecision: "needs_revision" | "approved") => 
             ? Number(proposalData.assignment_id)
             : Number(user?.user_id);
 
-    await updateProposalReview(proposalNode, resolvedReviewer, payload);
+    await updateProposalReview(reviewProposalNode, resolvedReviewer, payload);
   }
 };
 

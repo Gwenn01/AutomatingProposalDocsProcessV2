@@ -340,7 +340,7 @@ export async function updateProposalReview(
 ): Promise<ProposalReviewResponse> {
   if (import.meta.env.DEV) {
     console.log(
-      `[updateProposalReview] PATCH /api/proposal-review-update/${proposalNode}/${proposalReviewer}/`,
+      `[updateProposalReview] PUT /api/proposal-review-update/${proposalNode}/${proposalReviewer}/`,
       JSON.stringify(payload, null, 2),
     );
   }

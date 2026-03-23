@@ -15,6 +15,8 @@ const workplanMap: Record<string, string> = {};
   });
 });
 
+
+
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">

@@ -7,7 +7,7 @@ import type { BudgetItem } from "../view-reviewed-document";
 import { Clock } from "lucide-react";
 import { formatDate } from "@/utils/dateFormat";
 import { CommentHeader } from "./ui/comment-header";
-import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
+import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList, EditableSiteList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableActivity } from "@/hooks/useProposalEdit";
 
 interface Comments { [key: string]: string; }
@@ -111,7 +111,8 @@ export const ActivityForm: React.FC<{
      planOfActivityReviews, budgetReviews].some((r) => r.length > 0);
 
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
-
+    
+  console.log("Activity Data", activityData)
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
       <div className="text-center mb-8 space-y-1">
@@ -210,7 +211,11 @@ export const ActivityForm: React.FC<{
             {isEditing ? (
               <tr className="border-b border-black">
                 <td colSpan={7} className="px-4 py-3">
-                  <EditableArray value={draft.extension_sites} onChange={(v) => set("extension_sites", v)} isEditing={isEditing} placeholder="Add site…" />
+                  <EditableSiteList
+                    value={draft.extension_sites as any}
+                    onChange={(v) => set("extension_sites", v as any)}
+                    isEditing={isEditing}
+                  />
                 </td>
               </tr>
             ) : (

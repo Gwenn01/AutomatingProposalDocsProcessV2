@@ -41,7 +41,7 @@ export interface ApiProposalDetail {
   project_list: any[];
   implementing_agency: string[];
   cooperating_agencies: string[];
-  extension_sites: string[];
+  extension_sites: { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[];
   tags: string[];
   clusters: string[];
   agendas: string[];
@@ -51,7 +51,7 @@ export interface ApiProposalDetail {
   significance: string;
   general_objectives: string;
   specific_objectives: string;
-  methodology: MethodologyPhase[];
+  methodology: string;
   expected_output_6ps: string[];
   sustainability_plan: string;
   org_and_staffing: { name: string; role: string }[];
@@ -114,30 +114,31 @@ export interface ViewReviewedDocumentsProps {
 function mapReviewedToProgram(data: any): ApiProposalDetail | null {
   if (!data) return null;
   return {
-    id:                        data.id       ?? 0,
-    proposal:                  data.proposal ?? 0,
+    id:                        data.id        ?? data.program_id  ?? data.proposal_id ?? 0,
+    proposal:                  data.proposal  ?? data.proposal_id ?? data.id          ?? 0,
     program_title:             data.profile?.program_title        ?? data.program_title ?? "",
     program_leader:            data.profile?.program_leader       ?? "",
     project_list:              data.profile?.project_list         ?? [],
     implementing_agency:       data.agencies?.implementing_agency ?? [],
     cooperating_agencies:      data.agencies?.cooperating_agency  ?? [],
-    extension_sites:           data.extension_sites?.content      ?? [],
+    extension_sites:           data.extension_sites?.extension_site
+                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
     tags:                      data.tagging_clustering_extension?.tags     ?? [],
     clusters:                  data.tagging_clustering_extension?.clusters ?? [],
     agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
     sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed             ?? "",
     mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
-    rationale:                 data.rationale?.content    ?? "",
-    significance:              data.significance?.content ?? "",
-    general_objectives:        data.objectives?.general   ?? "",
-    specific_objectives:       data.objectives?.specific  ?? "",
-    methodology:               data.methodology?.content  ?? [],
-    expected_output_6ps:       data.expected_output_6ps?.content ?? [],
-    sustainability_plan:       data.sustainability_plan?.content  ?? "",
+    rationale:                 data.rationale?.content             ?? "",
+    significance:              data.significance?.content          ?? "",
+    general_objectives:        data.objectives?.general            ?? "",
+    specific_objectives:       data.objectives?.specific           ?? "",
+    methodology:               data.methodology?.content           ?? "",
+    expected_output_6ps:       data.expected_output_6ps?.content   ?? [],
+    sustainability_plan:       data.sustainability_plan?.content   ?? "",
     org_and_staffing:          data.organization_and_staffing?.content ?? [],
-    workplan:                  data.work_plan?.content     ?? [],
-    budget_requirements:       data.budget_requirements?.content  ?? [],
-    created_at:                data.created_at ?? "",
+    workplan:                  data.work_plan?.content             ?? [],
+    budget_requirements:       data.budget_requirements?.content   ?? [],
+    created_at:                data.created_at                     ?? "",
   };
 }
 
@@ -153,7 +154,8 @@ function mapReviewedToProject(data: any): any | null {
     end_date:                  data.profile?.end_date        ?? null,
     implementing_agency:       data.agencies?.implementing_agency  ?? [],
     cooperating_agencies:      data.agencies?.cooperating_agencies ?? [],
-    extension_sites:           data.extension_sites?.content       ?? [],
+    extension_sites:           data.extension_sites?.extension_site
+                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
     tags:                      data.tagging_clustering_extension?.tags     ?? [],
     clusters:                  data.tagging_clustering_extension?.clusters ?? [],
     agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
@@ -183,7 +185,8 @@ function mapReviewedToActivity(data: any): any | null {
     activity_date:             data.profile?.activity_date           ?? null,
     implementing_agency:       data.agencies?.implementing_agency    ?? [],
     cooperating_agencies:      data.agencies?.cooperating_agencies   ?? [],
-    extension_sites:           data.extension_sites?.content         ?? [],
+    extension_sites:           data.extension_sites?.extension_site
+                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
     tags:                      data.tagging_clustering_extension?.tags     ?? [],
     clusters:                  data.tagging_clustering_extension?.clusters ?? [],
     agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
@@ -213,6 +216,7 @@ function normalizeHistoryList(raw: any): History[] {
     program_title:  String(item.program_title ?? item.project_title ?? item.activity_title ?? ""),
   }));
 }
+
 
 // ================= MAIN MODAL =================
 
@@ -285,6 +289,8 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const mappedProgram  = React.useMemo(() => mapReviewedToProgram(programReviewedData),   [programReviewedData]);
   const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),   [projectReviewedData]);
   const mappedActivity = React.useMemo(() => mapReviewedToActivity(activityReviewedData), [activityReviewedData]);
+
+  //console.log("Program Reviewed Data", programReviewedData)
 
   // ── Resolved IDs for each PUT endpoint ───────────────────────────────────
   const programChildId    = proposalData?.child_id;

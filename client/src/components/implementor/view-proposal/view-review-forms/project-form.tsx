@@ -7,7 +7,7 @@ import PreviousComment from "@/components/reviewer/PreviousComment";
 import { Clock } from "lucide-react";
 import { formatDate } from "@/utils/dateFormat";
 import { CommentHeader } from "./ui/comment-header";
-import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
+import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList, EditableSiteList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableProject } from "@/hooks/useProposalEdit";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -213,7 +213,11 @@ const hasAnyReviewAcrossSections =
             {isEditing ? (
               <tr className="border border-black">
                 <td colSpan={7} className="px-4 py-3">
-                  <EditableArray value={draft.extension_sites} onChange={(v) => set("extension_sites", v)} isEditing={isEditing} placeholder="Add site…" />
+                  <EditableSiteList
+                    value={draft.extension_sites as any}
+                    onChange={(v) => set("extension_sites", v as any)}
+                    isEditing={isEditing}
+                  />
                 </td>
               </tr>
             ) : (
