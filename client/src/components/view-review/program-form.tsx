@@ -14,12 +14,7 @@ export const ProgramForm: React.FC<{
   alreadyReviewed: boolean;
   showCommentInputs: boolean;
 }> = ({ proposalData, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
-  const workplanMap: Record<string, string> = {};
-  (proposalData.workplan || []).forEach(({ month, activity }) => {
-    workplanMap[month] = activity;
-  });
 
-  console.log("Program Data", proposalData)
 
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
@@ -83,27 +78,39 @@ export const ProgramForm: React.FC<{
         </div>
 
 
-        <p className="font-bold p-3 text-base flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
-        <div className="overflow-x-auto">
-          <table className="w-full border-t border-black text-sm">
-            <tbody>
-              <tr className="border border-black">
-                <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-                <td className="px-4 py-3 font-bold">Site / Venue</td>
-              </tr>
-              {(proposalData.extension_sites?.length ? proposalData.extension_sites : ["—", "—"]).map((site, i) => (
-                <tr key={i} className="border border-black">
-                  <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="px-4 py-3">{site || ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Extension Site/s" onCommentChange={onCommentChange}
-            InputValue="extension_site_feedback" value={comments["extension_site_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+    <p className="font-bold p-3 text-base flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
+    <div className="overflow-x-auto">
+      <table className="w-full border-t border-black text-sm">
+        <thead>
+          <tr className="border border-black">
+            <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
+            <td className="border-r border-black px-4 py-3 font-bold text-center">Country</td>
+            <td className="border-r border-black px-4 py-3 font-bold text-center">Region</td>
+            <td className="border-r border-black px-4 py-3 font-bold text-center">Province</td>
+            <td className="border-r border-black px-4 py-3 font-bold text-center">District</td>
+            <td className="border-r border-black px-4 py-3 font-bold text-center">Municipality</td>
+            <td className="px-4 py-3 font-bold text-center">Barangay</td>
+          </tr>
+        </thead>
+        <tbody>
+          {(proposalData.extension_sites?.length ? proposalData.extension_sites : [{}, {}]).map((site: any, i: number) => (
+            <tr key={i} className="border border-black">
+              <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
+              <td className="border-r border-black px-4 py-3">{site.country || "—"}</td>
+              <td className="border-r border-black px-4 py-3">{site.region || "—"}</td>
+              <td className="border-r border-black px-4 py-3">{site.province || "—"}</td>
+              <td className="border-r border-black px-4 py-3">{site.district || "—"}</td>
+              <td className="border-r border-black px-4 py-3">{site.municipality || "—"}</td>
+              <td className="px-4 py-3">{site.barangay || "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {showCommentInputs && (
+      <CommentInput sectionName="Extension Site/s" onCommentChange={onCommentChange}
+        InputValue="extension_site_feedback" value={comments["extension_site_feedback"] || ""} disabled={alreadyReviewed} />
+    )}
 
       <div className="overflow-x-auto">
         <table className="w-full border-b border-black text-sm">
@@ -205,16 +212,7 @@ export const ProgramForm: React.FC<{
           {/* V. METHODOLOGY */}
           <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base mb-2 flex"><VerticalLine />V. METHODOLOGY</h3>
-            {(proposalData.methodology || []).length > 0 ? (
-              proposalData.methodology.map((phase, pi) => (
-                <div key={pi} className="mb-4">
-                  <p className="font-semibold text-gray-800 mb-2">{phase.phase}</p>
-                  <ul className="list-disc list-inside space-y-1 pl-4">
-                    {(phase.activities || []).map((act, ai) => <li key={ai} className="text-base">{act}</li>)}
-                  </ul>
-                </div>
-              ))
-            ) : <p className="text-base">{NA}</p>}
+                <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.methodology)}</p>
           </div>
           {showCommentInputs && (
             <CommentInput sectionName="Methodology" onCommentChange={onCommentChange}
@@ -289,26 +287,45 @@ export const ProgramForm: React.FC<{
             <h3 className="font-bold text-gray-900 p-2 text-base flex"><VerticalLine />IX. WORKPLAN</h3>
             <div className="overflow-x-auto">
               <table className="border border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
+                <thead>
+                  <tr className="border-b border-black">
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Activity</th>
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[90px]">Expected Output</th>
+                    {['Year 1', 'Year 2', 'Year 3'].map((y) => (
+                      <th key={y} colSpan={4} className="border-r border-black px-3 py-2 text-center font-bold last:border-r-0">{y}</th>
+                    ))}
+                  </tr>
+                  <tr className="border-b border-black">
+                    {[1, 2, 3].map((yr) =>
+                      ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => (
+                        <th key={`${yr}-${q}`} className={`px-2 py-1 text-center font-semibold w-8 ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>{q}</th>
+                      ))
+                    )}
+                  </tr>
+                </thead>
                 <tbody>
-                  <tr className="border-b border-black">
-                    <td className="border-r border-black px-4 py-3 font-bold text-center" colSpan={4}>Year 1</td>
-                    <td className="border-r border-black px-4 py-3 font-bold text-center" colSpan={4}>Year 2</td>
-                    <td className="px-4 py-3 font-bold text-center" colSpan={4}>Year 3</td>
-                  </tr>
-                  <tr className="border-b border-black">
-                    {QUARTERS.map((q, i) => (
-                      <td key={q} className={`px-2 py-2 font-bold text-center text-xs ${i < 11 ? "border-r border-black" : ""}`}>
-                        {q.split(" ").slice(-1)[0]}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-black">
-                    {QUARTERS.map((q, i) => (
-                      <td key={q} className={`px-2 py-3 text-center text-xs align-top ${i < 11 ? "border-r border-black" : ""}`}>
-                        {workplanMap[q] || ""}
-                      </td>
-                    ))}
-                  </tr>
+                  {(proposalData.workplan || []).map((row: any, i: number) => (
+                    <tr key={i} className="border-b border-black">
+                      <td className="border-r border-black px-3 py-2 align-top">{row.objective || "—"}</td>
+                      <td className="border-r border-black px-3 py-2 align-top">{row.activity || "—"}</td>
+                      <td className="border-r border-black px-3 py-2 align-top">{row.expected_output || "—"}</td>
+                      {[1, 2, 3].map((yr) =>
+                        ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => {
+                          const quarterLabel = `Year ${yr} ${q}`;
+                          const boolKey = `year${yr}_${q.toLowerCase()}`;
+                          const isChecked = Array.isArray(row.timeline)
+                            ? row.timeline.includes(quarterLabel)
+                            : !!row[boolKey];
+                          return (
+                            <td key={`${yr}-${q}`} className={`px-2 py-2 text-center align-middle ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>
+                              <input type="checkbox" checked={isChecked} readOnly className="rounded" />
+                            </td>
+                          );
+                        })
+                      )}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

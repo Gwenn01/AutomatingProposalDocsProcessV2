@@ -1,3 +1,9 @@
+// CHANGES vs original project-form.tsx:
+// 1. Accepts two new props: `programBudgetTotal` and `usedByOtherProjects`
+// 2. Renders <BudgetIndicator> above the budget table (section X)
+// 3. The "Save This Project" button is disabled when the current project's
+//    budget total + other projects exceed the program ceiling.
+
 import { getProjectCompletion } from "@/helpers/create-proposal-helper";
 import type { ActivityItem, ProjectFormData } from "@/api/implementor-api";
 import { Card } from "./ui/card";
@@ -11,33 +17,120 @@ import { ExpectedOutputTable } from "./tables/ExpectedOutputTable";
 import { OrgStaffingTable } from "./tables/OrgStaffingTable";
 import { WorkplanTable } from "./tables/WorkplanTable";
 import { BudgetTable } from "./tables/BudgetTable";
+import { BudgetIndicator } from "./ui/BudgetIndicator";
 import { Spinner } from "./ui/Spinner";
+import { formatDate } from "@/utils/dateFormat";
 
-interface ProjectFormProps { data: ProjectFormData; onChange: (v: ProjectFormData) => void; onSave: () => void; isSaving: boolean; }
+interface ProjectFormProps {
+  data: ProjectFormData;
+  onChange: (v: ProjectFormData) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  isSaved: boolean;
+  programData?: any;
+  /** Total program budget (₱) from Step 1 */
+  programBudgetTotal: number;
+  /** Sum of budgets already committed by OTHER saved/unsaved projects */
+  usedByOtherProjects: number;
+}
 
-export const ProjectProposalForm = ({ data, onChange, onSave, isSaving }: ProjectFormProps) => {
+/** Sum all line items in a BudgetRows object */
+function sumBudget(budget: ProjectFormData['budget']): number {
+  const cats = ['meals', 'transport', 'supplies'] as const;
+  return cats.reduce((acc, cat) =>
+    acc + budget[cat].reduce((s, r) => s + (parseFloat(String(r.amount)) || 0), 0), 0);
+}
+
+export const ProjectProposalForm = ({
+  data,
+  onChange,
+  onSave,
+  isSaving,
+  programData,
+  isSaved,
+  programBudgetTotal,
+  usedByOtherProjects,
+}: ProjectFormProps) => {
   const upd = (field: keyof ProjectFormData, val: any) => onChange({ ...data, [field]: val });
 
   const updateActivity = (i: number, field: keyof ActivityItem, val: string) => {
-    const u = [...data.activities]; u[i] = { ...u[i], [field]: val }; upd('activities', u);
+    const u = [...data.activities];
+    u[i] = { ...u[i], [field]: val };
+    upd('activities', u);
   };
+
   const pct = getProjectCompletion(data);
+  const currentBudget = sumBudget(data.budget);
+  const isBudgetOver = programBudgetTotal > 0 && (usedByOtherProjects + currentBudget) > programBudgetTotal;
+
+  const matchedProject = programData?.projects?.find(
+    (p: any) => p.project_title === data.project_title
+  );
 
   return (
     <div className="space-y-5">
-      {/* Project meta banner */}
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Project</span><span className="text-gray-900 font-semibold">{data.project_title}</span></div>
-          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">Project Leader</span><span className="text-gray-900 font-semibold">{data.project_leader || '—'}</span></div>
-          <div><span className="font-bold text-gray-600 text-xs uppercase tracking-wide block">API ID</span><span className="text-gray-900 font-semibold">#{data.apiProjectId}</span></div>
+      <div className="px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <SectionHeader title="I. Project Profile" />
+          <CompletionBadge pct={pct} />
+        </div>
+
+        {/* Program Info */}
+        <div className="mb-5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">Program</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Program Title</p>
+              <p className="text-sm font-semibold text-gray-800">{programData?.program_title || '—'}</p>
+            </div>
+            <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Program Leader</p>
+              <p className="text-sm font-semibold text-gray-800">{programData?.program_leader || '—'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="h-px flex-1 bg-gray-100" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Project</span>
+          <div className="h-px flex-1 bg-gray-100" />
+        </div>
+
+        {/* Project Info */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500 mb-1">Project Title</p>
+            <p className="text-sm font-semibold text-gray-800">{data.project_title || '—'}</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Project Leader</p>
+            <p className="text-sm font-semibold text-gray-800">{data.project_leader || '—'}</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Project Members</p>
+            <p className="text-sm font-semibold text-gray-800">{matchedProject?.project_members || '—'}</p>
+          </div>
+        </div>
+
+        {/* Duration & Dates */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Duration</p>
+            <p className="text-sm font-semibold text-gray-800">
+              {matchedProject?.project_duration_months ? `${matchedProject.project_duration_months} months` : '—'}
+            </p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">Start Date</p>
+            <p className="text-sm font-semibold text-gray-800">{formatDate(matchedProject?.project_start_date) || '—'}</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-1">End Date</p>
+            <p className="text-sm font-semibold text-gray-800">{formatDate(matchedProject?.project_end_date) || '—'}</p>
+          </div>
         </div>
       </div>
-
-      <Card>
-        <div className="flex items-center justify-between mb-4"><SectionHeader title="I. Project Profile" /><CompletionBadge pct={pct} /></div>
-        <CommonProfileFields data={data} onChange={onChange} />
-      </Card>
 
       {/* Activities for this project */}
       <Card>
@@ -64,11 +157,16 @@ export const ProjectProposalForm = ({ data, onChange, onSave, isSaving }: Projec
             </div>
           ))}
         </div>
-        <button onClick={() => upd('activities', [...data.activities, { ...defaultActivityItem(), project_leader: data.project_leader }])}
+        <button
+          onClick={() => upd('activities', [...data.activities, { ...defaultActivityItem(), project_leader: data.project_leader }])}
           className="mt-3 flex items-center gap-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 px-4 py-2.5 rounded-xl transition-all border-2 border-dashed border-orange-200 hover:border-orange-400 w-full justify-center">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           Add Another Activity
         </button>
+      </Card>
+
+      <Card>
+        <CommonProfileFields data={data} onChange={onChange} />
       </Card>
 
       <Card><SectionHeader title="II. Rationale" /><TextArea value={data.rationale} onChange={(e) => upd('rationale', e.target.value)} rows={7} required /></Card>
@@ -85,12 +183,34 @@ export const ProjectProposalForm = ({ data, onChange, onSave, isSaving }: Projec
       <Card><SectionHeader title="VII. Sustainability Plan" /><TextArea value={data.sustainability_plan} onChange={(e) => upd('sustainability_plan', e.target.value)} rows={7} required /></Card>
       <Card><SectionHeader title="VIII. Organization and Staffing" /><OrgStaffingTable rows={data.org_staffing} onChange={(val) => upd('org_staffing', val)} /></Card>
       <Card><SectionHeader title="IX. Workplan" /><WorkplanTable rows={data.workplan} onChange={(val) => upd('workplan', val)} /></Card>
-      <Card><SectionHeader title="X. Budgetary Requirement" /><BudgetTable rows={data.budget} onChange={(val) => upd('budget', val)} /></Card>
+
+      {/* ── X. Budget — with live indicator ── */}
+      <Card>
+        <SectionHeader title="X. Budgetary Requirement" />
+
+        {/* Live budget gauge — shown whenever a program total exists */}
+        <BudgetIndicator
+          programTotal={programBudgetTotal}
+          usedByOthers={usedByOtherProjects}
+          currentAmount={currentBudget}
+          label="project"
+        />
+
+        <BudgetTable rows={data.budget} onChange={(val) => upd('budget', val)} />
+      </Card>
 
       <div className="flex justify-end py-2">
-        <button onClick={onSave} disabled={isSaving}
-          className={`flex items-center gap-2 bg-white border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>
-          {isSaving ? (<><Spinner />Saving...</>) : (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save This Project</>)}
+        <button
+          onClick={onSave}
+          disabled={isSaving || isSaved || isBudgetOver}
+          title={isBudgetOver ? 'Budget exceeds program total — reduce amounts before saving' : undefined}
+          className={`flex items-center gap-2 bg-white border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all
+            ${(isSaving || isSaved || isBudgetOver) ? 'opacity-60 cursor-not-allowed' : ''}`}>
+          {isSaving
+            ? (<><Spinner />Saving...</>)
+            : isBudgetOver
+            ? (<><svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg><span className="text-red-600">Budget Exceeded</span></>)
+            : (<><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Save This Project</>)}
         </button>
       </div>
     </div>

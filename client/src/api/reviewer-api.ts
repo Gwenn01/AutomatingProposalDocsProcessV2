@@ -329,3 +329,36 @@ export async function submitProposalReview(
   return data;
 }
 
+/**
+ * PATCH /api/proposal-review-update/{proposal_node}/{proposal_reviewer}/
+ * Used for all subsequent reviews after the first submission.
+ */
+export async function updateProposalReview(
+  proposalNode: number,
+  proposalReviewer: number,
+  payload: ProposalReviewPayload,
+): Promise<ProposalReviewResponse> {
+  if (import.meta.env.DEV) {
+    console.log(
+      `[updateProposalReview] PATCH /api/proposal-review-update/${proposalNode}/${proposalReviewer}/`,
+      JSON.stringify(payload, null, 2),
+    );
+  }
+
+  const res = await authFetch(
+    `${BASE_URL}/proposal-review-update/${proposalNode}/${proposalReviewer}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const data = await handleResponse<ProposalReviewResponse>(res);
+
+  if (import.meta.env.DEV) {
+    console.log('[updateProposalReview] Response:', JSON.stringify(data, null, 2));
+  }
+
+  return data;
+}
+

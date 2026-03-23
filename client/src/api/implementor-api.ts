@@ -18,7 +18,7 @@ export interface ExpectedOutput6Ps {
 }
 
 export interface OrgStaffingItem {
-  activity: string;
+  //activity: string;
   designation: string;
   terms: string;
 }
@@ -89,6 +89,7 @@ export interface ActivityItem {
 // API response shapes
 export interface ApiProject {
   id: number;
+  child_id: number;
   project_title: string;
   project_leader: string;
   members: string[];
@@ -104,7 +105,7 @@ export interface ApiProjectListResponse {
 }
 
 export interface ApiActivity {
-  id: number;
+  child_id: number;
   activity_title: string;
   project_leader: string;
   members: string[];
@@ -125,7 +126,7 @@ export interface ProgramFormData {
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
-  extension_site: string;
+  extension_site: { country: string; region: string; province: string; district: string; municipality:string; barangay: string }[];
   tagging: string[];
   cluster: string[];
   extension_agenda: string[];
@@ -142,19 +143,26 @@ export interface ProgramFormData {
   workplan: WorkplanRow[];
   program_budget: ProgramBudgetRow[];
   projects: ProjectItem[];
+  program_budget_total?: string;
 }
 
 export interface ProjectFormData {
   // From API (pre-filled, read-only)
   apiProjectId: number;
+  apiProjectNodeId: number;
   project_title: string;
   project_leader: string;
+
+  project_members: string;
+  project_duration_months: string;
+  project_start_date: string;
+  project_end_date: string;
 
   // User-filled fields
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
-  extension_site: string;
+  extension_site: { country: string; region: string; province: string; district: string; municipality:string; barangay: string }[];
   tagging: string[];
   cluster: string[];
   extension_agenda: string[];
@@ -187,7 +195,7 @@ export interface ActivityFormData {
   implementing_agency: string;
   address_tel_email: string;
   cooperating_agencies: string;
-  extension_site: string;
+  extension_site: { country: string; region: string; province: string; district: string; municipality:string; barangay: string }[];
   tagging: string[];
   cluster: string[];
   extension_agenda: string[];
@@ -248,28 +256,34 @@ export function toStringArray(value: string): string[] {
   return value.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
 }
 
-export function mapWorkplanRows(rows: WorkplanRow[]): { month: string; activity: string }[] {
+export function mapWorkplanRows(rows: WorkplanRow[]): {
+  objective: string;
+  activity: string;
+  expected_output: string;
+  timeline: string[];
+}[] {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-  const result: { month: string; activity: string }[] = [];
-  rows.forEach((row) => {
-    if (!row.activity.trim() && !row.objective.trim()) return;
-    [1, 2, 3].forEach((yr) => {
-      quarters.forEach((q) => {
-        const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
-        if (row[key]) result.push({ month: `Year ${yr} ${q}`, activity: row.activity || row.objective });
+  return rows
+    .filter((row) => row.activity?.trim() || row.objective?.trim())
+    .map((row) => {
+      const timeline: string[] = [];
+      [1, 2, 3].forEach((yr) => {
+        quarters.forEach((q) => {
+          const key = `year${yr}_${q.toLowerCase()}` as keyof WorkplanRow;
+          if (row[key]) timeline.push(`Year ${yr} ${q}`);
+        });
       });
+      return {
+        objective: row.objective || '',
+        activity: row.activity || '',
+        expected_output: row.expected_output || '',
+        timeline,
+      };
     });
-  });
-  if (result.length === 0) {
-    rows.forEach((row) => {
-      if (row.activity || row.objective) result.push({ month: '—', activity: row.activity || row.objective });
-    });
-  }
-  return result;
 }
 
 export function mapOrgStaffing(rows: OrgStaffingItem[]): { role: string; name: string }[] {
-  return rows.filter((r) => r.designation?.trim()).map((r) => ({ role: r.activity, name: r.designation }));
+  return rows.filter((r) => r.designation?.trim()).map((r) => ({ role: r.terms, name: r.designation }));
 }
 
 export function mapBudgetRows(rows: BudgetRows): { item: string; amount: number }[] {
@@ -291,6 +305,16 @@ export function mapMethodology(text: string): { phase: string; activities: strin
   return [{ phase: 'Methodology', activities: lines.length ? lines : [text || '—'] }];
 }
 
+export function mapExtensionSites(
+  sites: Array<{ country: string; region: string; province: string; district: string; municipality: string; barangay: string }>
+): { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[] {
+  return sites
+    .filter((s) => Object.values(s).some((v) => v.trim()))  // skip fully empty rows
+    .map(({ country, region, province, district, municipality, barangay }) => ({
+      country, region, province, district, municipality, barangay,
+    }));
+}
+
 // ─────────────────────────────────────────────
 // API FUNCTIONS
 // ─────────────────────────────────────────────
@@ -300,15 +324,16 @@ export function mapMethodology(text: string): { phase: string; activities: strin
  * Payload matches the Postman-verified structure exactly.
  * After POST, resolves child_id via GET /proposals-node/Program.
  */
+// ── Drop-in replacement for submitProgramProposal() in implementor-api.ts ──
+// Only budget_requirements changes. Everything else is identical to your original.
+
 export async function submitProgramProposal(
   programData: ProgramFormData,
 ): Promise<{ child_id: number; [key: string]: any }> {
 
-  // ── Build project_list from the program form's projects array ──────────
   const project_list = programData.projects.map((p) => ({
     project_title: p.project_title,
     project_leader: p.project_leader,
-    // project_members is a comma/newline-separated string → split into array
     project_member: toStringArray(p.project_members),
     project_duration: Number(p.project_duration_months) || 0,
     project_start_date: p.project_start_date || null,
@@ -316,63 +341,53 @@ export async function submitProgramProposal(
   }));
 
   const payload = {
-    // "title" mirrors program_title (used as the node title in the API)
     title: programData.program_title,
     program_title: programData.program_title,
     program_leader: programData.program_leader,
-
-    // Project list — required for the API to create child project proposals
     project_list,
-
-    // Agency / site fields — single text box split on commas/newlines
     implementing_agency: toStringArray(programData.implementing_agency),
     cooperating_agencies: toStringArray(programData.cooperating_agencies),
-    extension_sites: toStringArray(programData.extension_site),
-
-    // Checkbox arrays sent directly
+    extension_sites: mapExtensionSites((programData as any).extension_sites ?? []),
     tags: programData.tagging,
     clusters: programData.cluster,
     agendas: programData.extension_agenda,
-
-    // Single-value fields
     sdg_addressed: programData.sdg_addressed,
     mandated_academic_program: programData.college_mandated_program,
-
-    // Narrative fields
     rationale: programData.rationale,
     significance: programData.significance,
     general_objectives: programData.general_objectives,
     specific_objectives: programData.specific_objectives,
-
-    // Structured fields via mappers
-    methodology: mapMethodology(programData.methodology),
+    methodology: programData.methodology,
     expected_output_6ps: mapExpectedOutput(programData.expected_output),
     sustainability_plan: programData.sustainability_plan,
     org_and_staffing: mapOrgStaffing(programData.org_staffing),
     workplan: mapWorkplanRows(programData.workplan),
-    budget_requirements: mapProgramBudgetRows(programData.program_budget),
+
+    // ── Single total amount from Step 1's budget input ──────────────────
+    budget_requirements: [
+      {
+        item: 'Total Program Budget',
+        amount: parseFloat((programData as any).program_budget_total) || 0,
+      },
+    ],
   };
 
   if (import.meta.env.DEV) {
     console.log('[submitProgramProposal] payload:', JSON.stringify(payload, null, 2));
   }
 
-  // ── POST the program proposal ──────────────────────────────────────────
   const res = await authFetch(`${BASE_URL}/program-proposal/`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
   const postResult: any = await handleResponse(res);
 
-  // If the POST response already includes child_id, use it directly
   if (postResult?.child_id) return postResult;
 
-  // ── Fallback: fetch the proposals list and find the latest matching entry ──
   const listRes = await authFetch(`${BASE_URL}/proposals-node/Program`);
   const list: Array<{ id: number; child_id: number; title: string; created_at: string }> =
     await handleResponse(listRes);
 
-  // Prefer entries whose title matches; sort by id descending to get the latest
   const matching = list
     .filter((p) => p.title === programData.program_title)
     .sort((a, b) => b.id - a.id);
@@ -380,7 +395,6 @@ export async function submitProgramProposal(
   const found = matching[0];
 
   if (!found?.child_id) {
-    // Last-resort fallback: grab the overall latest entry
     const latest = [...list].sort((a, b) => b.id - a.id)[0];
     if (!latest?.child_id) {
       throw new Error('Could not resolve child_id for the created program proposal.');
@@ -415,7 +429,7 @@ export async function saveProjectProposal(projectId: number, form: ProjectFormDa
     })),
     implementing_agency: toStringArray(form.implementing_agency),
     cooperating_agencies: toStringArray(form.cooperating_agencies),
-    extension_sites: toStringArray(form.extension_site),
+    extension_sites: mapExtensionSites((form as any).extension_sites ?? []),
     tags: form.tagging,
     clusters: form.cluster,
     agendas: form.extension_agenda,
@@ -425,7 +439,7 @@ export async function saveProjectProposal(projectId: number, form: ProjectFormDa
     significance: form.significance,
     general_objectives: form.general_objectives,
     specific_objectives: form.specific_objectives,
-    methodology: mapMethodology(form.methodology),
+    methodology: form.methodology,
     expected_output_6ps: mapExpectedOutput(form.expected_output),
     sustainability_plan: form.sustainability_plan,
     org_and_staffing: mapOrgStaffing(form.org_staffing),
@@ -454,7 +468,7 @@ export async function saveActivityProposal(activityId: number, form: ActivityFor
   const payload = {
     implementing_agency: toStringArray(form.implementing_agency),
     cooperating_agencies: toStringArray(form.cooperating_agencies),
-    extension_sites: toStringArray(form.extension_site),
+    extension_sites: mapExtensionSites((form as any).extension_sites ?? []),
     tags: form.tagging,
     clusters: form.cluster,
     agendas: form.extension_agenda,
