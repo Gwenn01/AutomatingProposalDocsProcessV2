@@ -195,22 +195,34 @@ export const ActivityForm: React.FC<{
       <div className="font-bold text-base p-3 mb-2 flex items-center"><VerticalLine />EXTENSION SITE/S OR VENUE/S</div>
       <div className="overflow-x-auto">
         <table className="w-full border border-black text-sm">
-          <tbody>
+          <thead>
             <tr className="border-b border-black">
               <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-              <td className="px-4 py-3 font-bold">Site / Venue</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Country</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Region</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Province</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">District</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Municipality</td>
+              <td className="px-4 py-3 font-bold text-center">Barangay</td>
             </tr>
+          </thead>
+          <tbody>
             {isEditing ? (
               <tr className="border-b border-black">
-                <td colSpan={2} className="px-4 py-3">
+                <td colSpan={7} className="px-4 py-3">
                   <EditableArray value={draft.extension_sites} onChange={(v) => set("extension_sites", v)} isEditing={isEditing} placeholder="Add site…" />
                 </td>
               </tr>
             ) : (
-              (activityData.extension_sites?.length ? activityData.extension_sites : ["—", "—"]).map((site: string, i: number) => (
+              (activityData.extension_sites?.length ? activityData.extension_sites : [{}, {}]).map((site: any, i: number) => (
                 <tr key={i} className="border-b border-black">
                   <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="px-4 py-3">{site || ""}</td>
+                  <td className="border-r border-black px-4 py-3">{site.country || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.region || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.province || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.district || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.municipality || "—"}</td>
+                  <td className="px-4 py-3">{site.barangay || "—"}</td>
                 </tr>
               ))
             )}

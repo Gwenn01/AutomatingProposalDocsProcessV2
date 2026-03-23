@@ -102,12 +102,12 @@ export const ProjectForm: React.FC<{
   const methodologyReviews    = validReviews(reviewedData?.methodology?.reviews);
   const expectedOutputReviews = validReviews(reviewedData?.expected_output_6ps?.reviews);
   const budgetReviews         = validReviews(reviewedData?.budget_requirements?.reviews);
+  const workplanReviews = validReviews(reviewedData?.work_plan?.reviews);
 
-  const hasAnyReviewAcrossSections =
-    [profileReviews, agencyReviews, extensionSiteReviews, taggingReviews, sdgReviews,
-     rationaleReviews, significanceReviews, generalObjReviews, specificObjReviews,
-     methodologyReviews, expectedOutputReviews, budgetReviews].some((r) => r.length > 0);
-
+const hasAnyReviewAcrossSections =
+  [profileReviews, agencyReviews, extensionSiteReviews, taggingReviews, sdgReviews,
+   rationaleReviews, significanceReviews, generalObjReviews, specificObjReviews,
+   methodologyReviews, expectedOutputReviews, budgetReviews, workplanReviews].some((r) => r.length > 0);
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
 
   return (
@@ -198,22 +198,34 @@ export const ProjectForm: React.FC<{
       <div className="font-bold mt-2 mb-3 px-2 flex items-center"><VerticalLine />Extension Site/s or Venue/s</div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <tbody>
+          <thead>
             <tr className="border border-t border-black">
               <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-              <td className="px-4 py-3 font-bold">Site / Venue</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Country</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Region</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Province</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">District</td>
+              <td className="border-r border-black px-4 py-3 font-bold text-center">Municipality</td>
+              <td className="px-4 py-3 font-bold text-center">Barangay</td>
             </tr>
+          </thead>
+          <tbody>
             {isEditing ? (
               <tr className="border border-black">
-                <td colSpan={2} className="px-4 py-3">
+                <td colSpan={7} className="px-4 py-3">
                   <EditableArray value={draft.extension_sites} onChange={(v) => set("extension_sites", v)} isEditing={isEditing} placeholder="Add site…" />
                 </td>
               </tr>
             ) : (
-              (projectData.extension_sites?.length ? projectData.extension_sites : ["—", "—"]).map((site: string, i: number) => (
+              (projectData.extension_sites?.length ? projectData.extension_sites : [{}, {}]).map((site: any, i: number) => (
                 <tr key={i} className="border border-black">
                   <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="px-4 py-3">{site || ""}</td>
+                  <td className="border-r border-black px-4 py-3">{site.country || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.region || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.province || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.district || "—"}</td>
+                  <td className="border-r border-black px-4 py-3">{site.municipality || "—"}</td>
+                  <td className="px-4 py-3">{site.barangay || "—"}</td>
                 </tr>
               ))
             )}
@@ -414,6 +426,58 @@ export const ProjectForm: React.FC<{
         <CommentHeader sectionName="Expected Output">
           <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" {...sectionProps} />
         </CommentHeader>
+
+        {/* IX. WORKPLAN */}
+<div>
+  <h3 className="font-bold text-gray-900 text-base p-2 mb-2 flex"><VerticalLine />IX. WORKPLAN</h3>
+  <div className="overflow-x-auto">
+    <table className="border border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
+      <thead>
+        <tr className="border-b border-black">
+          <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
+          <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Activity</th>
+          <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[90px]">Expected Output</th>
+          {['Year 1', 'Year 2', 'Year 3'].map((y) => (
+            <th key={y} colSpan={4} className="border-r border-black px-3 py-2 text-center font-bold last:border-r-0">{y}</th>
+          ))}
+        </tr>
+        <tr className="border-b border-black">
+          {[1, 2, 3].map((yr) =>
+            ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => (
+              <th key={`${yr}-${q}`} className={`px-2 py-1 text-center font-semibold w-8 ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>{q}</th>
+            ))
+          )}
+        </tr>
+      </thead>
+      <tbody>
+        {(projectData.workplan || []).map((row: any, i: number) => (
+          <tr key={i} className="border-b border-black">
+            <td className="border-r border-black px-3 py-2 align-top">{row.objective || "—"}</td>
+            <td className="border-r border-black px-3 py-2 align-top">{row.activity || "—"}</td>
+            <td className="border-r border-black px-3 py-2 align-top">{row.expected_output || "—"}</td>
+            {[1, 2, 3].map((yr) =>
+              ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => {
+                const quarterLabel = `Year ${yr} ${q}`;
+                const boolKey = `year${yr}_${q.toLowerCase()}`;
+                const isChecked = Array.isArray(row.timeline)
+                  ? row.timeline.includes(quarterLabel)
+                  : !!row[boolKey];
+                return (
+                  <td key={`${yr}-${q}`} className={`px-2 py-2 text-center align-middle ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>
+                    <input type="checkbox" checked={isChecked} readOnly className="rounded" />
+                  </td>
+                );
+              })
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+<CommentHeader sectionName="Work Plan">
+  <SectionReviews reviews={workplanReviews} sectionName="Work Plan" {...sectionProps} />
+</CommentHeader>
 
         {/* VII. BUDGET */}
         <div>

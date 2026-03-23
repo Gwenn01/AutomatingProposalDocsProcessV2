@@ -43,7 +43,7 @@ const ViewProposal: React.FC = () => {
     formatDate,
     goToNextPage,
     goToPreviousPage,
-  } = useProposals("Program", viewMode === "grid" ? 8 : 10);
+  } = useProposals("Program", viewMode === "grid" ? 6 : 10);
 
   // ── Local UI state (view-specific, not reusable) ─────────────────────────
 
@@ -186,7 +186,7 @@ const ViewProposal: React.FC = () => {
       <div className="flex-1 overflow-y-auto pb-4">
         {/* ================= GRID VIEW ================= */}
         {viewMode === "grid" && (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {currentDocuments.map((doc) => {
               const status = getStatusStyle(doc.status);
               return (
