@@ -156,10 +156,7 @@ const AdminOverview = () => {
             Monitoring proposal metrics and workflow status.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm text-xs font-bold text-slate-500 uppercase tracking-wider">
-          <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-          Live System Data
-        </div>
+
       </div>
 
       {/* ================= KPI ROW — TOP (Users, Proposals, Approvals, Pending) ================= */}
