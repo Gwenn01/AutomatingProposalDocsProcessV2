@@ -51,11 +51,11 @@ class ProposalReviewList(APIView):
 class ProposalReviewDetail(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
-        return get_object_or_404(ProposalReview, pk=pk)
+    def get_object(self, proposal):
+        return get_object_or_404(ProposalReview, proposal_node=proposal)
 
-    def get(self, request, pk, format=None):
-        review = self.get_object(pk)
+    def get(self, request, proposal, format=None):
+        review = self.get_object(proposal)
         serializer = ProposalReviewSerializer(review)
         return Response(serializer.data)
 

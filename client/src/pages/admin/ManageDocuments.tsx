@@ -66,6 +66,23 @@ const ManageDocuments = () => {
   const { fetchProposalDetail, actionLoading: docViewerLoading } =
     useProposals("Program");
 
+  // ── Modal loading progress ───────────────────────────────────────────────
+  const [modalProgress, setModalProgress] = useState(0);
+
+  useEffect(() => {
+    if (!docViewerLoading) {
+      setModalProgress(0);
+      return;
+    }
+    setModalProgress(0);
+    let value = 0;
+    const interval = setInterval(() => {
+      value += Math.random() * 15;
+      setModalProgress(Math.min(value, 90));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [docViewerLoading]);
+
   // Loading animation
   useEffect(() => {
     if (!loading) return;
@@ -585,6 +602,17 @@ const ManageDocuments = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Modal Loading Overlay (while fetching proposal detail) ── */}
+      {docViewerLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+          <Loading
+            title="Fetching Document"
+            subtitle="Loading proposal details, please wait…"
+            progress={modalProgress}
+          />
+        </div>
+      )}
 
       {/* ── Existing: Reviewer Assigned Modal ── */}
       <ReviewerAssignedModal

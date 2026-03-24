@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from .models import Proposal
 from .serializers import (
     ProposalSerializer
@@ -42,3 +43,12 @@ class AdminOverviewView(APIView):
         data = service.get_status_counts()
         return Response(data, status=status.HTTP_200_OK)
     
+# REVIEWER VIEWS APPROVE PROPOSAL
+class ReviewerApproveProposalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, proposal_id, format=None):
+        proposal = get_object_or_404(Proposal, id=proposal_id)
+        proposal.status = 'for_approval'
+        proposal.save()
+        return Response(status=status.HTTP_200_OK)
