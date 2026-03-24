@@ -156,15 +156,28 @@ class AssignedReviewerProposalView(APIView):
 class ProposalCheckIfAllReviews(APIView):
     def get(self, request, proposal_id):
         reviewers = ProposalReviewer.objects.filter(proposal_id=proposal_id)
-        # Check if there is any reviewer who has not reviewed yet
+
+        #  NEW: No reviewers assigned
+        if not reviewers.exists():
+            return Response({
+                "all_reviewed": False,
+                "can_edit": False,
+                "message": "No reviewers assigned yet. Editing is not allowed."
+            })
+
+        #  Check if there are pending reviews
         has_pending = reviewers.filter(is_review=False).exists()
         if has_pending:
             return Response({
                 "all_reviewed": False,
+                "can_edit": False,
                 "message": "Not all reviewers have submitted their reviews."
             })
+
+        #  All reviewers done
         return Response({
             "all_reviewed": True,
+            "can_edit": True,
             "message": "All reviewers have completed their reviews."
         })
     
