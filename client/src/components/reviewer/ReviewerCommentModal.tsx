@@ -663,7 +663,7 @@ const handleSubmitReview = async () => {
   }
 };
 
-//console.log("DATA", activeProgramData)
+console.log("DATA", proposalData)
 
 const handleApprove = async () => {
   setIsApproving(true);
@@ -799,6 +799,7 @@ const handleApprove = async () => {
                       onCommentChange={handleCommentChange}
                       alreadyReviewed={alreadyReviewed}
                       showCommentInputs={showCommentInputs}
+
                     />
                   ) : (
                     <div className="bg-white rounded-2xl border border-gray-100 p-8">

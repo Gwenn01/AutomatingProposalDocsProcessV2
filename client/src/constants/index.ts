@@ -1,7 +1,11 @@
 export const NA = "N/A";
 export const val = (v: any) => (v !== undefined && v !== null && v !== "" ? v : NA);
-export const arrVal = (arr: string[] | undefined) =>
-  arr && arr.length > 0 ? arr.join(", ") : NA;
+export const arrVal = (arr: any): string => {
+  if (!arr) return "—";
+  if (Array.isArray(arr)) return arr.length ? arr.join(", ") : "—";
+  if (typeof arr === "string") return arr || "—";
+  return String(arr) || "—";
+};
 
 export const SIX_PS_LABELS = [
   "Publications", "Patents/IP", "Products", "People Services",

@@ -138,7 +138,7 @@ export const ProgramForm: React.FC<{
     </div>
   );
 
-  console.log("Program Data View Edit ", proposalData)
+   console.log("Program Data", proposalData)
 
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">

@@ -23,7 +23,7 @@ export interface EditableProgram {
   program_leader: string;
   implementing_agency: string[];
   cooperating_agencies: string[];
-  extension_sites: string[];
+  extension_sites: { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[];
   tags: string[];
   clusters: string[];
   agendas: string[];
@@ -50,7 +50,7 @@ export interface EditableProject {
   end_date: string;
   implementing_agency: string[];
   cooperating_agencies: string[];
-  extension_sites: string[];
+  extension_sites: { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[];
   tags: string[];
   clusters: string[];
   agendas: string[];
@@ -73,7 +73,7 @@ export interface EditableActivity {
   activity_date: string;
   implementing_agency: string[];
   cooperating_agencies: string[];
-  extension_sites: string[];
+  extension_sites: { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[];
   tags: string[];
   clusters: string[];
   agendas: string[];
@@ -127,6 +127,18 @@ const defaultActivity = (): EditableActivity => ({
   budget_requirements: [],
 });
 
+const siteRows = (v: any) =>
+  Array.isArray(v)
+    ? v.map((r: any) => ({
+        country:      str(r?.country      ?? ""),
+        region:       str(r?.region       ?? ""),
+        province:     str(r?.province     ?? ""),
+        district:     str(r?.district     ?? ""),
+        municipality: str(r?.municipality ?? ""),
+        barangay:     str(r?.barangay     ?? ""),
+      }))
+    : [];
+
 // ─── hydrate from API-mapped data ─────────────────────────────────────────────
 function hydrateProgram(d: any): EditableProgram {
   if (!d) return defaultProgram();
@@ -136,7 +148,7 @@ function hydrateProgram(d: any): EditableProgram {
     program_leader:            str(d.program_leader),
     implementing_agency:       arr(d.implementing_agency),
     cooperating_agencies:      arr(d.cooperating_agencies),
-    extension_sites:           arr(d.extension_sites),
+    extension_sites:           siteRows(d.extension_sites),
     tags:                      arr(d.tags),
     clusters:                  arr(d.clusters),
     agendas:                   arr(d.agendas),
@@ -167,7 +179,7 @@ function hydrateProject(d: any): EditableProject {
     end_date:                  str(d.end_date),
     implementing_agency:       arr(d.implementing_agency),
     cooperating_agencies:      arr(d.cooperating_agencies),
-    extension_sites:           arr(d.extension_sites),
+    extension_sites:           siteRows(d.extension_sites),
     tags:                      arr(d.tags),
     clusters:                  arr(d.clusters),
     agendas:                   arr(d.agendas),
@@ -194,7 +206,7 @@ function hydrateActivity(d: any): EditableActivity {
     activity_date:           str(d.activity_date),
     implementing_agency:     arr(d.implementing_agency),
     cooperating_agencies:    arr(d.cooperating_agencies),
-    extension_sites:         arr(d.extension_sites),
+    extension_sites:         siteRows(d.extension_sites),
     tags:                    arr(d.tags),
     clusters:                arr(d.clusters),
     agendas:                 arr(d.agendas),
