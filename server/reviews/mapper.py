@@ -66,6 +66,12 @@ class ProposalReviewMapper:
                 "reviews": reviews["tagging_cluster_extension"]
             },
             
+             "sdg_and_academic_program": {
+                "sdg_addressed": program_proposal.sdg_addressed,
+                "mandated_academic_program": program_proposal.mandated_academic_program,
+                "reviews": reviews["sdg_academic_program"]
+            },
+            
             "rationale": {
                 "content": program_proposal.rationale,
                 "reviews": reviews["rationale"]
