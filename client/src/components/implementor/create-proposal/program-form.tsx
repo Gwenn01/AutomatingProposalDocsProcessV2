@@ -120,7 +120,7 @@ export const ProgramProposalForm = ({ data, onChange, onNext, isSubmitting }: Pr
           subtitle="Set the total program budget. Each project and activity will be allocated within this ceiling."
         />
 
-        <div className="mt-4 max-w-sm">
+        <div className="mt-4 max-w-lg">
           <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">
             Total Program Budget (PHP) <span className="text-red-400">*</span>
           </label>
@@ -133,7 +133,7 @@ export const ProgramProposalForm = ({ data, onChange, onNext, isSubmitting }: Pr
               value={(data as any).program_budget_total ?? ''}
               onChange={(e) => onChange({ ...data, program_budget_total: e.target.value } as any)}
               placeholder="0.00"
-              className="w-full pl-8 pr-4 py-3.5 text-lg font-black text-gray-900 bg-gray-50 border-2 border-gray-200 focus:border-emerald-500 rounded-xl outline-none transition-colors"
+              className="w-full pl-8 pr-4 py-3.5 text-lg font-bold text-gray-900 bg-gray-50 border-2 border-gray-200 focus:border-emerald-500 rounded-xl outline-none transition-colors"
             />
           </div>
           {budgetTotal > 0 && (

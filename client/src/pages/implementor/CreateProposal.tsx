@@ -16,6 +16,7 @@ import { getActivityCompletion, getProjectCompletion } from '@/helpers/create-pr
 import { ProjectProposalForm } from '@/components/implementor/create-proposal/project-form';
 import { ActivityProposalForm } from '@/components/implementor/create-proposal/activity-form';
 import { StepIndicator } from '@/components/implementor/create-proposal/ui/step-indicator';
+import { useToast } from '@/context/toast';
 
 interface CreateProposalProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -36,6 +37,8 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
   const [isDirty, setIsDirty] = useState(false);
   const [step, setStep] = useState(1);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const { showToast } = useToast();
 
   // Step 1
   const [programData, setProgramData] = useState<ProgramFormData>(defaultProgramFormData());
@@ -77,10 +80,6 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4500);
-  };
 
   // ── Derived budget values ──────────────────────────────────────────────────
 
@@ -97,6 +96,11 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
       0,
     );
 
+    const getProjectBudgetTotal = (projectId: number): number => {
+  const pf = projectForms.find((p) => p.apiProjectId === projectId);
+  return pf ? sumBudgetRows(pf.budget) : 0;
+};
+
   /**
    * In Step 3, the remaining budget for any activity is:
    *   programTotal − allProjectBudgets − otherActivitiesBudgets
@@ -104,22 +108,13 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
    * We include ALL project budgets (they were already committed in Step 2)
    * PLUS every other activity's budget, excluding the one being edited.
    */
-  const getUsedByOtherActivities = (excludeProjectId: number, excludeActIdx: number): number => {
-    // All project budgets (fully committed in Step 2)
-    const projectsTotal = projectForms.reduce((sum, pf) => sum + sumBudgetRows(pf.budget), 0);
-
-    // All OTHER activities (exclude current one)
-    let otherActivitiesTotal = 0;
-    for (const [pidStr, acts] of Object.entries(activityFormsByProject)) {
-      const pid = Number(pidStr);
-      acts.forEach((act, ai) => {
-        if (pid === excludeProjectId && ai === excludeActIdx) return;
-        otherActivitiesTotal += sumBudgetRows(act.budget);
-      });
-    }
-
-    return projectsTotal + otherActivitiesTotal;
-  };
+const getUsedByOtherActivities = (projectId: number, excludeActIdx: number): number => {
+  const acts = activityFormsByProject[projectId] || [];
+  return acts.reduce((sum, act, ai) => {
+    if (ai === excludeActIdx) return sum;
+    return sum + sumBudgetRows(act.budget);
+  }, 0);
+};
 
   // ── STEP 1: Save Program → GET project list ────────────────────────────────
   const handleProgramNext = async () => {
@@ -141,7 +136,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
       setActiveProjectTab(0);
       setStep(2);
       scrollToTop();
-      showToast(`Program saved! ID: #${childId}. Fill in each project below.`);
+      showToast(`Program saved! ID: #${childId}. Fill in each project below.`, "success");
     } catch (err: any) {
       showToast(`Failed to save program: ${err.message}`, 'error');
     } finally {
@@ -222,10 +217,11 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
     if (!form) return;
 
     // Budget guard
-    if (programBudgetTotal > 0) {
-      const usedByOthers = getUsedByOtherActivities(projectId, activityIdx);
-      const current = sumBudgetRows(form.budget);
-      if (usedByOthers + current > programBudgetTotal) {
+      const projectBudgetTotal = getProjectBudgetTotal(projectId);
+      if (projectBudgetTotal > 0) {
+        const usedByOthers = getUsedByOtherActivities(projectId, activityIdx);
+        const current = sumBudgetRows(form.budget);
+        if (usedByOthers + current > projectBudgetTotal) {
         showToast('Cannot save: activity budget exceeds the program total.', 'error'); return;
       }
     }
@@ -517,7 +513,7 @@ export default function CreateProposal({ onDirtyChange }: CreateProposalProps = 
                     onSave={() => handleSaveActivity(projectId, activityIdx)}
                     isSaving={!!activitySaving[key]}
                     isSaved={form.saved}
-                    programBudgetTotal={programBudgetTotal}
+                    programBudgetTotal={getProjectBudgetTotal(projectId)}
                     usedByOtherActivities={getUsedByOtherActivities(projectId, activityIdx)}
                   />
                 </div>
