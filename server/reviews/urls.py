@@ -11,7 +11,7 @@ from .views import (
 urlpatterns = [
     path("proposal-review/", ProposalReviewList.as_view(), name="proposal-review-list"),
     
-    path("proposal-review/<int:pk>/", ProposalReviewDetail.as_view(), name="proposal-review-detail"),
+    path("proposal-review/<int:proposal>/", ProposalReviewDetail.as_view(), name="proposal-review-detail"),
     
     path(
         "proposal-review/proposal/<int:proposal_id>/<str:proposal_type>/",
