@@ -126,7 +126,8 @@ function mapReviewedToProgram(data: any): ApiProposalDetail | null {
     tags:                      data.tagging_clustering_extension?.tags     ?? [],
     clusters:                  data.tagging_clustering_extension?.clusters ?? [],
     agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
-    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed             ?? "",
+    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed
+                               ?? data.sdg_addressed ?? "",
     mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
     rationale:                 data.rationale?.content             ?? "",
     significance:              data.significance?.content          ?? "",
@@ -292,7 +293,7 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),   [projectReviewedData]);
   const mappedActivity = React.useMemo(() => mapReviewedToActivity(activityReviewedData), [activityReviewedData]);
 
-  //console.log("Project Reviewed Data", projectReviewedData)
+  console.log("Program Reviewed Data", programReviewedData)
 
   //console.log("Mapped Project", mappedProject)
 
