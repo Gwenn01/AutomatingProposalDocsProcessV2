@@ -11,7 +11,7 @@ export interface Document {
   child_id?: string | number;
   reviewer_count: number;
   reviewed_count: number;
-  review_progress: number;
+  review_progress: string;
   title: string;
   file_path: string;
   status: string;

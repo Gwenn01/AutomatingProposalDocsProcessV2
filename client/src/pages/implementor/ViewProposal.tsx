@@ -204,7 +204,11 @@ const ViewProposal: React.FC = () => {
                         className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition"
                       >
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-green-700 font-semibold text-xs">{doc.review_progress}</span>
+                          <span className="text-green-700 font-semibold text-xs">
+                            {doc.review_progress === "0 out of 0"
+                              ? "No Assigned Reviewer"
+                              : doc.review_progress}
+                          </span>
                       </button>
                     </div>
                     <h3 className="text-base font-bold text-gray-900 mb-3 leading-tight" title={doc.title}>
