@@ -23,7 +23,8 @@ class ProposalReviewList(APIView):
         reviewer = get_object_or_404(ProposalReviewer, id=proposal_reviewer_id)
         # get the proposal for notification
         proposal = get_object_or_404(Proposal, id=request.data.get('proposal_node'))
-        
+        proposal.status = "for_revision"
+        proposal.save()
         # Check if already reviewed
         if reviewer.is_review:
             return Response(
@@ -107,7 +108,8 @@ class ProposalReviewUpdate(APIView):
         )
         # get the proposal for notification
         proposal = get_object_or_404(Proposal, id=request.data.get('proposal_node'))
-
+        proposal.status = "for_revision"
+        proposal.save()
         # Prevent duplicate review submission
         if reviewer.is_review:
             return Response(

@@ -51,4 +51,4 @@ class ReviewerApproveProposalView(APIView):
         proposal = get_object_or_404(Proposal, id=proposal_id)
         proposal.status = 'for_approval'
         proposal.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"message": "Proposal approved successfully"},status=status.HTTP_200_OK)
