@@ -110,6 +110,8 @@ const hasAnyReviewAcrossSections =
    methodologyReviews, expectedOutputReviews, budgetReviews, workplanReviews].some((r) => r.length > 0);
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
 
+  //console.log("Project Data", projectData)
+
   return (
     <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-serif text-gray-900 leading-relaxed p-5">
       <div className="text-center mb-8 space-y-1">

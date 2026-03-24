@@ -154,7 +154,8 @@ function mapReviewedToProject(data: any): any | null {
     end_date:                  data.profile?.end_date        ?? null,
     implementing_agency:       data.agencies?.implementing_agency  ?? [],
     cooperating_agencies:      data.agencies?.cooperating_agencies ?? [],
-    extension_sites:           data.extension_sites?.extension_site
+    extension_sites:           data.extension_sites?.content
+                               ?? data.extension_sites?.extension_site
                                ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
     tags:                      data.tagging_clustering_extension?.tags     ?? [],
     clusters:                  data.tagging_clustering_extension?.clusters ?? [],
@@ -185,7 +186,8 @@ function mapReviewedToActivity(data: any): any | null {
     activity_date:             data.profile?.activity_date           ?? null,
     implementing_agency:       data.agencies?.implementing_agency    ?? [],
     cooperating_agencies:      data.agencies?.cooperating_agencies   ?? [],
-    extension_sites:           data.extension_sites?.extension_site
+    extension_sites:           data.extension_sites?.content
+                               ?? data.extension_sites?.extension_site
                                ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
     tags:                      data.tagging_clustering_extension?.tags     ?? [],
     clusters:                  data.tagging_clustering_extension?.clusters ?? [],
@@ -290,7 +292,9 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),   [projectReviewedData]);
   const mappedActivity = React.useMemo(() => mapReviewedToActivity(activityReviewedData), [activityReviewedData]);
 
-  //console.log("Program Reviewed Data", programReviewedData)
+  //console.log("Project Reviewed Data", projectReviewedData)
+
+  //console.log("Mapped Project", mappedProject)
 
   // ── Resolved IDs for each PUT endpoint ───────────────────────────────────
   const programChildId    = proposalData?.child_id;
@@ -571,6 +575,8 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const activeMappedProgram  = historySnapshotData ? mapReviewedToProgram(historySnapshotData)  : mappedProgram;
   const activeMappedProject  = historySnapshotData ? mapReviewedToProject(historySnapshotData)  : mappedProject;
   const activeMappedActivity = historySnapshotData ? mapReviewedToActivity(historySnapshotData) : mappedActivity;
+
+  //console.log("Active Mapped Project", activeMappedProject)
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const goToProjectTab = () => {
