@@ -156,16 +156,15 @@ const AdminOverview = () => {
             Monitoring proposal metrics and workflow status.
           </p>
         </div>
-
       </div>
 
       {/* ================= KPI ROW — TOP (Users, Proposals, Approvals, Pending) ================= */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Card: Total Users */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-500/20 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-500/10">
               <Users size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -183,10 +182,10 @@ const AdminOverview = () => {
         </div>
 
         {/* Card: Active Proposals */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-blue-500/20 blur-2xl group-hover:bg-blue-500/20 transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-blue-500/20 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shadow-sm ring-1 ring-inset ring-blue-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shadow-sm ring-1 ring-inset ring-blue-500/10">
               <FileText size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -204,10 +203,10 @@ const AdminOverview = () => {
         </div>
 
         {/* Card: Approval Rate */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/20 blur-2xl group-hover:bg-emerald-500/20 transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/20 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-inset ring-emerald-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-inset ring-emerald-500/10">
               <CheckCircle size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -225,10 +224,10 @@ const AdminOverview = () => {
         </div>
 
         {/* Card: In Workflow */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-orange-500/10 blur-2xl group-hover:bg-orange-500/20 transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-orange-500/10 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-600 shadow-sm ring-1 ring-inset ring-orange-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-600 shadow-sm ring-1 ring-inset ring-orange-500/10">
               <Zap size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -249,10 +248,10 @@ const AdminOverview = () => {
       {/* ================= KPI ROW — BOTTOM (Program, Project, Activity) ================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card: Total Programs */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-500/15 blur-2xl transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-indigo-500/15 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-500/10">
               <BookOpen size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -270,10 +269,10 @@ const AdminOverview = () => {
         </div>
 
         {/* Card: Total Projects */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/15 blur-2xl transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/15 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-inset ring-emerald-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-inset ring-emerald-500/10">
               <FolderKanban size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -291,10 +290,10 @@ const AdminOverview = () => {
         </div>
 
         {/* Card: Total Activities */}
-        <div className="group relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)] transition-all duration-500 hover:bg-white/70 hover:-translate-y-1">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl transition-all duration-700" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]">
+          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl" />
           <div className="relative z-10">
-            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shadow-sm ring-1 ring-inset ring-amber-500/10 transition-transform duration-500 group-hover:scale-110">
+            <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shadow-sm ring-1 ring-inset ring-amber-500/10">
               <Activity size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -719,25 +718,24 @@ const AdminOverview = () => {
             const StatusIcon = config.icon;
 
             return (
-              <div
-                key={index}
-                className="group relative h-56 rounded-[2.5rem] transition-all duration-500 hover:-translate-y-2 active:scale-95"
-              >
+              <div key={index} className="relative h-56 rounded-[2.5rem]">
+                {/* Background Glow - made static and subtle */}
                 <div
-                  className="absolute inset-0 rounded-[2.5rem] opacity-0 group-hover:opacity-20 transition-opacity duration-700 blur-xl"
+                  className="absolute inset-0 rounded-[2.5rem] opacity-5 blur-xl"
                   style={{ backgroundColor: config.color }}
                 />
 
                 <div className="relative h-full w-full bg-white border border-slate-100 rounded-[2.2rem] p-8 shadow-[0_4px_25px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col justify-between">
+                  {/* Background Large Icon - static position */}
                   <StatusIcon
                     size={140}
-                    className="absolute -right-6 -bottom-6 opacity-[0.04] -rotate-12 transition-transform duration-1000 group-hover:rotate-0 group-hover:scale-110"
+                    className="absolute -right-6 -bottom-6 opacity-[0.04] -rotate-12"
                     style={{ color: config.color }}
                   />
 
                   <div className="flex justify-between items-start relative z-10">
                     <div
-                      className="p-4 rounded-2xl transition-all duration-500 group-hover:scale-110"
+                      className="p-4 rounded-2xl"
                       style={{
                         backgroundColor: `${config.color}10`,
                         color: config.color,
@@ -747,7 +745,7 @@ const AdminOverview = () => {
                     </div>
 
                     <div
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md transition-all duration-500"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border backdrop-blur-md"
                       style={{
                         backgroundColor: `${config.color}08`,
                         borderColor: `${config.color}25`,
@@ -778,13 +776,14 @@ const AdminOverview = () => {
                     </p>
                   </div>
 
+                  {/* Bottom Section - Description and Progress now permanently visible */}
                   <div className="space-y-4 relative z-10">
-                    <p className="text-[10px] text-slate-400 font-medium leading-none opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-1 group-hover:translate-y-0">
+                    <p className="text-[10px] text-slate-400 font-medium leading-none">
                       {config.description}
                     </p>
                     <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] w-0 group-hover:w-full"
+                        className="h-full rounded-full w-full"
                         style={{ backgroundColor: config.color }}
                       />
                     </div>
