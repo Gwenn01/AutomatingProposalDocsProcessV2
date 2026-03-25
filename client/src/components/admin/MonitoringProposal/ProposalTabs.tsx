@@ -3,7 +3,6 @@ import {
   Search,
   Filter,
   FileText,
-  Users,
   Eye,
   AlertTriangle,
   ChevronLeft,
@@ -106,14 +105,6 @@ const ProposalRow = ({ doc }: { doc: Proposal }) => {
         ) : (
           <span className="text-slate-300 text-sm">—</span>
         )}
-      </td>
-
-      {/* Reviewers */}
-      <td className="p-4 text-center">
-        <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-          <Users size={14} className="text-slate-400" />
-          {doc.reviewer_count}
-        </div>
       </td>
 
       {/* Action */}
@@ -225,7 +216,6 @@ const ProposalsTab = ({ proposals }: Props) => {
                 "Status",
                 "Progress",
                 "Budget",
-                "Reviewers",
                 "Action",
               ].map((h, i) => (
                 <th
