@@ -1,92 +1,100 @@
-import { Users, FileText, CheckCircle, Zap } from "lucide-react";
+import { CheckCircle2, Clock4 } from "lucide-react";
 
 interface KpiTopRowProps {
-  totalUsers: number;
-  totalProposals: number;
-  approvalRate: number;
-  pendingTotal: number;
+  totalApprove?: number;
+  totalPending?: number;
 }
 
-const KpiTopRow = ({
-  totalUsers,
-  totalProposals,
-  approvalRate,
-  pendingTotal,
-}: KpiTopRowProps) => {
-  const cards = [
-    {
-      label: "Users",
-      subLabel: "Total Users",
-      value: totalUsers,
-      valueClass: "text-slate-800",
-      icon: Users,
-      iconBg: "bg-indigo-50 text-indigo-600 ring-indigo-500/10",
-      glow: "bg-indigo-500/20",
-    },
-    {
-      label: "Proposals",
-      subLabel: "Total Submissions",
-      value: totalProposals,
-      valueClass: "text-slate-800",
-      icon: FileText,
-      iconBg: "bg-blue-50 text-blue-600 ring-blue-500/10",
-      glow: "bg-blue-500/20",
-    },
-    {
-      label: "Approvals",
-      subLabel: "Approval Rate",
-      value: `${approvalRate}%`,
-      valueClass: "text-emerald-600",
-      icon: CheckCircle,
-      iconBg: "bg-emerald-50 text-emerald-600 ring-emerald-500/10",
-      glow: "bg-emerald-500/20",
-    },
-    {
-      label: "Pending",
-      subLabel: "Proposals in review",
-      value: pendingTotal,
-      valueClass: "text-slate-800",
-      icon: Zap,
-      iconBg: "bg-orange-50 text-orange-600 ring-orange-500/10",
-      glow: "bg-orange-500/10",
-    },
-  ];
+const KpiTopRow = ({ totalApprove = 0, totalPending = 0 }: KpiTopRowProps) => {
+  const total = totalApprove + totalPending;
+  const approvePercent =
+    total > 0 ? Math.round((totalApprove / total) * 100) : 0;
+  const pendingPercent =
+    total > 0 ? Math.round((totalPending / total) * 100) : 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-      {cards.map((card, index) => {
-        const Icon = card.icon;
-        return (
-          <div
-            key={index}
-            className="relative overflow-hidden rounded-[2rem] bg-white/40 p-8 backdrop-blur-md border border-white/60 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.04)]"
-          >
-            <div
-              className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${card.glow} blur-2xl`}
-            />
-            <div className="relative z-10">
-              <div
-                className={`mb-6 flex h-11 w-11 items-center justify-center rounded-xl shadow-sm ring-1 ring-inset ${card.iconBg}`}
-              >
-                <Icon size={20} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
-                  {card.label}
-                </p>
-                <h3
-                  className={`mt-1 text-4xl font-extrabold tracking-tighter tabular-nums ${card.valueClass}`}
-                >
-                  {card.value}
-                </h3>
-                <p className="mt-1 text-[13px] font-medium text-slate-400">
-                  {card.subLabel}
-                </p>
-              </div>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── Approved Card ── */}
+      <div className="relative overflow-hidden rounded-xl bg-primaryGreen border-b border-white/10 px-8 pt-6 pb-5 flex flex-col gap-4">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.10)_0%,_transparent_65%)] pointer-events-none" />
+
+        {/* Top: label + number / icon pill */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <span className="font-semibold text-[11px] tracking-[0.15em] uppercase text-white/70">
+              Total Approved
+            </span>
+            <p className="mt-1 text-4xl font-bold text-white tabular-nums drop-shadow-sm">
+              {totalApprove.toLocaleString()}
+            </p>
           </div>
-        );
-      })}
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-lg border border-white/15 shadow-inner">
+            <CheckCircle2
+              size={15}
+              strokeWidth={2.5}
+              className="text-white/80"
+            />
+            <span className="text-sm font-semibold text-white">Approved</span>
+          </div>
+        </div>
+
+        {/* Bottom: progress bar + percent */}
+        <div className="relative z-10 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/50">
+              Approval Rate
+            </span>
+            <span className="text-[11px] font-bold text-white/80">
+              {approvePercent}%
+            </span>
+          </div>
+          <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white/50 transition-all duration-700"
+              style={{ width: `${approvePercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Pending Card ── */}
+      <div className="relative overflow-hidden rounded-xl bg-primaryGreen border-b border-white/10 px-8 pt-6 pb-5 flex flex-col gap-4">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.10)_0%,_transparent_65%)] pointer-events-none" />
+
+        {/* Top: label + number / icon pill */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <span className="font-semibold text-[11px] tracking-[0.15em] uppercase text-white/70">
+              Total Pending
+            </span>
+            <p className="mt-1 text-4xl font-bold text-white tabular-nums drop-shadow-sm">
+              {totalPending.toLocaleString()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-lg border border-white/15 shadow-inner">
+            <Clock4 size={15} strokeWidth={2.5} className="text-white/80" />
+            <span className="text-sm font-semibold text-white">Pending</span>
+          </div>
+        </div>
+
+        {/* Bottom: progress bar + percent */}
+        <div className="relative z-10 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/50">
+              In Pipeline
+            </span>
+            <span className="text-[11px] font-bold text-white/80">
+              {pendingPercent}%
+            </span>
+          </div>
+          <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white/50 transition-all duration-700"
+              style={{ width: `${pendingPercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

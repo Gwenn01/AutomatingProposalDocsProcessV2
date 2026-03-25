@@ -1,5 +1,7 @@
 from django.db.models import Count
 from .models import Proposal
+from program_proposal.models import ProgramProposal
+from django.db.models import Count, Q
 
 
 class OverviewService:
@@ -14,7 +16,6 @@ class OverviewService:
             .values('proposal_type')
             .annotate(total=Count('id'))
         )
-
         # ONE query for status
         status_counts = (
             Proposal.objects
@@ -22,12 +23,16 @@ class OverviewService:
             .annotate(total=Count('id'))
         )
 
-        # total proposals (very cheap)
-        total_proposals = Proposal.objects.count()
-
+        # approve and pending data
+        totals = Proposal.objects.filter(proposal_type='Program').aggregate(
+            #total_proposals=Count('id'),
+            total_approve=Count('id', filter=Q(status='approved')),
+            total_pending=Count('id', filter=~Q(status='approved'))
+        )
+        
+        
         # convert to dictionary
         proposal = {
-            'total_proposals': total_proposals,
             'total_program': 0,
             'total_project': 0,
             'total_activity': 0
@@ -55,6 +60,7 @@ class OverviewService:
             if key in status:
                 status[key] = item['total']
 
+        data['total'] = totals
         data['proposal'] = proposal
         data['status'] = status
         return data

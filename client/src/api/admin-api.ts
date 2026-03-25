@@ -21,8 +21,11 @@ export interface UsersOverview {
 }
 
 export interface ProposalsOverview {
+  total: {
+    total_approve: number;
+    total_pending: number;
+  };
   proposal: {
-    total_proposals: number;
     total_program: number;
     total_project: number;
     total_activity: number;
@@ -34,7 +37,7 @@ export interface ProposalsOverview {
     total_for_approval: number;
     total_approved: number;
     total_rejected: number;
-  }
+  };
 }
 
 export interface CreateAdminUserPayload {
@@ -91,7 +94,7 @@ export interface AssignReviewerPayload {
 export interface CreateCoverPagePayload {
   proposal: number;
   cover_page_body: string;
-  submission_date: string; 
+  submission_date: string;
 }
 
 export interface ProposalCoverPage {
@@ -113,7 +116,7 @@ const getAuthHeaders = () => {
   if (!token) throw new Error("No access token found. Please login.");
   return {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
   };
 };
 
@@ -121,7 +124,7 @@ const getAuthHeaders = () => {
 export const getUsersOverview = async (): Promise<UsersOverview> => {
   const response = await fetch(`${API_URL}/users/admin/overview-users/`, {
     method: "GET",
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -130,13 +133,13 @@ export const getUsersOverview = async (): Promise<UsersOverview> => {
   }
 
   return response.json();
-}
+};
 
 // Get Proposals Overview
 export const getProposalsOverview = async (): Promise<ProposalsOverview> => {
   const response = await fetch(`${API_URL}/admin/overview-proposals/`, {
     method: "GET",
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -144,29 +147,29 @@ export const getProposalsOverview = async (): Promise<ProposalsOverview> => {
     throw new Error(errorData.detail || "Failed to fetch proposals overview");
   }
 
-  return response.json()
-}
+  return response.json();
+};
 
 // Get All Proposals
 export const getProposals = async (): Promise<ProgramProposal[]> => {
   const response = await fetch(`${API_URL}/admin/proposals-node/Program/`, {
     method: "GET",
     headers: getAuthHeaders(),
-  })
+  });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to fetch program proposals")
+    throw new Error(errorData.detail || "Failed to fetch program proposals");
   }
 
   return response.json();
-}
+};
 
 // Get All Reviewers
 export const getAllReviewers = async (): Promise<ApiUser[]> => {
   const response = await fetch(`${API_URL}/reviewers/`, {
     method: "GET",
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -174,14 +177,16 @@ export const getAllReviewers = async (): Promise<ApiUser[]> => {
     throw new Error(errorData.detail || "Failed to fetch reviewers");
   }
 
-  return response.json()
-}
+  return response.json();
+};
 
 // Get All Reviewer Assignments
-export const getAllReviewerAssignments = async (): Promise<ReviewerAssignment[]> => {
+export const getAllReviewerAssignments = async (): Promise<
+  ReviewerAssignment[]
+> => {
   const response = await fetch(`${API_URL}/assign-reviewer/`, {
     method: "GET",
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -190,13 +195,15 @@ export const getAllReviewerAssignments = async (): Promise<ReviewerAssignment[]>
   }
 
   return response.json();
-}
+};
 
 // Get Assigned Reviewers by Proposal ID
-export const getAssignedReviewers = async (proposalId: number): Promise<ReviewerAssignment[]> => {
+export const getAssignedReviewers = async (
+  proposalId: number,
+): Promise<ReviewerAssignment[]> => {
   const response = await fetch(`${API_URL}/assigned-reviewer/${proposalId}/`, {
     method: "GET",
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -206,14 +213,16 @@ export const getAssignedReviewers = async (proposalId: number): Promise<Reviewer
 
   const data = await response.json();
   return Array.isArray(data) ? data : [data];
-}
+};
 
 // Assign Reviewer
-export const assignReviewer = async (payload: AssignReviewerPayload): Promise<ReviewerAssignment> => {
+export const assignReviewer = async (
+  payload: AssignReviewerPayload,
+): Promise<ReviewerAssignment> => {
   const response = await fetch(`${API_URL}/assign-reviewer/`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
 
   const resJson = await response.json().catch(() => ({}));
@@ -224,28 +233,30 @@ export const assignReviewer = async (payload: AssignReviewerPayload): Promise<Re
   }
 
   return resJson.data as ReviewerAssignment;
-}
+};
 
 // Unassign Revieweer
-export const unassignReviewer = async (proposalId: number ): Promise<void> => {
+export const unassignReviewer = async (proposalId: number): Promise<void> => {
   const response = await fetch(`${API_URL}/unassign-reviewer/${proposalId}/`, {
     method: "DELETE",
-    headers: getAuthHeaders()
-  })
+    headers: getAuthHeaders(),
+  });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to unassign reviewer");
   }
-}
+};
 
 // Create Cover Page
-export const createCoverPage = async (payload: CreateCoverPagePayload): Promise<CreateCoverPageResponse> => {
+export const createCoverPage = async (
+  payload: CreateCoverPagePayload,
+): Promise<CreateCoverPageResponse> => {
   const response = await fetch(`${API_URL}/proposal-cover/`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
-  })
+  });
 
   const resJson = await response.json().catch(() => ({}));
 
@@ -254,25 +265,27 @@ export const createCoverPage = async (payload: CreateCoverPagePayload): Promise<
   }
 
   return resJson as CreateCoverPageResponse;
-}
+};
 
 // Get All Cover Page
 export const getAllCoverPage = async (): Promise<ProposalCoverPage[]> => {
   const response = await fetch(`${API_URL}/proposal-cover/`, {
     method: "GET",
     headers: getAuthHeaders(),
-  })
+  });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to fetch cover pages");
   }
 
-  return response.json()
-}
+  return response.json();
+};
 
 // Get Single Cover Page
-export const getCoverPage = async (coverPageId: number): Promise<ProposalCoverPage> => {
+export const getCoverPage = async (
+  coverPageId: number,
+): Promise<ProposalCoverPage> => {
   const response = await fetch(`${API_URL}/proposal-cover/${coverPageId}/`, {
     method: "GET",
     headers: getAuthHeaders(),
@@ -301,45 +314,50 @@ export const getAllAccounts = async (): Promise<ApiUser[]> => {
 };
 
 //Admin Create Account
-export const createAdminAccount = async (payload: CreateAdminUserPayload): Promise<CreateAdminUserResponse> => {
-    const response = await fetch(`${API_URL}/users/admin/`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-    });
+export const createAdminAccount = async (
+  payload: CreateAdminUserPayload,
+): Promise<CreateAdminUserResponse> => {
+  const response = await fetch(`${API_URL}/users/admin/`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to create account");
-    }
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || "Failed to create account");
+  }
 
-    return response.json();
+  return response.json();
 };
 
 //Admin Update User Profiles
-export const updateAdminAccount = async (userId: number,  payload: UpdateAdminUserPayload): Promise<ApiUser> => {
-    const response = await fetch(`${API_URL}/users/admin/${userId}/`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-    });
+export const updateAdminAccount = async (
+  userId: number,
+  payload: UpdateAdminUserPayload,
+): Promise<ApiUser> => {
+  const response = await fetch(`${API_URL}/users/admin/${userId}/`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
 
-    if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Failed to update user");
-    }
-    return response.json();
-}
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.detail || "Failed to update user");
+  }
+  return response.json();
+};
 
 // Admin Delete Account
 export const deleteAdminAccount = async (userId: number): Promise<void> => {
   const response = await fetch(`${API_URL}/users/admin/${userId}/`, {
     method: "DELETE",
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to delete account");
   }
-}
+};

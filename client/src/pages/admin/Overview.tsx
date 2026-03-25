@@ -14,6 +14,7 @@ const AdminOverview = () => {
   const [proposals, setProposals] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [usersYear, setUsersYear] = useState(new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
 
   // Progress bar animation while loading
@@ -31,30 +32,31 @@ const AdminOverview = () => {
     return () => window.clearInterval(intervalId);
   }, [loading]);
 
-  // Fetch data
-  useEffect(() => {
-    const fetchOverviewData = async () => {
-      try {
-        setLoading(true);
-        const [usersData, proposalsData] = await Promise.all([
-          getUsersOverview(),
-          getProposalsOverview(),
-        ]);
-        setUsers(usersData);
-        setProposals(proposalsData);
-        setProgress(100);
-        setTimeout(() => setLoading(false), 200);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch overview data");
-        setUsers([]);
-        setProposals([]);
-        setLoading(false);
-      }
-    };
+  // fetch data
+  const fetchOverviewData = async () => {
+    try {
+      setLoading(true);
+      const [usersData, proposalsData] = await Promise.all([
+        getUsersOverview(),
+        getProposalsOverview(),
+      ]);
+      setUsers(usersData);
+      console.log(proposalsData);
+      setProposals(proposalsData);
+      setProgress(100);
+      setTimeout(() => setLoading(false), 200);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch overview data");
+      setUsers([]);
+      setProposals([]);
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOverviewData();
-  }, []);
+  }, [usersYear]);
 
   if (loading) {
     return (
@@ -68,24 +70,16 @@ const AdminOverview = () => {
 
   if (error) return <p className="p-8">{error}</p>;
 
-  // ── Derived values ──────────────────────────────────────────────
-  const totalUsers = users.total_user;
-  const totalProposals = proposals.proposal.total_proposals;
+  // ── pending and approve ──────────────────────────────────────────────
+  const totalApprove = proposals.total.total_approve;
+  const totalPending = proposals.total.total_pending;
+
+  // proposals
   const totalProgram = proposals.proposal.total_program;
   const totalProject = proposals.proposal.total_project;
   const totalActivity = proposals.proposal.total_activity;
 
-  const approvalRate =
-    totalProposals > 0
-      ? Math.round((proposals.status.total_approved / totalProposals) * 100)
-      : 0;
-
-  const pendingTotal =
-    proposals.status.total_under_review +
-    proposals.status.total_for_review +
-    proposals.status.total_for_revision +
-    proposals.status.total_for_approval;
-
+  // workflow
   const statusBarData = [
     { key: "under_review", value: proposals.status.total_under_review },
     { key: "for_review", value: proposals.status.total_for_review },
@@ -98,14 +92,9 @@ const AdminOverview = () => {
   // ── Render ──────────────────────────────────────────────────────
   return (
     <div className="relative h-auto bg-slate-50 p-8 lg:p-12 space-y-16">
-      <OverviewHeader />
+      <OverviewHeader usersYear={usersYear} setUsersYear={setUsersYear} />
 
-      <KpiTopRow
-        totalUsers={totalUsers}
-        totalProposals={totalProposals}
-        approvalRate={approvalRate}
-        pendingTotal={pendingTotal}
-      />
+      <KpiTopRow totalApprove={totalApprove} totalPending={totalPending} />
 
       <KpiBottomRow
         totalProgram={totalProgram}
@@ -113,13 +102,16 @@ const AdminOverview = () => {
         totalActivity={totalActivity}
       />
 
+      <WorkflowBreakdown statusBarData={statusBarData} />
+      <StatusBarChart statusBarData={statusBarData} />
+
       {/* Analytics: Pie + Bar side by side */}
       <div className="grid grid-cols-1 xl:grid-cols-10 gap-8">
         <UsersPieChart
           admin={users.admin}
           reviewer={users.reviewer}
           implementor={users.implementor}
-          totalUsers={totalUsers}
+          totalUsers={users.total_user}
         />
         <ProposalBarChart
           totalProgram={totalProgram}
@@ -127,10 +119,6 @@ const AdminOverview = () => {
           totalActivity={totalActivity}
         />
       </div>
-
-      <StatusBarChart statusBarData={statusBarData} />
-
-      <WorkflowBreakdown statusBarData={statusBarData} />
     </div>
   );
 };
