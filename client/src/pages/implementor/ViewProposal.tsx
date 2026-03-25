@@ -384,7 +384,11 @@ const ViewProposal: React.FC = () => {
 
       <ReviewerListStatus
         isOpen={showReviewerStatus}
-        proposalId={selectedDoc?.proposal_id}
+        proposalId={
+          selectedDoc?.proposal_id !== undefined
+            ? Number(selectedDoc.proposal_id)
+            : undefined
+        }
         onClose={() => setShowReviewerStatus(false)}
       />
 

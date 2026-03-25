@@ -376,8 +376,15 @@ const ReviewProposal: React.FC = () => {
 
       <ReviewerListStatus
         isOpen={showReviewerList}
-        proposalId={selectedProposalId}
-        onClose={() => { setShowReviewerList(false); setSelectedProposalId(null); }}
+        proposalId={
+          selectedProposalId !== null
+            ? Number(selectedProposalId)
+            : undefined
+        }
+        onClose={() => {
+          setShowReviewerList(false);
+          setSelectedProposalId(null);
+        }}
       />
     </div>
   );
