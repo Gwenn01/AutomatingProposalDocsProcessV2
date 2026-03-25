@@ -16,7 +16,7 @@ import {
 import MonitoringHeader from "@/components/admin/MonitoringProposal/MonitoringHeader";
 //import MonitoringStats from "@/components/admin/MonitoringProposal/MonitoringStats";
 import MonitoringTabs from "@/components/admin/MonitoringProposal/MonitoringTabs";
-import ProposalsTab from "@/components/admin/MonitoringProposal/Proposaltabs";
+import ProposalsTab from "@/components/admin/MonitoringProposal/ProposalTabs";
 import BudgetTab from "@/components/admin/MonitoringProposal/BudgetTabs";
 import AccessTab from "@/components/admin/MonitoringProposal/AccessTabs";
 
