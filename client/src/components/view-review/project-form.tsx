@@ -1,9 +1,27 @@
-import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
+import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import CommentInput from "../reviewer/CommentInput";
-import { type BudgetItem, type Comments, type MethodologyPhase, type WorkplanItem } from "../reviewer/ReviewerCommentModal";
+import { type BudgetItem, type Comments, FeedbackBadge } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
 import { formatDate } from "@/utils/dateFormat";
+
+/** Renders the right slot: input / feedback badge / nothing */
+const SF: React.FC<{
+  show: boolean;
+  showInput: boolean;
+  loading: boolean;
+  label: string;
+  value?: string;
+  inputKey: string;
+  inputLabel: string;
+  comments: Comments;
+  onCommentChange: (k: string, v: string) => void;
+  disabled: boolean;
+}> = ({ show, showInput, loading, label, value, inputKey, inputLabel, comments, onCommentChange, disabled }) => {
+  if (showInput) return <CommentInput sectionName={inputLabel} onCommentChange={onCommentChange} InputValue={inputKey} value={comments[inputKey] || ""} disabled={disabled} />;
+  if (show) return <FeedbackBadge label={label} value={value} loading={loading} />;
+  return null;
+};
 
 export const ProjectForm: React.FC<{
   projectData: any;
@@ -12,8 +30,16 @@ export const ProjectForm: React.FC<{
   onCommentChange: (key: string, val: string) => void;
   alreadyReviewed: boolean;
   showCommentInputs: boolean;
-}> = ({ projectData, programTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
+  existingReview?: any | null;
+  reviewLoading?: boolean;
+}> = ({ projectData, programTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs, existingReview, reviewLoading = false }) => {
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
+
+  const showFeedback = !showCommentInputs && (reviewLoading || !!existingReview);
+
+  const sf = (label: string, inputLabel: string, inputKey: string, value?: string) => (
+    <SF show={showFeedback} showInput={showCommentInputs} loading={reviewLoading} label={label} value={value} inputKey={inputKey} inputLabel={inputLabel} comments={comments} onCommentChange={onCommentChange} disabled={alreadyReviewed} />
+  );
 
   return (
     <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-serif text-gray-900 leading-relaxed p-5">
@@ -37,10 +63,8 @@ export const ProjectForm: React.FC<{
             <p className="font-bold">End Date: <span className="font-normal">{val(formatDate(projectData.end_date))}</span></p>
           </div>
         </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
-              InputValue="proj_profile_feedback" value={comments["proj_profile_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+        {sf("Profile", "Profile", "proj_profile_feedback", existingReview?.profile_feedback)}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <tbody>
@@ -48,10 +72,6 @@ export const ProjectForm: React.FC<{
                 <p className="px-3 pt-2 font-bold flex"><VerticalLine />IMPLEMENTING AGENCY <span className="font-normal">/ College / Mandated Program:</span></p>
                 <p className="px-3 py-1 mb-2">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
                 <p className="px-3 mb-2 text-lg">{arrVal(projectData.implementing_agency)}</p>
-                {/* {showCommentInputs && (
-                  <CommentInput sectionName="Implementing Agency" onCommentChange={onCommentChange}
-                    InputValue="proj_implementing_agency_feedback" value={comments["proj_implementing_agency_feedback"] || ""} disabled={alreadyReviewed} />
-                )} */}
               </tr>
               <tr className="border-b border-black">
                 <p className="px-3 py-2 font-bold flex"><VerticalLine />COOPERATING AGENCY/IES <span className="font-normal">(Name/s and Address/es)</span></p>
@@ -60,10 +80,7 @@ export const ProjectForm: React.FC<{
             </tbody>
           </table>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Implementing & Cooperating Agency" onCommentChange={onCommentChange}
-            InputValue="proj_implementing_agency_feedback" value={comments["proj_implementing_agency_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+        {sf("Implementing & Cooperating Agency", "Implementing & Cooperating Agency", "proj_implementing_agency_feedback", existingReview?.implementing_agency_feedback)}
 
         <p className="font-bold mt-2 mb-3 px-2 flex"><VerticalLine />Extension Site/s or Venue/s</p>
         <div className="overflow-x-auto">
@@ -94,10 +111,7 @@ export const ProjectForm: React.FC<{
             </tbody>
           </table>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Extension Site/s" onCommentChange={onCommentChange}
-            InputValue="proj_extension_site_feedback" value={comments["proj_extension_site_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+        {sf("Extension Site/s", "Extension Site/s", "proj_extension_site_feedback", existingReview?.extension_site_feedback)}
 
         <div className="overflow-x-auto">
           <table className="w-full border-b border-black text-sm">
@@ -105,38 +119,20 @@ export const ProjectForm: React.FC<{
               <tr className="border-b border-black">
                 <td className="border-r border-black px-4 py-4 align-top w-1/2">
                   <p className="font-bold mb-3 text-base flex"><VerticalLine />TAGGING</p>
-                  <CheckboxList
-                    items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]}
-                    checked={(label) => projectData.tags?.some((t: string) => t.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
+                  <CheckboxList items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]} checked={(label) => projectData.tags?.some((t: string) => t.toLowerCase() === label.toLowerCase()) ?? false} />
                   <p className="font-bold mt-5 mb-3 text-base flex"><VerticalLine />CLUSTER</p>
-                  <CheckboxList
-                    items={["Health, Education, and Social Sciences", "Engineering, Industry, Information Technology", "Environment and Natural Resources", "Tourism, Hospitality Management, Entrepreneurship, Criminal Justice", "Graduate Studies", "Fisheries", "Agriculture, Forestry"]}
-                    checked={(label) => projectData.clusters?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
+                  <CheckboxList items={["Health, Education, and Social Sciences", "Engineering, Industry, Information Technology", "Environment and Natural Resources", "Tourism, Hospitality Management, Entrepreneurship, Criminal Justice", "Graduate Studies", "Fisheries", "Agriculture, Forestry"]} checked={(label) => projectData.clusters?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false} />
                 </td>
                 <td className="px-4 py-4 align-top w-1/2">
                   <p className="font-bold mb-3 text-base flex"><VerticalLine />EXTENSION AGENDA</p>
-                  <CheckboxList
-                    items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]}
-                    checked={(label) => projectData.agendas?.some((a: string) => a.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
+                  <CheckboxList items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]} checked={(label) => projectData.agendas?.some((a: string) => a.toLowerCase() === label.toLowerCase()) ?? false} />
                 </td>
-                
               </tr>
-              {showCommentInputs && (
-                    <tr>
-                      <td colSpan={2} className="p-0">
-                        <CommentInput
-                          sectionName="Tagging, Cluster & Extension Agenda"
-                          onCommentChange={onCommentChange}
-                          InputValue="proj_tagging_cluster_extension_feedback"
-                          value={comments["proj_tagging_cluster_extension_feedback"] || ""}
-                          disabled={alreadyReviewed}
-                        />
-                      </td>
-                    </tr>
-                  )}
+              <tr>
+                <td colSpan={2} className="p-0">
+                  {sf("Tagging, Cluster & Extension Agenda", "Tagging, Cluster & Extension Agenda", "proj_tagging_cluster_extension_feedback", existingReview?.tagging_cluster_extension_feedback)}
+                </td>
+              </tr>
               <tr className="border border-black">
                 <td className="border-r border-black px-4 py-3 font-bold">Sustainable Development Goal (SDG) Addressed</td>
                 <td className="border-r border-black px-4 py-3 font-bold">College/Campus/Mandated Academic Program:</td>
@@ -148,63 +144,36 @@ export const ProjectForm: React.FC<{
             </tbody>
           </table>
         </div>
-
-        {showCommentInputs && (
-          <CommentInput sectionName="SDG & Academic Program" onCommentChange={onCommentChange}
-            InputValue="proj_sdg_academic_program_feedback" value={comments["proj_sdg_academic_program_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
-        {/* {showCommentInputs && (
-          <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
-            InputValue="proj_profile_feedback" value={comments["proj_profile_feedback"] || ""} disabled={alreadyReviewed} />
-        )} */}
+        {sf("SDG & Academic Program", "SDG & Academic Program", "proj_sdg_academic_program_feedback", existingReview?.sdg_academic_program_feedback)}
 
         <div className="text-gray-700 leading-relaxed">
           <div className="px-2 py-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.rationale)}</p>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Rationale" onCommentChange={onCommentChange}
-              InputValue="proj_rationale_feedback" value={comments["proj_rationale_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Rationale", "Project Rationale", "proj_rationale_feedback", existingReview?.rationale_feedback)}
 
           <div className="p-2 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. SIGNIFICANCE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.significance)}</p>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Significance" onCommentChange={onCommentChange}
-              InputValue="proj_significance_feedback" value={comments["proj_significance_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Significance", "Project Significance", "proj_significance_feedback", existingReview?.significance_feedback)}
 
           <div className="border-b border-black p-2">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />IV. OBJECTIVES</h3>
             <p className="text-base font-semibold mb-2 mt-3 ml-2">General:</p>
             <p className="p-5 bg-gray-100">{val(projectData.general_objectives)}</p>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project General Objectives" onCommentChange={onCommentChange}
-              InputValue="proj_general_objectives_feedback" value={comments["proj_general_objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+            {sf("General Objectives", "Project General Objectives", "proj_general_objectives_feedback", existingReview?.general_objectives_feedback)}
             <p className="text-base font-semibold mb-2 mt-3 ml-2">Specific:</p>
             <p className="p-5 bg-gray-100">{val(projectData.specific_objectives)}</p>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Specific Objectives" onCommentChange={onCommentChange}
-              InputValue="proj_specific_objectives_feedback" value={comments["proj_specific_objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+            {sf("Specific Objectives", "Project Specific Objectives", "proj_specific_objectives_feedback", existingReview?.specific_objectives_feedback)}
           </div>
-          {/* {showCommentInputs && (
-            <CommentInput sectionName="Project Objectives" onCommentChange={onCommentChange}
-              InputValue="proj_objectives_feedback" value={comments["proj_objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )} */}
 
           <div className="border-b border-black p-2">
             <h3 className="font-bold text-gray-900 text-base mb-5 flex"><VerticalLine />V. METHODOLOGY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(projectData.methodology)}</p>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Methodology" onCommentChange={onCommentChange}
-              InputValue="proj_methodology_feedback" value={comments["proj_methodology_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Methodology", "Project Methodology", "proj_methodology_feedback", existingReview?.methodology_feedback)}
 
           <div>
             <h3 className="font-bold text-gray-900 p-2 text-base my-2 flex"><VerticalLine />VI. EXPECTED OUTPUT/OUTCOME</h3>
@@ -223,63 +192,42 @@ export const ProjectForm: React.FC<{
               </tbody>
             </table>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Expected Output" onCommentChange={onCommentChange}
-              InputValue="proj_expected_output_feedback" value={comments["proj_expected_output_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Expected Output", "Expected Output", "proj_expected_output_feedback", existingReview?.expected_output_feedback)}
 
-        {/* VIII. WORKPLAN */}
-        <div>
-          <h3 className="font-bold text-gray-900 text-base p-2 mb-2 flex"><VerticalLine />VII. WORKPLAN</h3>
-          <div className="overflow-x-auto">
-            <table className="border border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
-              <thead>
-                <tr className="border-b border-black">
-                  <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
-                  <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Activity</th>
-                  <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[90px]">Expected Output</th>
-                  {['Year 1', 'Year 2', 'Year 3'].map((y) => (
-                    <th key={y} colSpan={4} className="border-r border-black px-3 py-2 text-center font-bold last:border-r-0">{y}</th>
-                  ))}
-                </tr>
-                <tr className="border-b border-black">
-                  {[1, 2, 3].map((yr) =>
-                    ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => (
-                      <th key={`${yr}-${q}`} className={`px-2 py-1 text-center font-semibold w-8 ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>{q}</th>
-                    ))
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {(projectData.workplan || []).map((row: any, i: number) => (
-                  <tr key={i} className="border-b border-black">
-                    <td className="border-r border-black px-3 py-2 align-top">{row.objective || "—"}</td>
-                    <td className="border-r border-black px-3 py-2 align-top">{row.activity || "—"}</td>
-                    <td className="border-r border-black px-3 py-2 align-top">{row.expected_output || "—"}</td>
-                    {[1, 2, 3].map((yr) =>
-                      ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => {
+          <div>
+            <h3 className="font-bold text-gray-900 text-base p-2 mb-2 flex"><VerticalLine />VII. WORKPLAN</h3>
+            <div className="overflow-x-auto">
+              <table className="border border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
+                <thead>
+                  <tr className="border-b border-black">
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Activity</th>
+                    <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[90px]">Expected Output</th>
+                    {['Year 1', 'Year 2', 'Year 3'].map((y) => (<th key={y} colSpan={4} className="border-r border-black px-3 py-2 text-center font-bold last:border-r-0">{y}</th>))}
+                  </tr>
+                  <tr className="border-b border-black">
+                    {[1, 2, 3].map((yr) => ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => (<th key={`${yr}-${q}`} className={`px-2 py-1 text-center font-semibold w-8 ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>{q}</th>)))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(projectData.workplan || []).map((row: any, i: number) => (
+                    <tr key={i} className="border-b border-black">
+                      <td className="border-r border-black px-3 py-2 align-top">{row.objective || "—"}</td>
+                      <td className="border-r border-black px-3 py-2 align-top">{row.activity || "—"}</td>
+                      <td className="border-r border-black px-3 py-2 align-top">{row.expected_output || "—"}</td>
+                      {[1, 2, 3].map((yr) => ['Q1', 'Q2', 'Q3', 'Q4'].map((q, qi) => {
                         const quarterLabel = `Year ${yr} ${q}`;
                         const boolKey = `year${yr}_${q.toLowerCase()}`;
-                        const isChecked = Array.isArray(row.timeline)
-                          ? row.timeline.includes(quarterLabel)
-                          : !!row[boolKey];
-                        return (
-                          <td key={`${yr}-${q}`} className={`px-2 py-2 text-center align-middle ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}>
-                            <input type="checkbox" checked={isChecked} readOnly className="rounded" />
-                          </td>
-                        );
-                      })
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        const isChecked = Array.isArray(row.timeline) ? row.timeline.includes(quarterLabel) : !!row[boolKey];
+                        return (<td key={`${yr}-${q}`} className={`px-2 py-2 text-center align-middle ${qi === 3 && yr < 3 ? 'border-r border-black' : ''}`}><input type="checkbox" checked={isChecked} readOnly className="rounded" /></td>);
+                      }))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Project Work Plan" onCommentChange={onCommentChange}
-            InputValue="proj_work_plan_feedback" value={comments["proj_work_plan_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+          {sf("Work Plan", "Project Work Plan", "proj_work_plan_feedback", existingReview?.work_plan_feedback)}
 
           <div>
             <h3 className="font-bold text-gray-900 text-base p-2 mb-2 flex"><VerticalLine />VIII. BUDGETARY REQUIREMENT</h3>
@@ -290,26 +238,16 @@ export const ProjectForm: React.FC<{
                   <td className="px-4 py-3 font-bold text-center">Amount (PhP)</td>
                 </tr>
                 {(projectData.budget_requirements || []).length > 0
-                  ? projectData.budget_requirements.map((row: BudgetItem, i: number) => (
-                    <tr key={i} className="border border-black">
-                      <td className="border-r border-black px-4 py-3">{val(row.item)}</td>
-                      <td className="px-4 py-3 text-right">₱ {row.amount}</td>
-                    </tr>
-                  ))
+                  ? projectData.budget_requirements.map((row: BudgetItem, i: number) => (<tr key={i} className="border border-black"><td className="border-r border-black px-4 py-3">{val(row.item)}</td><td className="px-4 py-3 text-right">₱ {row.amount}</td></tr>))
                   : <tr><td colSpan={2} className="text-center px-4 py-3 text-gray-500">No budget data available</td></tr>}
                 <tr className="font-bold bg-gray-100 border-t border border-black">
                   <td className="border-r border-black px-4 py-3 text-right font-bold">Total</td>
-                  <td className="px-4 py-3 text-right">
-                    ₱ {(projectData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}
-                  </td>
+                  <td className="px-4 py-3 text-right">₱ {(projectData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Project Budget" onCommentChange={onCommentChange}
-              InputValue="proj_budget_feedback" value={comments["proj_budget_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Budget", "Project Budget", "proj_budget_feedback", existingReview?.budget_requirements_feedback)}
         </div>
       </div>
     </section>

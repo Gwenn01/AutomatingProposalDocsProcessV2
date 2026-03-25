@@ -144,3 +144,15 @@ export async function updateProposalReview(
   return data;
 }
 
+
+export async function fetchExistingReview(
+  proposalNodeId: number,
+): Promise<ProposalReviewResponse | null> {
+  try {
+    const res = await authFetch(`${BASE_URL}/proposal-review/${proposalNodeId}/`);
+    if (res.status === 404) return null;
+    return await handleResponse<ProposalReviewResponse>(res);
+  } catch {
+    return null;
+  }
+}

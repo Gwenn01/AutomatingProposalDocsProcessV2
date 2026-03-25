@@ -1,13 +1,29 @@
-import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
+import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import CommentInput from "../reviewer/CommentInput";
-import { type BudgetItem } from "../reviewer/ReviewerCommentModal";
+import { type BudgetItem, type Comments, FeedbackBadge } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
 import { formatDate } from "@/utils/dateFormat";
 
-interface Comments {
-  [key: string]: string;
-}
+const NA = "N/A";
+
+/** Renders the right slot: input / feedback badge / nothing */
+const SF: React.FC<{
+  show: boolean;
+  showInput: boolean;
+  loading: boolean;
+  label: string;
+  value?: string;
+  inputKey: string;
+  inputLabel: string;
+  comments: Comments;
+  onCommentChange: (k: string, v: string) => void;
+  disabled: boolean;
+}> = ({ show, showInput, loading, label, value, inputKey, inputLabel, comments, onCommentChange, disabled }) => {
+  if (showInput) return <CommentInput sectionName={inputLabel} onCommentChange={onCommentChange} InputValue={inputKey} value={comments[inputKey] || ""} disabled={disabled} />;
+  if (show) return <FeedbackBadge label={label} value={value} loading={loading} />;
+  return null;
+};
 
 export const ActivityForm: React.FC<{
   activityData: any;
@@ -17,9 +33,16 @@ export const ActivityForm: React.FC<{
   onCommentChange: (key: string, val: string) => void;
   alreadyReviewed: boolean;
   showCommentInputs: boolean;
-}> = ({ activityData, programTitle, projectTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs }) => {
+  existingReview?: any | null;
+  reviewLoading?: boolean;
+}> = ({ activityData, programTitle, projectTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs, existingReview, reviewLoading = false }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
+  const showFeedback = !showCommentInputs && (reviewLoading || !!existingReview);
+
+  const sf = (label: string, inputLabel: string, inputKey: string, value?: string) => (
+    <SF show={showFeedback} showInput={showCommentInputs} loading={reviewLoading} label={label} value={value} inputKey={inputKey} inputLabel={inputLabel} comments={comments} onCommentChange={onCommentChange} disabled={alreadyReviewed} />
+  );
 
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
@@ -41,13 +64,10 @@ export const ActivityForm: React.FC<{
             <p className="font-normal">Members: <span className="font-normal">{val(activityData.members?.join(", ") || NA)}</span></p>
             <br />
             <p className="font-bold">Activity Duration: <span className="font-normal">{val(activityData.activity_duration_hours)} hours</span></p>
-            <p className="font-normal">Date: {" "} <span className="font-normal"> {val(formatDate(activityData.activity_date))}</span></p>
+            <p className="font-normal">Date: <span className="font-normal">{val(formatDate(activityData.activity_date))}</span></p>
           </div>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Profile" onCommentChange={onCommentChange}
-            InputValue="act_extension_site_feedback" value={comments["act_extension_site_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+        {sf("Profile", "Profile", "act_profile_feedback", existingReview?.profile_feedback)}
 
         {/* IMPLEMENTING / COOPERATING AGENCY */}
         <div className="overflow-x-auto">
@@ -58,19 +78,14 @@ export const ActivityForm: React.FC<{
                 <p className="px-3 pb-1 text-xs text-gray-500 italic">Address/Telephone/Email (Barangay, Municipality, District, Province, Region):</p>
                 <p className="px-3 mb-2">{arrVal(activityData.implementing_agency)}</p>
               </tr>
-
               <tr className="border-b border-black">
                 <p className="px-3 py-2 font-bold flex"><VerticalLine />COOPERATING AGENCY/IES <span className="font-normal">/Program/College (Name/s and Address/es)</span></p>
                 <p className="px-3 mb-2 font-normal">{arrVal(activityData.cooperating_agencies)}</p>
               </tr>
-                {showCommentInputs && (
-                  <CommentInput sectionName="Implementing & Cooperating Agency" onCommentChange={onCommentChange}
-                    InputValue="act_implementing_agency_feedback" value={comments["act_implementing_agency_feedback"] || ""} disabled={alreadyReviewed} />
-                )}
             </tbody>
           </table>
         </div>
-
+        {sf("Implementing & Cooperating Agency", "Implementing & Cooperating Agency", "act_implementing_agency_feedback", existingReview?.implementing_agency_feedback)}
 
         {/* EXTENSION SITES */}
         <p className="font-bold text-base p-3 mb-2 flex"><VerticalLine />EXTENSION SITE/S OR VENUE/S</p>
@@ -102,10 +117,7 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="Extension Site/s" onCommentChange={onCommentChange}
-            InputValue="act_extension_site_feedback" value={comments["act_extension_site_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+        {sf("Extension Site/s", "Extension Site/s", "act_extension_site_feedback", existingReview?.extension_site_feedback)}
 
         {/* TAGGING / CLUSTER / AGENDA / SDG */}
         <div className="overflow-x-auto">
@@ -114,37 +126,20 @@ export const ActivityForm: React.FC<{
               <tr className="border-b border-black">
                 <td className="border border-black px-4 py-4 align-top w-1/2">
                   <p className="font-bold mb-3 text-base flex"><VerticalLine />TAGGING</p>
-                  <CheckboxList
-                    items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]}
-                    checked={(label) => activityData.tags?.some((t: string) => t.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
+                  <CheckboxList items={["General", "Environment and Climate Change (for CECC)", "Gender and Development (for GAD)", "Mango-Related (for RMC)"]} checked={(label) => activityData.tags?.some((t: string) => t.toLowerCase() === label.toLowerCase()) ?? false} />
                   <p className="font-bold mt-5 mb-3 text-base flex"><VerticalLine />CLUSTER</p>
-                  <CheckboxList
-                    items={["Health, Education, and Social Sciences", "Engineering, Industry, Information Technology", "Environment and Natural Resources", "Tourism, Hospitality Management, Entrepreneurship, Criminal Justice", "Graduate Studies", "Fisheries", "Agriculture, Forestry"]}
-                    checked={(label) => activityData.clusters?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
+                  <CheckboxList items={["Health, Education, and Social Sciences", "Engineering, Industry, Information Technology", "Environment and Natural Resources", "Tourism, Hospitality Management, Entrepreneurship, Criminal Justice", "Graduate Studies", "Fisheries", "Agriculture, Forestry"]} checked={(label) => activityData.clusters?.some((c: string) => c.toLowerCase() === label.toLowerCase()) ?? false} />
                 </td>
                 <td className="border border-black px-4 py-4 align-top w-1/2">
                   <p className="font-bold mb-3 text-base flex"><VerticalLine />EXTENSION AGENDA</p>
-                  <CheckboxList
-                    items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]}
-                    checked={(label) => activityData.agendas?.some((a: string) => a.toLowerCase() === label.toLowerCase()) ?? false}
-                  />
+                  <CheckboxList items={["Business Management and Livelihood Skills Development", "Accountability, Good Governance, and Peace and Order", "Youth and Adult Functional Literacy and Education", "Accessibility, Inclusivity, and Gender and Development", "Nutrition, Health, and Wellness", "Indigenous People's Rights and Cultural Heritage Preservation", "Human Capital Development", "Adoption and Commercialization of Appropriate Technologies", "Natural Resources, Climate Change, and Disaster Risk Reduction Management"]} checked={(label) => activityData.agendas?.some((a: string) => a.toLowerCase() === label.toLowerCase()) ?? false} />
                 </td>
               </tr>
-              {showCommentInputs && (
-                    <tr>
-                      <td colSpan={2} className="p-0">
-                        <CommentInput
-                          sectionName="Tagging, Cluster & Extension Agenda"
-                          onCommentChange={onCommentChange}
-                          InputValue="act_tagging_cluster_extension_feedback"
-                          value={comments["act_tagging_cluster_extension_feedback"] || ""}
-                          disabled={alreadyReviewed}
-                        />
-                      </td>
-                    </tr>
-                  )}
+              <tr>
+                <td colSpan={2} className="p-0">
+                  {sf("Tagging, Cluster & Extension Agenda", "Tagging, Cluster & Extension Agenda", "act_tagging_cluster_extension_feedback", existingReview?.tagging_cluster_extension_feedback)}
+                </td>
+              </tr>
               <tr className="border border-black">
                 <td className="border-r border-black px-4 py-3 font-bold">Sustainable Development Goal (SDG) Addressed:</td>
                 <td className="border-r border-black px-4 py-3 font-bold">College / Campus / Mandated Academic Program:</td>
@@ -156,43 +151,27 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        {showCommentInputs && (
-          <CommentInput sectionName="SDG & Academic Program" onCommentChange={onCommentChange}
-            InputValue="act_sdg_academic_program_feedback" value={comments["act_sdg_academic_program_feedback"] || ""} disabled={alreadyReviewed} />
-        )}
+        {sf("SDG & Academic Program", "SDG & Academic Program", "act_sdg_academic_program_feedback", existingReview?.sdg_academic_program_feedback)}
 
         <div className="text-gray-700 leading-relaxed">
-          {/* II. RATIONALE */}
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />II. RATIONALE</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.rationale)}</p>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Rationale" onCommentChange={onCommentChange}
-              InputValue="act_rationale_feedback" value={comments["act_rationale_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Rationale", "Activity Rationale", "act_rationale_feedback", existingReview?.rationale_feedback)}
 
-          {/* III. OBJECTIVES */}
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />III. OBJECTIVES OF THE ACTIVITY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.objectives)}</p>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Objectives" onCommentChange={onCommentChange}
-              InputValue="act_objectives_feedback" value={comments["act_objectives_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Objectives", "Activity Objectives", "act_objectives_feedback", existingReview?.objectives_feedback)}
 
-          {/* IV. METHODOLOGY */}
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base flex"><VerticalLine />IV. METHODOLOGY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.methodology)}</p>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Methodology" onCommentChange={onCommentChange}
-              InputValue="act_methodology_feedback" value={comments["act_methodology_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Methodology", "Activity Methodology", "act_methodology_feedback", existingReview?.methodology_feedback)}
 
-          {/* V. EXPECTED OUTPUT */}
           <div>
             <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5 flex"><VerticalLine />V. EXPECTED OUTPUT/OUTCOME</h3>
             <table className="w-full border border-black text-sm">
@@ -210,12 +189,8 @@ export const ActivityForm: React.FC<{
               </tbody>
             </table>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Expected Output" onCommentChange={onCommentChange}
-              InputValue="act_expected_output_feedback" value={comments["act_expected_output_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Expected Output", "Expected Output", "act_expected_output_feedback", existingReview?.expected_output_feedback)}
 
-          {/* VI. PLAN OF ACTIVITY */}
           <div>
             <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5 flex"><VerticalLine />VI. PLAN OF ACTIVITY</h3>
             <table className="w-full border border-black text-sm">
@@ -225,28 +200,20 @@ export const ActivityForm: React.FC<{
                   <td className="border-r border-black px-4 py-3 font-bold text-center">Activity</td>
                   <td className="px-4 py-3 font-bold text-center">Person/s Responsible</td>
                 </tr>
-                {(activityData.plan_of_activity || []).length > 0 ? (
-                  activityData.plan_of_activity.map((item: any, i: number) => (
+                {(activityData.plan_of_activity || []).length > 0
+                  ? activityData.plan_of_activity.map((item: any, i: number) => (
                     <tr key={i} className="border-b border-black">
                       <td className="border-r border-black px-4 py-3 text-xs">{val(item.time)}</td>
                       <td className="border-r border-black px-4 py-3">{val(item.activity)}</td>
                       <td className="px-4 py-3">{val(item.person_responsible)}</td>
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} className="text-center px-4 py-6 text-gray-400 italic">No plan of activity data available</td>
-                  </tr>
-                )}
+                  : <tr><td colSpan={3} className="text-center px-4 py-6 text-gray-400 italic">No plan of activity data available</td></tr>}
               </tbody>
             </table>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Plan of Activities" onCommentChange={onCommentChange}
-              InputValue="act_work_plan_feedback" value={comments["act_work_plan_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Plan of Activity", "Plan of Activities", "act_work_plan_feedback", existingReview?.work_plan_feedback)}
 
-          {/* VII. BUDGET */}
           <div>
             <h3 className="font-bold text-gray-900 pt-4 px-4 text-base flex"><VerticalLine />VII. BUDGETARY REQUIREMENT</h3>
             <table className="w-full border border-black text-sm mt-6">
@@ -256,26 +223,16 @@ export const ActivityForm: React.FC<{
                   <td className="px-4 py-3 font-bold text-center">Amount (PhP)</td>
                 </tr>
                 {(activityData.budget_requirements || []).length > 0
-                  ? activityData.budget_requirements.map((row: BudgetItem, i: number) => (
-                    <tr key={i} className="border-b border-black">
-                      <td className="border-r border-black px-4 py-3">{val(row.item)}</td>
-                      <td className="px-4 py-3 text-right">₱ {row.amount}</td>
-                    </tr>
-                  ))
+                  ? activityData.budget_requirements.map((row: BudgetItem, i: number) => (<tr key={i} className="border-b border-black"><td className="border-r border-black px-4 py-3">{val(row.item)}</td><td className="px-4 py-3 text-right">₱ {row.amount}</td></tr>))
                   : <tr><td colSpan={2} className="text-center px-4 py-3 text-gray-500">No budget data available</td></tr>}
                 <tr className="font-bold bg-gray-100 border-t border-black">
                   <td className="border-r border-black px-4 py-3 text-right font-bold">Total</td>
-                  <td className="px-4 py-3 text-right">
-                    ₱ {(activityData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}
-                  </td>
+                  <td className="px-4 py-3 text-right">₱ {(activityData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          {showCommentInputs && (
-            <CommentInput sectionName="Activity Budget" onCommentChange={onCommentChange}
-              InputValue="act_budget_feedback" value={comments["act_budget_feedback"] || ""} disabled={alreadyReviewed} />
-          )}
+          {sf("Budget", "Activity Budget", "act_budget_feedback", existingReview?.budget_requirements_feedback)}
         </div>
       </div>
     </section>
