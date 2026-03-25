@@ -210,7 +210,7 @@ function mapSnapshotToActivity(data: any): any | null {
 
 // ================= HISTORY NORMALIZER =================
 
-function normalizeHistoryList(raw: any): History[] {
+function normalizeHistoryList(raw: any): any[] {
   if (!raw) return [];
   const items: any[] = Array.isArray(raw) ? raw : raw.history ?? raw.results ?? [];
   return items.map((item) => ({
@@ -464,14 +464,19 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   }, [isOpen, programNodeId]);
 
   // ── 2. Project list ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isOpen || !childId) return;
-    setProjectListLoading(true);
-    fetchReviewerProjectProposal(childId)
-      .then((data: ReviewerProjectList) => setProjectList(data))
-      .catch((err) => console.error("[ProjectList]", err))
-      .finally(() => setProjectListLoading(false));
-  }, [isOpen, childId]);
+    useEffect(() => {
+      if (!isOpen || !childId) return;
+
+      setProjectListLoading(true);
+
+      fetchReviewerProjectProposal(childId)
+        .then((data: ReviewerProjectList[]) => {
+          setProjectList(data);
+        })
+        .catch((err) => console.error("[ProjectList]", err))
+        .finally(() => setProjectListLoading(false));
+
+    }, [isOpen, childId]);
 
   // ── 3. Project history ────────────────────────────────────────────────────
   useEffect(() => {
@@ -571,7 +576,7 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
     if (activitiesCache[project.child_id] !== undefined) return;
     setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
     try {
-      const data: ApiActivity[] = await fetchReviewerActivityProposal(project.child_id);
+      const data: any[] = await fetchReviewerActivityProposal(project.child_id);
       setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data }));
     } catch (err) {
       console.error("[ActivityList]", err);
@@ -656,34 +661,121 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   };
 
   const getProposalNode = (): number | null => {
-    if (activeTab === "project")  return projectDetail?.id ?? selectedProject?.id ?? null;
-    if (activeTab === "activity") return activityDetail?.id ?? selectedActivity?.id ?? null;
+    if (activeTab === "project")  return projectDetail?.id ?? selectedProject?.proposal ?? null;
+    if (activeTab === "activity") return activityDetail?.id ?? selectedActivity?.proposal ?? null;
     return proposalData?.proposal_id ? Number(proposalData.proposal_id) : proposalDetail?.proposal ?? null;
   };
 
-  const buildPayload = (overrideDecision?: "needs_revision" | "approved"): ProposalReviewPayload => {
+  const buildPayload = (
+    overrideDecision?: "needs_revision" | "approved"
+  ): ProposalReviewPayload => {
     const proposalType = getProposalType();
+
     const resolveAssignment = (): number | undefined => {
       if (activeTab === "activity" && selectedActivity) return Number(selectedActivity.assignment);
-      if (activeTab === "project"  && selectedProject)  return Number(selectedProject.assignment);
-      return proposalData?.assignment_id ? Number(proposalData.assignment_id) : user?.user_id ? Number(user.user_id) : undefined;
+      if (activeTab === "project" && selectedProject) return Number(selectedProject.assignment);
+      return proposalData?.assignment_id
+        ? Number(proposalData.assignment_id)
+        : user?.user_id
+        ? Number(user.user_id)
+        : undefined;
     };
+
     const resolveProposalNode = (): number | undefined => {
       if (activeTab === "activity" && selectedActivity) return Number(selectedActivity.proposal);
-      if (activeTab === "project"  && selectedProject)  return Number(selectedProject.proposal);
-      return Number(proposalData.proposal_id);
+      if (activeTab === "project" && selectedProject) return Number(selectedProject.proposal);
+      return proposalData?.proposal_id ? Number(proposalData.proposal_id) : undefined;
     };
+
+    const proposal_node = resolveProposalNode();
+
+    // 🚨 HARD GUARD (IMPORTANT)
+    if (proposal_node === undefined) {
+      throw new Error("proposal_node is required but undefined");
+    }
+
     const base = {
       proposal_reviewer: resolveAssignment(),
-      proposal_node: resolveProposalNode(),
+      proposal_node, // ✅ now guaranteed number
       decision: overrideDecision ?? decision,
       review_round: String(reviewRound),
       proposal_type: proposalType,
     };
-    if (proposalType === "program") return { ...base, proposal_type: "program", profile_feedback: comments["profile_feedback"] || "", implementing_agency_feedback: comments["implementing_agency_feedback"] || "", extension_site_feedback: comments["extension_site_feedback"] || "", tagging_cluster_extension_feedback: comments["tagging_cluster_extension_feedback"] || "", sdg_academic_program_feedback: comments["sdg_academic_program_feedback"] || "", rationale_feedback: comments["rationale_feedback"] || "", significance_feedback: comments["significance_feedback"] || "", objectives_feedback: comments["objectives_feedback"] || "", general_objectives_feedback: comments["general_objectives_feedback"] || "", specific_objectives_feedback: comments["specific_objectives_feedback"] || "", methodology_feedback: comments["methodology_feedback"] || "", expected_output_feedback: comments["expected_output_feedback"] || "", sustainability_plan_feedback: comments["sustainability_feedback"] || "", org_staffing_feedback: comments["org_staffing_feedback"] || "", work_plan_feedback: comments["work_plan_feedback"] || "", budget_requirements_feedback: comments["budget_feedback"] || "" };
-    if (proposalType === "project") return { ...base, proposal_type: "project", profile_feedback: comments["proj_profile_feedback"] || "", implementing_agency_feedback: comments["proj_implementing_agency_feedback"] || "", extension_site_feedback: comments["proj_extension_site_feedback"] || "", tagging_cluster_extension_feedback: comments["proj_tagging_cluster_extension_feedback"] || "", sdg_academic_program_feedback: comments["proj_sdg_academic_program_feedback"] || "", rationale_feedback: comments["proj_rationale_feedback"] || "", significance_feedback: comments["proj_significance_feedback"] || "", objectives_feedback: comments["proj_objectives_feedback"] || "", general_objectives_feedback: comments["proj_general_objectives_feedback"] || "", specific_objectives_feedback: comments["proj_specific_objectives_feedback"] || "", methodology_feedback: comments["proj_methodology_feedback"] || "", expected_output_feedback: comments["proj_expected_output_feedback"] || "", sustainability_plan_feedback: comments["proj_sustainability_feedback"] || "", org_staffing_feedback: comments["proj_org_staffing_feedback"] || "", work_plan_feedback: comments["proj_work_plan_feedback"] || "", budget_requirements_feedback: comments["proj_budget_feedback"] || "" };
-    return { ...base, proposal_type: "activity", profile_feedback: comments["act_profile_feedback"] || "", implementing_agency_feedback: comments["act_implementing_agency_feedback"] || "", extension_site_feedback: comments["act_extension_site_feedback"] || "", tagging_cluster_extension_feedback: comments["act_tagging_cluster_extension_feedback"] || "", sdg_academic_program_feedback: comments["act_sdg_academic_program_feedback"] || "", rationale_feedback: comments["act_rationale_feedback"] || "", objectives_feedback: comments["act_objectives_feedback"] || "", methodology_feedback: comments["act_methodology_feedback"] || "", expected_output_feedback: comments["act_expected_output_feedback"] || "", work_plan_feedback: comments["act_work_plan_feedback"] || "", budget_requirements_feedback: comments["act_budget_feedback"] || "" };
-  };
+      if (proposalType === "program")
+        return {
+          ...base,
+          proposal_type: "program",
+
+          profile_feedback: comments["profile_feedback"] || "",
+          implementing_agency_feedback: comments["implementing_agency_feedback"] || "",
+          extension_site_feedback: comments["extension_site_feedback"] || "",
+          tagging_cluster_extension_feedback: comments["tagging_cluster_extension_feedback"] || "",
+          sdg_academic_program_feedback: comments["sdg_academic_program_feedback"] || "",
+
+          rationale_feedback: comments["rationale_feedback"] || "",
+          significance_feedback: comments["significance_feedback"] || "",
+
+          objectives_feedback: comments["objectives_feedback"] || "",
+          general_objectives_feedback: comments["general_objectives_feedback"] || "",
+          specific_objectives_feedback: comments["specific_objectives_feedback"] || "",
+
+          methodology_feedback: comments["methodology_feedback"] || "",
+          expected_output_feedback: comments["expected_output_feedback"] || "",
+          sustainability_plan_feedback: comments["sustainability_feedback"] || "",
+
+          org_staffing_feedback: comments["org_staffing_feedback"] || "",
+          work_plan_feedback: comments["work_plan_feedback"] || "",
+          budget_requirements_feedback: comments["budget_feedback"] || "",
+        };
+
+      if (proposalType === "project")
+        return {
+          ...base,
+          proposal_type: "project",
+
+          profile_feedback: comments["proj_profile_feedback"] || "",
+          implementing_agency_feedback: comments["proj_implementing_agency_feedback"] || "",
+          extension_site_feedback: comments["proj_extension_site_feedback"] || "",
+          tagging_cluster_extension_feedback: comments["proj_tagging_cluster_extension_feedback"] || "",
+          sdg_academic_program_feedback: comments["proj_sdg_academic_program_feedback"] || "",
+
+          rationale_feedback: comments["proj_rationale_feedback"] || "",
+          significance_feedback: comments["proj_significance_feedback"] || "",
+
+          objectives_feedback: comments["proj_objectives_feedback"] || "",
+          general_objectives_feedback: comments["proj_general_objectives_feedback"] || "",
+          specific_objectives_feedback: comments["proj_specific_objectives_feedback"] || "",
+
+          methodology_feedback: comments["proj_methodology_feedback"] || "",
+          expected_output_feedback: comments["proj_expected_output_feedback"] || "",
+          sustainability_plan_feedback: comments["proj_sustainability_feedback"] || "",
+
+          org_staffing_feedback: comments["proj_org_staffing_feedback"] || "",
+          work_plan_feedback: comments["proj_work_plan_feedback"] || "",
+          budget_requirements_feedback: comments["proj_budget_feedback"] || "",
+        };
+
+      return {
+        ...base,
+        proposal_type: "activity",
+
+        profile_feedback: comments["act_profile_feedback"] || "",
+        implementing_agency_feedback: comments["act_implementing_agency_feedback"] || "",
+        extension_site_feedback: comments["act_extension_site_feedback"] || "",
+        tagging_cluster_extension_feedback: comments["act_tagging_cluster_extension_feedback"] || "",
+        sdg_academic_program_feedback: comments["act_sdg_academic_program_feedback"] || "",
+
+        rationale_feedback: comments["act_rationale_feedback"] || "",
+
+        objectives_feedback: comments["act_objectives_feedback"] || "",
+        methodology_feedback: comments["act_methodology_feedback"] || "",
+        expected_output_feedback: comments["act_expected_output_feedback"] || "",
+
+        work_plan_feedback: comments["act_work_plan_feedback"] || "",
+        budget_requirements_feedback: comments["act_budget_feedback"] || "",
+      };
+
+    };
 
   const submitReview = async (overrideDecision: "needs_revision" | "approved") => {
     const proposalNode = getProposalNode();

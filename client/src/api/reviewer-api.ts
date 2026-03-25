@@ -151,6 +151,7 @@ export async function fetchExistingReview(
   try {
     const res = await authFetch(`${BASE_URL}/proposal-review/${proposalNodeId}/`);
     if (res.status === 404) return null;
+    if (res.status === 500) return null;
     return await handleResponse<ProposalReviewResponse>(res);
   } catch {
     return null;
