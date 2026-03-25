@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Search, Table, Grid } from "lucide-react";
+import { Search, Table, Grid, FileText } from "lucide-react";
 import { getProposals, type ProgramProposal } from "@/api/admin-api";
 import { getNotifications } from "@/api/get-notification-api";
 import NotificationBell, { type Notification } from "@/components/NotificationBell";
@@ -12,8 +12,8 @@ import { useProposals } from "@/hooks/useViewProposal";
 // ── Sub-components ────────────────────────────────────────────────────────────
 import ProposalsTableView from "@/components/admin/ManageDocuments/ProposalsTableView";
 import ProposalsCardView from "@/components/admin/ManageDocuments/ProposalsCardView";
-import AdminPagination from "@/components/admin/ManageDocuments/Pagination";
-import ProposalsEmptyState from "@/components/admin/ManageDocuments/ProposalEmptyState";
+import AdminPagination from "@/components/admin/Pagination";
+import EmptyState from "@/components/admin/EmptyState";
 
 const ManageDocuments = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,7 +22,7 @@ const ManageDocuments = () => {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const itemsPerPage = viewMode === "table" ? 5 : 6;
 
   // ── Reviewer modal state ──────────────────────────────────────────────────
   const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
@@ -103,7 +103,7 @@ const ManageDocuments = () => {
   // ── Reset page on search / view mode / page size change ───────────────────
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, viewMode, itemsPerPage]);
+  }, [searchQuery, viewMode]);
 
   // ── Notifications ─────────────────────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
@@ -186,107 +186,118 @@ const ManageDocuments = () => {
 
   return (
     <>
-      <div className="p-8 lg:p-10 space-y-10 bg-[#fbfcfb] h-auto animate-in fade-in duration-500">
-        {/* Header */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2 mb-10">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-              Manage Documents
-            </h1>
-            <p className="text-slate-500 text-sm">
-              View proposals and reviewer statistics.
-            </p>
-          </div>
+      <div className="p-8 lg:p-10 bg-[#fbfcfb] min-h-screen flex flex-col animate-in fade-in duration-500">
 
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
-            {/* Search */}
-            <div className="relative w-full md:w-80 group">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Search size={16} className="text-slate-400" />
+        {/* Main Content Wrapper */}
+        <div className="flex-1 flex flex-col space-y-10">
+
+          {/* Header */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                Manage Documents
+              </h1>
+              <p className="text-slate-500 text-sm">
+                View proposals and reviewer statistics.
+              </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+              {/* Search */}
+              <div className="relative w-full md:w-80 group">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                  <Search size={16} className="text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search proposals..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none text-[13px] font-semibold"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Search proposals..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none text-[13px] font-semibold"
-              />
-            </div>
 
-            {/* View Switch */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-2 rounded-[12px] ${
-                  viewMode === "table"
+              {/* View Switch */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`p-2 rounded-[12px] ${viewMode === "table"
                     ? "bg-white text-[#1cb35a] shadow-sm"
                     : "text-slate-400"
-                }`}
-              >
-                <Table size={16} />
-              </button>
-              <button
-                onClick={() => setViewMode("card")}
-                className={`p-2 rounded-[12px] ${
-                  viewMode === "card"
+                    }`}
+                >
+                  <Table size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode("card")}
+                  className={`p-2 rounded-[12px] ${viewMode === "card"
                     ? "bg-white text-[#1cb35a] shadow-sm"
                     : "text-slate-400"
-                }`}
-              >
-                <Grid size={16} />
-              </button>
-            </div>
+                    }`}
+                >
+                  <Grid size={16} />
+                </button>
+              </div>
 
-            {/* Notification Bell */}
-            <div className="ml-4">
-              <NotificationBell
-                notifications={notifications}
-                unreadCount={unreadCount}
-                show={showNotifications}
-                onToggle={() => setShowNotifications((prev) => !prev)}
-                onClose={() => setShowNotifications(false)}
-                onRead={handleReadNotification}
-              />
+              {/* Notification Bell */}
+              <div className="ml-4">
+                <NotificationBell
+                  notifications={notifications}
+                  unreadCount={unreadCount}
+                  show={showNotifications}
+                  onToggle={() => setShowNotifications((prev) => !prev)}
+                  onClose={() => setShowNotifications(false)}
+                  onRead={handleReadNotification}
+                />
+              </div>
             </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1">
+            {currentData.length === 0 ? (
+              <EmptyState icon={FileText} message="No proposals found" />
+            ) : viewMode === "table" ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <ProposalsTableView
+                  data={currentData}
+                  docViewerLoading={docViewerLoading}
+                  onOpenReviewerModal={openReviewerModal}
+                  onOpenDocViewer={openDocViewer}
+                  onOpenReviewedDoc={openReviewedDoc}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <ProposalsCardView
+                  data={currentData}
+                  docViewerLoading={docViewerLoading}
+                  onOpenReviewerModal={openReviewerModal}
+                  onOpenDocViewer={openDocViewer}
+                  onOpenReviewedDoc={openReviewedDoc}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="bg-white rounded-[15px] shadow border border-slate-100 overflow-hidden">
-          {currentData.length === 0 ? (
-            <ProposalsEmptyState />
-          ) : viewMode === "table" ? (
-            <ProposalsTableView
-              data={currentData}
-              docViewerLoading={docViewerLoading}
-              onOpenReviewerModal={openReviewerModal}
-              onOpenDocViewer={openDocViewer}
-              onOpenReviewedDoc={openReviewedDoc}
-            />
-          ) : (
-            <ProposalsCardView
-              data={currentData}
-              docViewerLoading={docViewerLoading}
-              onOpenReviewerModal={openReviewerModal}
-              onOpenDocViewer={openDocViewer}
-              onOpenReviewedDoc={openReviewedDoc}
-            />
-          )}
+        {/* Pagination (Pinned Bottom) */}
+        <div className="mt-auto pt-6">
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            totalItems={filteredDocs.length}
+            itemsPerPage={itemsPerPage}
+            onPrev={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onNext={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            onPageChange={(page) => setCurrentPage(page)}
+            itemName="proposals"
+          />
         </div>
-
-        {/* Pagination */}
-        <AdminPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          startIndex={startIndex}
-          endIndex={endIndex}
-          totalItems={filteredDocs.length}
-          itemsPerPage={itemsPerPage}
-          onPrev={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          onNext={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          onPageChange={(page) => setCurrentPage(page)}
-          onItemsPerPageChange={(count) => setItemsPerPage(count)}
-        />
       </div>
 
       {/* Modal Loading Overlay */}

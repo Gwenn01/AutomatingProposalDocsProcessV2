@@ -77,46 +77,45 @@ const ProposalsTableView = ({
                 </td>
 
                 {/* 4. Actions */}
-<td className="px-6 py-5 text-center align-middle">
-  {/* flex-nowrap keeps everything on one line */}
-  <div className="flex items-center justify-center gap-2 flex-nowrap whitespace-nowrap">
-    
-    {/* View Docs - Solid Blue/Indigo */}
-    <button
-      onClick={() => onOpenDocViewer(doc)}
-      disabled={docViewerLoading}
-      className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <FileText className="w-3.5 h-3.5" />
-      View Docs
-    </button>
+                <td className="px-6 py-5 text-center align-middle">
+                  {/* Added flex-nowrap and whitespace-nowrap to prevent breaking */}
+                  <div className="flex items-center justify-center gap-2 flex-nowrap whitespace-nowrap">
 
-    {/* View Reviews - Solid Emerald/Teal */}
-    <button
-      onClick={() => onOpenReviewedDoc(doc)}
-      className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-    >
-      <Users className="w-3.5 h-3.5" />
-      View Reviews
-    </button>
+                    {/* View Docs */}
+                    <button
+                      onClick={() => onOpenDocViewer(doc)}
+                      disabled={docViewerLoading}
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-600 px-3 py-2 rounded-lg text-xs font-semibold hover:from-blue-100 hover:to-indigo-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      View Docs
+                    </button>
 
-    {/* Approve / Reject — Solid Green and Red */}
-    {doc.status === "for_approval" && (
-      <>
-        <button className="inline-flex items-center gap-1.5 bg-green-600 text-white border border-green-700 px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-green-700 transition-all shadow-md">
-          <Check size={12} strokeWidth={3} />
-          Approve
-        </button>
+                    {/* View Reviews */}
+                    <button
+                      onClick={() => onOpenReviewedDoc(doc)}
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-3 py-2 rounded-lg text-xs font-semibold hover:from-emerald-100 hover:to-teal-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      View Reviews
+                    </button>
 
-        <button className="inline-flex items-center gap-1.5 bg-red-600 text-white border border-red-700 px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-red-700 transition-all shadow-md">
-          <XCircle size={12} />
-          Reject
-        </button>
-      </>
-    )}
-  </div>
-</td>
+                    {/* Approve / Reject — rendered directly in the same flex container */}
+                    {doc.status === "for_approval" && (
+                      <>
+                        <button className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-600 border border-emerald-100 px-3 py-2 rounded-lg text-xs font-bold uppercase hover:from-emerald-500 hover:to-green-500 hover:text-white hover:border-transparent transition-all shadow-sm">
+                          <Check size={12} strokeWidth={3} />
+                          Approve
+                        </button>
 
+                        <button className="inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-50 to-red-50 text-rose-500 border border-rose-100 px-3 py-2 rounded-lg text-xs font-bold uppercase hover:from-rose-500 hover:to-red-500 hover:text-white hover:border-transparent transition-all shadow-sm">
+                          <XCircle size={12} />
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
               </tr>
             );
           })}
