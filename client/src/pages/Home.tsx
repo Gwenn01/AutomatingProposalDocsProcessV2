@@ -6,6 +6,7 @@ import {
   AssignToReview,
   ManageAccount,
   ManageDocuments,
+  MonitoringProposals,
   Overview,
   CreateCoverPage,
 } from "@/pages/admin";
@@ -28,6 +29,7 @@ type ActiveMenu =
   | "Edit Proposal"
   | "Profile Overview"
   | "Overview"
+  | "Monitoring Proposal"
   | "Manage Account"
   | "Manage Documents"
   | "Assign to Review"
@@ -80,19 +82,19 @@ const Home: React.FC = () => {
   }, [navigate]);
 
   // Add a guarded navigation handler:
-const handleSetActive = (menu: ActiveMenu) => {
-  if (
-    active === 'Create Proposal' &&
-    isProposalDirty &&
-    menu !== 'Create Proposal'
-  ) {
-    const confirmed = window.confirm(
-      'You have unsaved changes in your proposal. If you leave, your progress will be lost.\n\nAre you sure you want to leave?'
-    );
-    if (!confirmed) return;
-  }
-  setActive(menu);
-};
+  const handleSetActive = (menu: ActiveMenu) => {
+    if (
+      active === "Create Proposal" &&
+      isProposalDirty &&
+      menu !== "Create Proposal"
+    ) {
+      const confirmed = window.confirm(
+        "You have unsaved changes in your proposal. If you leave, your progress will be lost.\n\nAre you sure you want to leave?",
+      );
+      if (!confirmed) return;
+    }
+    setActive(menu);
+  };
 
   // Optional loading guard
   if (!user || !active) return null;
@@ -111,11 +113,14 @@ const handleSetActive = (menu: ActiveMenu) => {
       <main className="flex-1 flex flex-col overflow-y-auto relative">
         {active === "Profile Overview" && <ProfileOverview />}
         {/* IMPLEMENTOR / INSTRUCTOR */}
-        {active === "Create Proposal" && <CreateProposal  onDirtyChange={setIsProposalDirty} />}
+        {active === "Create Proposal" && (
+          <CreateProposal onDirtyChange={setIsProposalDirty} />
+        )}
         {active === "View Proposal" && <ViewProposal />}
 
         {/* ADMIN */}
         {active === "Overview" && <Overview />}
+        {active === "Monitoring Proposal" && <MonitoringProposals />}
         {active === "Manage Account" && <ManageAccount />}
         {active === "Manage Documents" && <ManageDocuments />}
         {active === "Assign to Review" && <AssignToReview />}
