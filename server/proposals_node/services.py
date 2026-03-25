@@ -6,32 +6,38 @@ from django.db.models import Count, Q
 
 class OverviewService:
 
-    def get_status_counts(self):
+    def get_status_counts(self, year):
 
         data = {}
 
+        # ORM QUERY SET ==========================================================
+        queryset = Proposal.objects.all()
+        if year:
+            queryset = queryset.filter(created_at__year=year)
         # ONE query for proposal types
         type_counts = (
-            Proposal.objects
+            queryset
             .values('proposal_type')
             .annotate(total=Count('id'))
         )
         # ONE query for status
         status_counts = (
-            Proposal.objects
+            queryset
             .values('status')
             .annotate(total=Count('id'))
         )
 
         # approve and pending data
-        totals = Proposal.objects.filter(proposal_type='Program').aggregate(
-            #total_proposals=Count('id'),
-            total_approve=Count('id', filter=Q(status='approved')),
-            total_pending=Count('id', filter=~Q(status='approved'))
+        totals = (
+            queryset
+            .filter(proposal_type='Program')
+            .aggregate(
+                total_approve=Count('id', filter=Q(status='approved')),
+                total_pending=Count('id', filter=~Q(status='approved'))
+            )
         )
         
-        
-        # convert to dictionary
+        # convert to dictionary ================================================================
         proposal = {
             'total_program': 0,
             'total_project': 0,

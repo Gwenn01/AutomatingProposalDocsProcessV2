@@ -38,9 +38,9 @@ class AdminProposalList(APIView):
 class AdminOverviewView(APIView):
     permission_classes = [IsAdminUser]
 
-    def get(self, request, format=None):
+    def get(self, request, year, format=None):
         service = OverviewService()
-        data = service.get_status_counts()
+        data = service.get_status_counts(year)
         return Response(data, status=status.HTTP_200_OK)
     
 # REVIEWER VIEWS APPROVE PROPOSAL

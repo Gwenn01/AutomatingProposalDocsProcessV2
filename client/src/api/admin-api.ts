@@ -136,8 +136,10 @@ export const getUsersOverview = async (): Promise<UsersOverview> => {
 };
 
 // Get Proposals Overview
-export const getProposalsOverview = async (): Promise<ProposalsOverview> => {
-  const response = await fetch(`${API_URL}/admin/overview-proposals/`, {
+export const getProposalsOverview = async (
+  year: number,
+): Promise<ProposalsOverview> => {
+  const response = await fetch(`${API_URL}/admin/overview-proposals/${year}/`, {
     method: "GET",
     headers: getAuthHeaders(),
   });

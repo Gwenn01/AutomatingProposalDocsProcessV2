@@ -38,7 +38,7 @@ const AdminOverview = () => {
       setLoading(true);
       const [usersData, proposalsData] = await Promise.all([
         getUsersOverview(),
-        getProposalsOverview(),
+        getProposalsOverview(usersYear),
       ]);
       setUsers(usersData);
       console.log(proposalsData);
