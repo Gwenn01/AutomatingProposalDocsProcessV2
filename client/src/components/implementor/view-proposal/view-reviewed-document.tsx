@@ -570,6 +570,8 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const activeProjectReviewedData  = historySnapshotData ?? projectReviewedData;
   const activeActivityReviewedData = historySnapshotData ?? activityReviewedData;
 
+  console.log("reviewed data of project", projectReviewedData)
+
   // ── Resolved mapped data when a history snapshot is active ────────────────
   const activeMappedProgram  = historySnapshotData ? mapReviewedToProgram(historySnapshotData)  : mappedProgram;
   const activeMappedProject  = historySnapshotData ? mapReviewedToProject(historySnapshotData)  : mappedProject;
