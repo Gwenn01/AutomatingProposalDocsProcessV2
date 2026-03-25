@@ -5,8 +5,6 @@ import { getStatusStyle } from "@/utils/statusStyles";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import {
   fetchProjectList,
-  type ApiProjectListResponse,
-  type ApiActivity,
 } from "@/api/reviewer-api";
 import {
   fetchActivityList,
@@ -15,7 +13,6 @@ import {
   fetchProgramHistoryList,
   fetchProjectHistoryList,
   fetchActivityHistoryList,
-  type ApiActivityListResponse,
   checkReviews,
 } from "@/api/implementor-api";
 import { useAuth } from "@/context/auth-context";
@@ -26,6 +23,7 @@ import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
 import { useProposalEdit } from "@/hooks/useProposalEdit";
 import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/api/get-history-data-api";
+import type { ApiActivity, ApiActivityListResponse, ApiProjectListResponse } from "@/types/reviewer-types";
 
 // ================= TYPES =================
 

@@ -1,4 +1,4 @@
-import type { ActivityFormData, ActivityItem, ActivityScheduleRow, ApiActivity, ApiProject, BudgetRows, ExpectedOutput6Ps, OrgStaffingItem, ProgramFormData, ProjectFormData, ProjectItem, WorkplanRow } from "@/api/implementor-api";
+import type { ActivityFormData, ActivityItem, ActivityScheduleRow, ApiActivity, ApiProject, BudgetRows, ExpectedOutput6Ps, OrgStaffingItem, ProgramFormData, ProjectFormData, ProjectItem, WorkplanRow } from "@/types/implementor-types";
 
 export const defaultExtensionSite = () => ({
   country: '', region: '', province: '', district: '', municipality: '', barangay: '',
@@ -94,6 +94,12 @@ export const defaultProjectFormData = (apiProject: ApiProject): ProjectFormData 
   budget: defaultBudget(),
   activities: [{ ...defaultActivityItem(), project_leader: apiProject.project_leader }],
   saved: false,
+
+  
+  project_members: "",
+  project_duration_months: "",
+  project_start_date: "",
+  project_end_date: ""
 });
 
 export const defaultActivityFormData = (apiActivity: ApiActivity): ActivityFormData => ({

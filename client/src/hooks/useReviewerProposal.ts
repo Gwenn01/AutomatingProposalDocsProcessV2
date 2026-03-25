@@ -1,14 +1,14 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   fetchReviewerProposals,
-  fetchProgramProposalDetail,
-  type ReviewerProposal,
+  fetchProgramProposalDetail
 } from "@/api/reviewer-api";
 import {
   getNotifications,
   markNotificationRead,
   type Notification,
 } from "@/api/get-notification-api";
+import type { ReviewerProposal } from "@/types/reviewer-types";
 
 // ================= TYPE DEFINITIONS =================
 export interface Proposal {

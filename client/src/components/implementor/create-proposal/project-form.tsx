@@ -5,7 +5,6 @@
 //    budget total + other projects exceed the program ceiling.
 
 import { getProjectCompletion } from "@/helpers/create-proposal-helper";
-import type { ActivityItem, ProjectFormData } from "@/api/implementor-api";
 import { Card } from "./ui/card";
 import { SectionHeader } from "./ui/section-header";
 import { CompletionBadge } from "./ui/completion-badge";
@@ -20,6 +19,7 @@ import { BudgetTable } from "./tables/BudgetTable";
 import { BudgetIndicator } from "./ui/BudgetIndicator";
 import { Spinner } from "./ui/Spinner";
 import { formatDate } from "@/utils/dateFormat";
+import type { ActivityItem, ProjectFormData } from "@/types/implementor-types";
 
 interface ProjectFormProps {
   data: ProjectFormData;

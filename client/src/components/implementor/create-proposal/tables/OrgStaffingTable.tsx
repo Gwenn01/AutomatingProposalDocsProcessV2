@@ -1,4 +1,5 @@
-import type { OrgStaffingItem } from "@/api/implementor-api";
+import type { OrgStaffingItem } from "@/types/implementor-types";
+
 
 export const OrgStaffingTable = ({ rows, onChange }: { rows: OrgStaffingItem[]; onChange: (v: OrgStaffingItem[]) => void }) => {
   const update = (i: number, field: keyof OrgStaffingItem, value: string) => {

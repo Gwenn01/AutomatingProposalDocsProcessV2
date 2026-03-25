@@ -6,9 +6,6 @@ import {
   fetchActivityList,
   fetchProjectProposalDetail,
   fetchActivityProposalDetail,
-  type ApiProjectListResponse,
-  type ApiActivityListResponse,
-  type ApiActivity,
 } from "@/api/implementor-api";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import { exportElementToPdf } from "@/utils/exportToPdf";
@@ -18,6 +15,7 @@ import { ProjectFormDocument } from "../view-document/project-form";
 import { ActivityFormDocument } from "../view-document/activity-form";
 import { val } from "@/constants";
 import { ProjectTreeNode } from "../view-document/ptn-view-docs";
+import type { ApiActivityListResponse, ApiProjectListResponse } from "@/types/implementor-types";
 
 // ================= TYPE DEFINITIONS =================
 
@@ -46,7 +44,7 @@ interface ApiProposalDetail {
   proposal: number;
   program_title: string;
   program_leader: string;
-  projects_list: any[];
+  project_list: any[];
   implementing_agency: string[];
   cooperating_agencies: string[];
   extension_sites: string[];
@@ -292,7 +290,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     setActivityDetail(null);
     setActivityDetailLoading(true);
     try {
-      const data = await fetchActivityProposalDetail(activity.id);
+      const data = await fetchActivityProposalDetail(activity.child_id);
       setActivityDetail(data);
     } catch (err) {
       console.error("[ActivityDetail] Failed:", err);

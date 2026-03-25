@@ -1,5 +1,5 @@
+import type { ApiActivity } from "@/types/reviewer-types";
 import { formatDate } from "@/utils/dateFormat";
-import type { ApiActivity, ApiProject, ReviewerProjectList } from "@/api/reviewer-api";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
 type ProjectListFields = {

@@ -11,19 +11,11 @@ import { getStatusStyle } from "@/utils/statusStyles";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import { useToast } from "@/context/toast";
 import {
-  fetchProjectList,
-  fetchActivityList,
   fetchProjectProposalDetail,
   fetchActivityProposalDetail,
   submitProposalReview,
   updateProposalReview,
-  type ApiProjectListResponse,
-  type ApiActivityListResponse,
-  type ApiProject,
-  type ApiActivity,
-  type ProposalReviewPayload,
   fetchReviewerProjectProposal,
-  type ReviewerProjectList,
   fetchReviewerActivityProposal,
 } from "@/api/reviewer-api";
 import {
@@ -41,6 +33,7 @@ import { ProjectForm } from "../view-review/project-form";
 import { ProgramForm } from "../view-review/program-form";
 import { ProjectTreeNode } from "../view-review/project-tree-node";
 import { useAuth } from "@/context/auth-context";
+import type { ApiActivity, ProposalReviewPayload, ReviewerProjectList } from "@/types/reviewer-types";
 
 // ================= TYPES =================
 

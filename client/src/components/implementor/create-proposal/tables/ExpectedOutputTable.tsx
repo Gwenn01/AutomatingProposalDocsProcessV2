@@ -1,4 +1,5 @@
-import type { ExpectedOutput6Ps } from "@/api/implementor-api";
+import type { ExpectedOutput6Ps } from "@/types/implementor-types";
+
 
 export const ExpectedOutputTable = ({ data, onChange }: { data: ExpectedOutput6Ps; onChange: (v: ExpectedOutput6Ps) => void }) => {
   const rows: { label: string; key: keyof ExpectedOutput6Ps }[] = [

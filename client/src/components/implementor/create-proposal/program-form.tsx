@@ -1,14 +1,4 @@
-// CHANGES vs original program-form.tsx:
-// 1. "X. Budgetary Requirement" card now renders a single currency input for
-//    `program_budget_total` (a new top-level field on ProgramFormData).
-// 2. The heavy ProgramBudgetRow table is removed from this step entirely —
-//    the detailed line-item breakdown happens inside each project/activity form.
-//
-// Add `program_budget_total: string` to ProgramFormData in implementor-api.ts
-// and initialise it to '' in defaultProgramFormData().
-
 import { getProgramCompletion } from "@/helpers/create-proposal-helper";
-import type { ProgramFormData, ProjectItem } from "@/api/implementor-api";
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { SectionHeader } from "./ui/section-header";
@@ -22,6 +12,7 @@ import { OrgStaffingTable } from "./tables/OrgStaffingTable";
 import { WorkplanTable } from "./tables/WorkplanTable";
 import { Spinner } from "./ui/Spinner";
 import { ArrowRight } from "lucide-react";
+import type { ProgramFormData, ProjectItem } from "@/types/implementor-types";
 
 interface ProgramFormProps {
   data: ProgramFormData;

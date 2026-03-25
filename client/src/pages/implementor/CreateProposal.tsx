@@ -4,10 +4,7 @@ import {
   fetchProjectList,
   saveProjectProposal,
   fetchActivityList,
-  saveActivityProposal,
-  type ProgramFormData,
-  type ProjectFormData,
-  type ActivityFormData,
+  saveActivityProposal
 } from '@/api/implementor-api';
 import { defaultActivityFormData, defaultProgramFormData, defaultProjectFormData } from '@/constants/defaults';
 import { ProgramProposalForm } from '@/components/implementor/create-proposal/program-form';
@@ -17,6 +14,7 @@ import { ProjectProposalForm } from '@/components/implementor/create-proposal/pr
 import { ActivityProposalForm } from '@/components/implementor/create-proposal/activity-form';
 import { StepIndicator } from '@/components/implementor/create-proposal/ui/step-indicator';
 import { useToast } from '@/context/toast';
+import type { ProgramFormData, ProjectFormData, ActivityFormData } from '@/types/implementor-types';
 
 interface CreateProposalProps {
   onDirtyChange?: (isDirty: boolean) => void;

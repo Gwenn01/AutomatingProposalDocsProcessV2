@@ -1,4 +1,5 @@
-import type { ActivityFormData, ProgramFormData, ProjectFormData } from "@/api/implementor-api";
+import type { ActivityFormData, ProgramFormData, ProjectFormData } from "@/types/implementor-types";
+
 
 type Score = { weight: number; filled: boolean };
 

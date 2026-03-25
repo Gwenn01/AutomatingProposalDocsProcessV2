@@ -1,5 +1,6 @@
 import { defaultWorkplanRow } from "@/constants/defaults";
-import type { WorkplanRow } from "@/api/implementor-api";
+import type { WorkplanRow } from "@/types/implementor-types";
+
 
 export const WorkplanTable = ({ rows, onChange }: { rows: WorkplanRow[]; onChange: (v: WorkplanRow[]) => void }) => {
   const update = (i: number, key: keyof WorkplanRow, val: any) => { const u = [...rows]; (u[i] as any)[key] = val; onChange(u); };

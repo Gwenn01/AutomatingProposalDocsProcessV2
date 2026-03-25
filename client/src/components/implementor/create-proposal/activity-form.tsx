@@ -4,7 +4,6 @@
 // 3. Save button is disabled if over budget
 
 import { getActivityCompletion } from "@/helpers/create-proposal-helper";
-import type { ActivityFormData, ActivityScheduleRow } from "@/api/implementor-api";
 import { SectionHeader } from "./ui/section-header";
 import { CompletionBadge } from "./ui/completion-badge";
 import { Card } from "./ui/card";
@@ -16,6 +15,7 @@ import { OrgStaffingTable } from "./tables/OrgStaffingTable";
 import { BudgetTable } from "./tables/BudgetTable";
 import { BudgetIndicator } from "./ui/BudgetIndicator";
 import { Spinner } from "./ui/Spinner";
+import type { ActivityFormData, ActivityScheduleRow } from "@/types/implementor-types";
 
 interface ActivityFormProps {
   data: ActivityFormData;
