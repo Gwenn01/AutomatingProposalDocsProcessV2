@@ -73,6 +73,7 @@ export interface ProgramProposal {
   proposal_type: "Program";
   status: ProposalStatus;
   version_no: number;
+  progress: string;
   created_at: string;
   user: number;
 }
@@ -158,6 +159,26 @@ export const getProposals = async (): Promise<ProgramProposal[]> => {
     method: "GET",
     headers: getAuthHeaders(),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch program proposals");
+  }
+
+  return response.json();
+};
+
+// Get All Proposals
+export const getProposalsBaseType = async (
+  proposalType: string,
+): Promise<ProgramProposal[]> => {
+  const response = await fetch(
+    `${API_URL}/admin/proposals-node/${proposalType}/`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    },
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

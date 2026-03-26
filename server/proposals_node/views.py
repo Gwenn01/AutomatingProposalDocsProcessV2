@@ -26,7 +26,7 @@ class ProposalList(APIView):
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
     
-# ADMIN VIEWS get all proposal 
+# ADMIN VIEWS get all proposal ===========================================================================
 class AdminProposalList(APIView):
     permission_classes = [IsAdminUser]
 
@@ -43,7 +43,7 @@ class AdminOverviewView(APIView):
         data = service.get_status_counts(year)
         return Response(data, status=status.HTTP_200_OK)
     
-# REVIEWER VIEWS APPROVE PROPOSAL
+# REVIEWER VIEWS APPROVE PROPOSAL ==========================================================================
 class ReviewerApproveProposalView(APIView):
     permission_classes = [IsAuthenticated]
 

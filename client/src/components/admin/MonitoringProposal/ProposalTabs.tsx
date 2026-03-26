@@ -8,26 +8,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
-  BarChart3,
-  Activity,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { Proposal, FilterType, StatusFilter, ProposalType } from "./types";
+import type { Proposal, StatusFilter } from "./types";
 import { getProgress, formatBudget, TYPE_BADGE, progressColor } from "./helper";
 import { getStatusStyleAdmin } from "@/utils/statusStyles";
-
-// ── Type icons map ────────────────────────────────────────────────────────────
-const TYPE_ICON: Record<ProposalType, LucideIcon> = {
-  Program: Layers,
-  Project: BarChart3,
-  Activity: Activity,
-};
 
 // ── Proposal table row ────────────────────────────────────────────────────────
 const ProposalRow = ({ doc }: { doc: Proposal }) => {
   const status = getStatusStyleAdmin(doc.status as any);
   const prog = getProgress(doc.status);
-  const Icon = TYPE_ICON[doc.proposal_type];
   const overBudget =
     (doc.budget_requested ?? 0) > (doc.budget_approved ?? 0) &&
     doc.budget_approved !== 0;
@@ -47,20 +36,15 @@ const ProposalRow = ({ doc }: { doc: Proposal }) => {
             <span className="text-[10px] text-slate-400">{doc.created_by}</span>
           )}
         </div>
-        {doc.proposal_type === "Activity" && (
-          <p className="text-[10px] text-slate-400 mt-0.5">
-            {doc.parent_program} → {doc.parent_project}
-          </p>
-        )}
       </td>
 
       {/* Type */}
       <td className="p-4 text-center">
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${TYPE_BADGE[doc.proposal_type]}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${TYPE_BADGE["Program"]}`}
         >
-          <Icon size={11} />
-          {doc.proposal_type}
+          <Layers size={11} />
+          Program
         </span>
       </td>
 
@@ -83,7 +67,7 @@ const ProposalRow = ({ doc }: { doc: Proposal }) => {
           />
         </div>
         <p className="text-[10px] text-center mt-1 font-semibold text-slate-500">
-          {prog}%
+          {doc.progress}%
         </p>
       </td>
 
@@ -124,31 +108,23 @@ const ITEMS_PER_PAGE = 8;
 
 const ProposalsTab = ({ proposals }: Props) => {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<FilterType>("all");
   const [statusFilter, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     setPage(1);
-  }, [search, typeFilter, statusFilter]);
+  }, [search, statusFilter]);
 
   const filtered = proposals.filter((p) => {
     const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "all" || p.proposal_type === typeFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchSearch && matchType && matchStatus;
+    return matchSearch && matchStatus;
   });
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const startIndex = (page - 1) * ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filtered.length);
   const currentData = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  const counts: Record<FilterType, number> = {
-    all: proposals.length,
-    Program: proposals.filter((p) => p.proposal_type === "Program").length,
-    Project: proposals.filter((p) => p.proposal_type === "Project").length,
-    Activity: proposals.filter((p) => p.proposal_type === "Activity").length,
-  };
 
   return (
     <div className="space-y-4">
@@ -167,23 +143,6 @@ const ProposalsTab = ({ proposals }: Props) => {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300"
           />
-        </div>
-
-        {/* Type pills */}
-        <div className="flex gap-2 flex-wrap">
-          {(["all", "Program", "Project", "Activity"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all duration-200 ${
-                typeFilter === t
-                  ? "bg-slate-800 text-white border-slate-800"
-                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              {t === "all" ? `All (${counts.all})` : `${t} (${counts[t]})`}
-            </button>
-          ))}
         </div>
 
         {/* Status dropdown */}
@@ -223,7 +182,7 @@ const ProposalsTab = ({ proposals }: Props) => {
                   className={`p-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 ${
                     i === 0
                       ? "text-left"
-                      : i === 6
+                      : i === 5
                         ? "text-right"
                         : "text-center"
                   }`}
@@ -248,37 +207,47 @@ const ProposalsTab = ({ proposals }: Props) => {
             </p>
           </div>
         )}
-      </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
+        {/* Pagination Footer */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/60">
+          {/* Left: range + total */}
           <p className="text-xs text-slate-500">
-            Showing <strong className="text-slate-700">{startIndex + 1}</strong>
-            –
             <strong className="text-slate-700">
-              {Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)}
-            </strong>{" "}
-            of <strong className="text-slate-700">{filtered.length}</strong>
+              {filtered.length > 0 ? startIndex + 1 : 0}
+            </strong>
+            –<strong className="text-slate-700">{endIndex}</strong> of{" "}
+            <strong className="text-slate-700">{filtered.length}</strong>{" "}
+            proposals
           </p>
+
+          {/* Center: page indicator */}
+          <p className="text-xs text-slate-500">
+            Page{" "}
+            <strong className="text-slate-700">
+              {totalPages > 0 ? page : 0}
+            </strong>{" "}
+            of <strong className="text-slate-700">{totalPages}</strong>
+          </p>
+
+          {/* Right: prev / next */}
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={page === 1}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-semibold transition-all"
+              disabled={page === 1 || totalPages === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-slate-300 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-semibold transition-all"
             >
-              <ChevronLeft size={14} /> Prev
+              <ChevronLeft size={13} /> Previous
             </button>
             <button
               onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              disabled={page === totalPages}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 text-white hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-xs font-semibold transition-all"
+              disabled={page === totalPages || totalPages === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-xs font-semibold transition-all"
             >
-              Next <ChevronRight size={14} />
+              Next <ChevronRight size={13} />
             </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

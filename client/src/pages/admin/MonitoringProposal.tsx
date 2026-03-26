@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Loading from "@/components/Loading";
-import { getProposals } from "@/api/admin-api";
+import { getProposalsBaseType } from "@/api/admin-api";
 
 import type {
   Proposal,
@@ -49,7 +49,8 @@ const MonitoringProposals = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await getProposals();
+        const data = await getProposalsBaseType("Program");
+        console.log(data);
         const augmented: Proposal[] = data.map((p: Proposal, i: number) => ({
           ...p,
           budget_requested:

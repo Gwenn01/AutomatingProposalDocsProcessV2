@@ -5,23 +5,11 @@
 import type { ProposalType, YearConfig, ImplementorLock } from "./types";
 
 // ── Progress ──────────────────────────────────────────────────────────────────
-export const getProgress = (status: string): number => {
-  switch (status) {
-    case "draft":
-      return 10;
-    case "submitted":
-      return 25;
-    case "under_review":
-      return 50;
-    case "for_revision":
-      return 60;
-    case "for_approval":
-      return 80;
-    case "approved":
-      return 100;
-    default:
-      return 0;
+export const getProgress = (progress: string | number): number => {
+  if (typeof progress === "string") {
+    return parseFloat(progress) || 0;
   }
+  return progress;
 };
 
 // ── Currency formatter ────────────────────────────────────────────────────────
