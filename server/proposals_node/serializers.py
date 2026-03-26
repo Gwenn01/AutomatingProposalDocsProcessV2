@@ -48,14 +48,13 @@ class ProposalSerializer(serializers.ModelSerializer):
         return obj.user.profile.name
     
     def get_budget_requested(self, obj):
+        if obj.proposal_type != "program":
+            return None
         data = obj.program_details.budget_requirements or []
-
         total = Decimal("0")
-
         for item in data:
             amount = item.get("amount", 0)
             total += Decimal(str(amount))
-
         return str(total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
     
     
