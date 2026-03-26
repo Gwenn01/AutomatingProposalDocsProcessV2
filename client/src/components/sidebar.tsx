@@ -10,7 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { prmsuLogo, extensionLogo } from "../assets";
+import { extensionLogo } from "../assets";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth";
 import { useToast } from "@/context/toast";
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     admin: [
       { label: "Overview", icon: Home },
       { label: "Monitoring Proposal", icon: Eye },
-      { label: "Manage Documents", icon: Files },
+      { label: "Review Documents", icon: Files },
       { label: "Assign to Review", icon: UserCheck },
       { label: "Create Cover Page", icon: FileCheck },
       { label: "Manage Account", icon: Users },
@@ -135,10 +135,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               }}
               className={`group relative flex items-center gap-4 px-6 py-3 rounded-xl cursor-pointer
                 transition-all duration-300 overflow-hidden
-                ${
-                  active === label
-                    ? "bg-white text-green-700 shadow-lg"
-                    : "text-white/80 hover:bg-white/10"
+                ${active === label
+                  ? "bg-white text-green-700 shadow-lg"
+                  : "text-white/80 hover:bg-white/10"
                 }`}
             >
               {/* Active Indicator */}
