@@ -1,4 +1,4 @@
-import { FileText, Eye, FilePlus, CheckCircle2, FileX } from "lucide-react";
+import { FileText, Eye, FilePlus, CheckCircle2, FileX, Pencil } from "lucide-react"; // Nag-import ng Pencil icon
 import { type ProgramProposal, type ProposalCoverPage } from "@/api/admin-api";
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 
@@ -7,6 +7,7 @@ interface CoverPageTableViewProps {
     coverPages: ProposalCoverPage[];
     onOpenCreate: (doc: ProgramProposal) => void;
     onOpenView: (coverId: number) => void;
+    onOpenEdit: (coverId: number, doc: ProgramProposal) => void; // Idinagdag ito
 }
 
 const CoverPageTableView = ({
@@ -14,10 +15,8 @@ const CoverPageTableView = ({
     coverPages,
     onOpenCreate,
     onOpenView,
+    onOpenEdit, // Idinagdag ito
 }: CoverPageTableViewProps) => {
-    const hasCoverPage = (proposalId: number) =>
-        coverPages.some((c) => c.proposal === proposalId);
-
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <table className="w-full">
@@ -33,11 +32,13 @@ const CoverPageTableView = ({
                     {data.map((doc) => {
                         const status = getStatusStyle(doc.status as ProposalStatus);
                         const isApproved = doc.status === "approved";
-                        const hasCover = hasCoverPage(doc.id);
+
+                        // Hanapin ang specific cover page record para sa proposal na ito
+                        const coverRecord = coverPages.find((c) => c.proposal === doc.id);
+                        const hasCover = !!coverRecord;
 
                         return (
                             <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors group">
-
                                 {/* 1. Proposal Info */}
                                 <td className="px-6 py-5 align-middle">
                                     <div className="flex items-center gap-4">
@@ -66,7 +67,7 @@ const CoverPageTableView = ({
                                     </div>
                                 </td>
 
-                                {/* 2. Cover Page Status */}
+                                {/* 2. Cover Page Status Icon */}
                                 <td className="px-6 py-5 text-center align-middle">
                                     <div className="flex justify-center group/status">
                                         {hasCover ? (
@@ -87,7 +88,7 @@ const CoverPageTableView = ({
                                     </div>
                                 </td>
 
-                                {/* 3. Proposal Status */}
+                                {/* 3. Proposal Status Badge */}
                                 <td className="px-6 py-5 text-center align-middle">
                                     <span className={`px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 min-w-[130px] shadow-sm ${status.className}`}>
                                         {status.label}
@@ -96,34 +97,37 @@ const CoverPageTableView = ({
 
                                 {/* 4. Actions */}
                                 <td className="px-6 py-5 text-center align-middle">
-                                    <div className="flex items-center justify-center gap-2 flex-nowrap whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-2 flex-nowrap">
+                                        {hasCover ? (
+                                            <>
+                                                {/* View Button */}
+                                                <button
+                                                    onClick={() => onOpenView(coverRecord.id)}
+                                                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-600 px-3 py-2 rounded-lg text-xs font-semibold hover:from-blue-100 hover:to-indigo-100 transition-all shadow-sm transform hover:-translate-y-0.5"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    View
+                                                </button>
 
-                                        {/* View Cover — lalabas lang kapag MAY cover na */}
-                                        {hasCover && (
-                                            <button
-                                                onClick={() => {
-                                                    const cover = coverPages.find((c) => c.proposal === doc.id);
-                                                    if (cover) onOpenView(cover.id);
-                                                }}
-                                                title="View Cover Page"
-                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-600 px-3 py-2 rounded-lg text-xs font-semibold hover:from-blue-100 hover:to-indigo-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                                            >
-                                                <Eye className="w-3.5 h-3.5" />
-                                                View Cover
-                                            </button>
-                                        )}
-
-                                        {/* Create Cover — lalabas lang kapag WALA pang cover */}
-                                        {!hasCover && (
+                                                {/* Edit Button — Idinagdag para sa Edit functionality */}
+                                                <button
+                                                    onClick={() => onOpenEdit(coverRecord.id, doc)}
+                                                    className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 px-3 py-2 rounded-lg text-xs font-semibold hover:from-amber-100 hover:to-orange-100 transition-all shadow-sm transform hover:-translate-y-0.5 border border-amber-100"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                    Edit
+                                                </button>
+                                            </>
+                                        ) : (
+                                            /* Create Button */
                                             <button
                                                 onClick={() => onOpenCreate(doc)}
-                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 hover:from-emerald-500 hover:to-green-500 hover:text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 hover:from-emerald-500 hover:to-green-500 hover:text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm transform hover:-translate-y-0.5"
                                             >
                                                 <FilePlus className="w-3.5 h-3.5" />
                                                 Create Cover
                                             </button>
                                         )}
-
                                     </div>
                                 </td>
                             </tr>

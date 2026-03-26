@@ -395,6 +395,22 @@ export const getCoverPage = async (
   return response.json();
 };
 
+// Update Cover Page
+export const updateCoverPage = async (coverPageId: number, payload: CreateCoverPagePayload): Promise<{ message: string }> => {
+  const response = await fetch(`${API_URL}/proposal-cover/${coverPageId}/`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  })
+
+  const resJson = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(resJson.error || "Failed to update cover page");
+  }
+
+  return resJson;
+};
+
 // Get All Accounts (Manage Account)
 export const getAllAccounts = async (): Promise<ApiUser[]> => {
   const response = await fetch(`${API_URL}/users/admin/`, {

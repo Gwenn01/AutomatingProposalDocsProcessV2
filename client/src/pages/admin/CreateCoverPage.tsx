@@ -6,11 +6,12 @@ import {
   type ProgramProposal,
   type ProposalCoverPage,
 } from "@/api/admin-api";
+
 import Loading from "@/components/Loading";
 import CreateCoverPageModal from "@/components/admin/CreateCoverPageModal";
 import ViewCoverPageModal from "@/components/admin/ViewCoverPageModal";
+import EditCoverPageModal from "@/components/admin/EditCoverPageModal";
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
 import CoverPageTableView from "@/components/admin/CreateCoverPage/CreateCoverTableView";
 import CoverPageCardView from "@/components/admin/CreateCoverPage/CreateCoverCardView";
 import EmptyState from "@/components/admin/EmptyState";
@@ -20,17 +21,42 @@ const CreateCoverPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [allDocs, setAllDocs] = useState<ProgramProposal[]>([]);
+  const [coverPages, setCoverPages] = useState<ProposalCoverPage[]>([]);
+
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<ProgramProposal | null>(null);
-  const itemsPerPage = viewMode === "table" ? 5 : 6;
-  const [coverPages, setCoverPages] = useState<ProposalCoverPage[]>([]);
+
   const [viewCoverId, setViewCoverId] = useState<number | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
-  // Loading animation
+  const [editCoverId, setEditCoverId] = useState<number | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const itemsPerPage = viewMode === "table" ? 5 : 6;
+
+  // ✅ Fetch function (SINGLE SOURCE OF TRUTH)
+  const fetchDocs = async () => {
+    try {
+      setLoading(true);
+      const [proposals, covers] = await Promise.all([
+        getProposals(),
+        getAllCoverPage(),
+      ]);
+      setAllDocs(proposals);
+      setCoverPages(covers);
+    } catch (error) {
+      console.error("Failed to fetch proposals", error);
+    } finally {
+      setLoading(false);
+      setProgress(100);
+    }
+  };
+
+  // ✅ Loading animation
   useEffect(() => {
     if (!loading) return;
     setProgress(20);
@@ -38,41 +64,27 @@ const CreateCoverPage = () => {
     return () => clearTimeout(timeout);
   }, [loading]);
 
-  // Fetch proposals and cover pages
+  // ✅ Initial fetch (ONLY ONCE)
   useEffect(() => {
-    const fetchDocs = async () => {
-      try {
-        setLoading(true);
-        const [proposals, covers] = await Promise.all([
-          getProposals(),
-          getAllCoverPage(),
-        ]);
-        setAllDocs(proposals);
-        setCoverPages(covers);
-      } catch (error) {
-        console.error("Failed to fetch proposals", error);
-      } finally {
-        setLoading(false);
-        setProgress(100);
-      }
-    };
     fetchDocs();
   }, []);
 
-  // Reset page on search / view mode change
+  // ✅ Reset pagination
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, viewMode]);
 
-  // Derived data
+  // ✅ Derived data
   const filteredDocs = allDocs.filter((doc) =>
-    doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
   const totalPages = Math.max(1, Math.ceil(filteredDocs.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredDocs.slice(startIndex, endIndex);
 
+  // ✅ Safe conditional render AFTER hooks
   if (loading) {
     return (
       <Loading
@@ -86,8 +98,6 @@ const CreateCoverPage = () => {
   return (
     <>
       <div className="p-8 lg:p-10 bg-[#fbfcfb] min-h-screen flex flex-col animate-in fade-in duration-500">
-
-        {/* Main Content Wrapper */}
         <div className="flex-1 flex flex-col space-y-10">
 
           {/* Header */}
@@ -105,10 +115,7 @@ const CreateCoverPage = () => {
               {/* Search */}
               <div className="relative w-full md:w-80 group">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                  <Search
-                    className="text-slate-400 group-focus-within:text-[#1cb35a] transition-all"
-                    size={16}
-                  />
+                  <Search size={16} className="text-slate-400 group-focus-within:text-[#1cb35a]" />
                 </div>
                 <input
                   type="text"
@@ -119,22 +126,18 @@ const CreateCoverPage = () => {
                 />
               </div>
 
-              {/* View Switch */}
+              {/* View Toggle */}
               <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
                 <button
                   onClick={() => setViewMode("table")}
-                  className={`p-2 rounded-[12px] ${viewMode === "table"
-                    ? "bg-white text-[#1cb35a] shadow-sm"
-                    : "text-slate-400"
+                  className={`p-2 rounded-[12px] ${viewMode === "table" ? "bg-white text-[#1cb35a]" : "text-slate-400"
                     }`}
                 >
                   <Table size={16} />
                 </button>
                 <button
                   onClick={() => setViewMode("card")}
-                  className={`p-2 rounded-[12px] ${viewMode === "card"
-                    ? "bg-white text-[#1cb35a] shadow-sm"
-                    : "text-slate-400"
+                  className={`p-2 rounded-[12px] ${viewMode === "card" ? "bg-white text-[#1cb35a]" : "text-slate-400"
                     }`}
                 >
                   <Grid size={16} />
@@ -148,58 +151,63 @@ const CreateCoverPage = () => {
             {currentData.length === 0 ? (
               <EmptyState icon={FileText} message="No proposals found" />
             ) : viewMode === "table" ? (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <CoverPageTableView
-                  data={currentData}
-                  coverPages={coverPages}
-                  onOpenCreate={(doc) => {
-                    setSelectedProposal(doc);
-                    setIsModalOpen(true);
-                  }}
-                  onOpenView={(coverId) => {
-                    setViewCoverId(coverId);
-                    setIsViewOpen(true);
-                  }}
-                />
-              </div>
+              <CoverPageTableView
+                data={currentData}
+                coverPages={coverPages}
+                onOpenCreate={(doc) => {
+                  setSelectedProposal(doc);
+                  setIsModalOpen(true);
+                }}
+                onOpenView={(coverId) => {
+                  setViewCoverId(coverId);
+                  setIsViewOpen(true);
+                }}
+                onOpenEdit={(coverId, doc) => {
+                  setEditCoverId(coverId);
+                  setSelectedProposal(doc);
+                  setIsEditOpen(true);
+                }}
+              />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <CoverPageCardView
-                  data={currentData}
-                  coverPages={coverPages}
-                  onOpenCreate={(doc) => {
-                    setSelectedProposal(doc);
-                    setIsModalOpen(true);
-                  }}
-                  onOpenView={(coverId) => {
-                    setViewCoverId(coverId);
-                    const foundProposal = allDocs.find(doc =>
-                      coverPages.find(cp => cp.id === coverId)?.proposal === doc.id
-                    );
-                    setSelectedProposal(foundProposal || null);
-                    setIsViewOpen(true);
-                  }}
-                />
-              </div>
+              <CoverPageCardView
+                data={currentData}
+                coverPages={coverPages}
+                onOpenCreate={(doc) => {
+                  setSelectedProposal(doc);
+                  setIsModalOpen(true);
+                }}
+                onOpenView={(coverId) => {
+                  setViewCoverId(coverId);
+                  const found = allDocs.find(
+                    (doc) =>
+                      coverPages.find((cp) => cp.id === coverId)?.proposal === doc.id
+                  );
+                  setSelectedProposal(found || null);
+                  setIsViewOpen(true);
+                }}
+                onOpenEdit={(coverId, doc) => {
+                  setEditCoverId(coverId);
+                  setSelectedProposal(doc);
+                  setIsEditOpen(true);
+                }}
+              />
             )}
           </div>
         </div>
 
-        {/* Pagination (Pinned Bottom) */}
-        <div className="mt-auto pt-6">
-          <AdminPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            startIndex={startIndex}
-            endIndex={endIndex}
-            totalItems={filteredDocs.length}
-            itemsPerPage={itemsPerPage}
-            onPrev={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            onNext={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            onPageChange={(page) => setCurrentPage(page)}
-            itemName="proposals"
-          />
-        </div>
+        {/* Pagination */}
+        <AdminPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={filteredDocs.length}
+          itemsPerPage={itemsPerPage}
+          onPrev={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+          onNext={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+          onPageChange={setCurrentPage}
+          itemName="proposals"
+        />
       </div>
 
       {/* Modals */}
@@ -209,10 +217,22 @@ const CreateCoverPage = () => {
         proposalId={selectedProposal?.id || null}
         proposalTitle={selectedProposal?.title}
       />
+
       <ViewCoverPageModal
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
         coverPageId={viewCoverId}
+        proposalId={selectedProposal?.id || null}
+        proposalTitle={selectedProposal?.title}
+      />
+
+      <EditCoverPageModal
+        isOpen={isEditOpen}
+        onClose={() => {
+          setIsEditOpen(false);
+          fetchDocs(); // ✅ refresh safely
+        }}
+        coverPageId={editCoverId}
         proposalId={selectedProposal?.id || null}
         proposalTitle={selectedProposal?.title}
       />
