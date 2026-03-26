@@ -1,6 +1,6 @@
-import { FileText, Eye, FilePlus, Users, CheckCircle2, FileX } from "lucide-react";
+import { FileText, Eye, FilePlus, CheckCircle2, FileX } from "lucide-react";
 import { type ProgramProposal, type ProposalCoverPage } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
+import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 
 interface CoverPageTableViewProps {
     data: ProgramProposal[];
@@ -31,7 +31,7 @@ const CoverPageTableView = ({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {data.map((doc) => {
-                        const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+                        const status = getStatusStyle(doc.status as ProposalStatus);
                         const isApproved = doc.status === "approved";
                         const hasCover = hasCoverPage(doc.id);
 
@@ -90,10 +90,6 @@ const CoverPageTableView = ({
                                 {/* 3. Proposal Status */}
                                 <td className="px-6 py-5 text-center align-middle">
                                     <span className={`px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 min-w-[130px] shadow-sm ${status.className}`}>
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-40" />
-                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-current" />
-                                        </span>
                                         {status.label}
                                     </span>
                                 </td>
@@ -102,7 +98,7 @@ const CoverPageTableView = ({
                                 <td className="px-6 py-5 text-center align-middle">
                                     <div className="flex items-center justify-center gap-2 flex-nowrap whitespace-nowrap">
 
-                                        {/* View Cover — only when cover exists */}
+                                        {/* View Cover — lalabas lang kapag MAY cover na */}
                                         {hasCover && (
                                             <button
                                                 onClick={() => {
@@ -117,27 +113,16 @@ const CoverPageTableView = ({
                                             </button>
                                         )}
 
-                                        {/* Create Cover / Cover Created */}
-                                        <button
-                                            disabled={hasCover}
-                                            onClick={() => { if (!hasCover) onOpenCreate(doc); }}
-                                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm ${hasCover
-                                                ? "bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 cursor-default opacity-80"
-                                                : "bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 hover:from-emerald-500 hover:to-green-500 hover:text-white hover:shadow-md transform hover:-translate-y-0.5"
-                                                }`}
-                                        >
-                                            {hasCover ? (
-                                                <>
-                                                    <Users className="w-3.5 h-3.5" />
-                                                    Cover Created
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FilePlus className="w-3.5 h-3.5" />
-                                                    Create Cover
-                                                </>
-                                            )}
-                                        </button>
+                                        {/* Create Cover — lalabas lang kapag WALA pang cover */}
+                                        {!hasCover && (
+                                            <button
+                                                onClick={() => onOpenCreate(doc)}
+                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 hover:from-emerald-500 hover:to-green-500 hover:text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                            >
+                                                <FilePlus className="w-3.5 h-3.5" />
+                                                Create Cover
+                                            </button>
+                                        )}
 
                                     </div>
                                 </td>

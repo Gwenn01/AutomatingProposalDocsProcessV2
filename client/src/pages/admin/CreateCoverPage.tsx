@@ -124,8 +124,8 @@ const CreateCoverPage = () => {
                 <button
                   onClick={() => setViewMode("table")}
                   className={`p-2 rounded-[12px] ${viewMode === "table"
-                      ? "bg-white text-[#1cb35a] shadow-sm"
-                      : "text-slate-400"
+                    ? "bg-white text-[#1cb35a] shadow-sm"
+                    : "text-slate-400"
                     }`}
                 >
                   <Table size={16} />
@@ -133,8 +133,8 @@ const CreateCoverPage = () => {
                 <button
                   onClick={() => setViewMode("card")}
                   className={`p-2 rounded-[12px] ${viewMode === "card"
-                      ? "bg-white text-[#1cb35a] shadow-sm"
-                      : "text-slate-400"
+                    ? "bg-white text-[#1cb35a] shadow-sm"
+                    : "text-slate-400"
                     }`}
                 >
                   <Grid size={16} />
@@ -173,6 +173,10 @@ const CreateCoverPage = () => {
                   }}
                   onOpenView={(coverId) => {
                     setViewCoverId(coverId);
+                    const foundProposal = allDocs.find(doc =>
+                      coverPages.find(cp => cp.id === coverId)?.proposal === doc.id
+                    );
+                    setSelectedProposal(foundProposal || null);
                     setIsViewOpen(true);
                   }}
                 />
@@ -209,6 +213,8 @@ const CreateCoverPage = () => {
         isOpen={isViewOpen}
         onClose={() => setIsViewOpen(false)}
         coverPageId={viewCoverId}
+        proposalId={selectedProposal?.id || null}
+        proposalTitle={selectedProposal?.title}
       />
     </>
   );

@@ -1,6 +1,6 @@
 // components/admin/CreateCoverPageModal.tsx
 import React, { useState } from "react";
-import { X, FileText, Loader2, Sparkles } from "lucide-react";
+import { X, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/context/toast";
 import Header from "./CoverPage/Header";
 import Letter from "./CoverPage/Letter";
@@ -58,37 +58,41 @@ const CreateCoverPageModal: React.FC<CreateCoverPageModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm">
-      {/* Pinalaki natin ang width (max-w-6xl) at ginawang mas responsive */}
-      <div className="relative w-full max-w-6xl h-[96vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+      {/* Full Screen Square Modal */}
+      <div className="relative w-full max-w-7xl h-screen md:h-[96vh] bg-white rounded-none shadow-2xl overflow-hidden flex flex-col">
 
-        {/* Modal Header */}
-        <div className="bg-slate-50 p-5 border-b border-slate-200 flex justify-between items-center flex-shrink-0 z-10">
+        {/* Improved Solid Green Header */}
+        <div className="bg-green-700 px-8 py-5 flex justify-between items-center flex-shrink-0 z-10">
           <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-emerald-100 rounded-xl text-emerald-600 shadow-sm">
-              <FileText size={22} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Create Cover Letter</h2>
+            {/* Icon without border or background box */}
+            <FileText size={28} className="text-white/90" strokeWidth={1.5} />
+
+            <div className="flex flex-col">
+              <h2 className="text-xl font-bold text-white  leading-tight">
+                Create Cover Page
+              </h2>
               {proposalTitle && (
-                <p className="text-sm text-slate-500 font-medium truncate max-w-[500px]">
+                <p className="text-[10px] text-green-100/70 font-bold uppercase tracking-[0.1em] truncate max-w-[600px] mt-0.5">
                   {proposalTitle}
                 </p>
               )}
             </div>
           </div>
+
           <button
             onClick={onClose}
-            className="p-2.5 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-700"
+            className="group p-2 hover:bg-white/10 transition-all duration-200"
+            title="Close Modal"
           >
-            <X size={22} />
+            <X size={24} className="text-white opacity-70 group-hover:opacity-100 transition-opacity" />
           </button>
         </div>
 
-        {/* Full-Screen Document Area */}
-        {/* Inalis ang bg-slate-200, ginawang buong canvas ang document layout */}
-        <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
-          <div className="w-full max-w-[900px] mx-auto px-8 py-12 md:px-12 md:py-16 min-h-full">
+        {/* Content Area - Full Width Editor Look */}
+        <div className="flex-1 overflow-y-auto bg-white relative custom-scrollbar pb-32">
+          {/* Container is now max-w-full and has no 'paper' styling */}
+          <div className="w-full px-8 py-10 md:px-20 md:py-12">
             <Header />
             <div className="mt-10">
               <Letter
@@ -98,35 +102,27 @@ const CreateCoverPageModal: React.FC<CreateCoverPageModalProps> = ({
                 onBodyChange={setBody}
               />
             </div>
-            <div className="mt-12">
+            <div className="mt-16">
               <Signatory />
             </div>
           </div>
         </div>
 
-        {/* Action Footer */}
-        <div className="p-5 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0 z-10">
-          <button
-            onClick={onClose}
-            className="px-6 py-3 font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-all text-sm tracking-wide"
-          >
-            Cancel
-          </button>
+        {/* Smaller Floating Action Button (No Icon) */}
+        <div className="absolute bottom-8 right-8 z-30 pointer-events-none">
           <button
             onClick={handleSubmit}
             disabled={loading || !body.trim()}
-            className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95
+            className={`pointer-events-auto flex items-center px-8 py-3.5 rounded-full font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shadow-2xl
               ${loading || !body.trim()
                 ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                : "bg-slate-900 text-white hover:bg-emerald-600 shadow-lg shadow-slate-300 hover:shadow-emerald-500/30"
+                : "bg-green-600 text-white hover:bg-green-700 shadow-green-900/30"
               }`}
           >
             {loading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              <Sparkles size={18} className="text-emerald-400" />
-            )}
-            {loading ? "Generating..." : "Generate & Finalize"}
+              <Loader2 className="animate-spin mr-2" size={16} />
+            ) : null}
+            {loading ? "Processing..." : "Create Cover Page"}
           </button>
         </div>
       </div>
