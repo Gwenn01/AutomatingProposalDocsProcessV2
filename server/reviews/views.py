@@ -12,7 +12,7 @@ from reviewer.models import ProposalReviewer
 from notifications.models import Notification
 from proposals_node.models import Proposal
 # Create your views here.
-# create reviews 
+# create reviews =========================================================
 class ProposalReviewList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -49,31 +49,24 @@ class ProposalReviewList(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+# get the reviews only ======================================================
 class ProposalReviewDetail(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, proposal):
-        return get_object_or_404(ProposalReview, proposal_node=proposal)
+    def get_object(self, user, proposal):
+        return get_object_or_404(
+            ProposalReview,
+            proposal_reviewer__reviewer=user,
+            proposal_node=proposal
+        )
 
     def get(self, request, proposal, format=None):
-        review = self.get_object(proposal)
+        review = self.get_object(request.user, proposal)
         serializer = ProposalReviewSerializer(review)
         return Response(serializer.data)
 
-    def put(self, request, pk, format=None):
-        review = self.get_object(pk)
-        serializer = ProposalReviewSerializer(review, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk, format=None):
-        review = self.get_object(pk)
-        review.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-# get the proposal with reviews  
+# get the proposal with reviews  =============================================================
 class ProposalReviewByProposal(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, proposal_id, proposal_type, format=None):
@@ -87,7 +80,7 @@ class ProposalReviewHistoryByProposalHistory(APIView):
         data = ProposalReviewSelectors.proposal_reviews_history_mapper(proposal_id, history_id, version, proposal_type)
         return Response(data, status=status.HTTP_200_OK)
     
-# when the reviews is created and then the implementor update the proposal, the reviews will be updated 
+# when the reviews is created and then the implementor update the proposal, the reviews will be updated ================================================
 class ProposalReviewUpdate(APIView):
     permission_classes = [IsAuthenticated]
 
