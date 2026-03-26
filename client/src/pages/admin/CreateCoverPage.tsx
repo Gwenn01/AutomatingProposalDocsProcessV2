@@ -1,25 +1,20 @@
 import { useState, useEffect } from "react";
-import {
-  Search,
-  FileText,
-  Grid,
-  Table,
-  ChevronRight,
-  ChevronLeft,
-  FilePlus,
-  Eye,
-  Users,
-} from "lucide-react";
+import { Search, Grid, Table, FileText } from "lucide-react";
 import {
   getProposals,
   getAllCoverPage,
   type ProgramProposal,
   type ProposalCoverPage,
 } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
 import Loading from "@/components/Loading";
 import CreateCoverPageModal from "@/components/admin/CreateCoverPageModal";
 import ViewCoverPageModal from "@/components/admin/ViewCoverPageModal";
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+import CoverPageTableView from "@/components/admin/CreateCoverPage/CreateCoverTableView";
+import CoverPageCardView from "@/components/admin/CreateCoverPage/CreateCoverCardView";
+import EmptyState from "@/components/admin/EmptyState";
+import AdminPagination from "@/components/admin/Pagination";
 
 const CreateCoverPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,14 +24,13 @@ const CreateCoverPage = () => {
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProposal, setSelectedProposal] =
-    useState<ProgramProposal | null>(null);
-  const itemsPerPage = viewMode === "table" ? 10 : 12;
+  const [selectedProposal, setSelectedProposal] = useState<ProgramProposal | null>(null);
+  const itemsPerPage = viewMode === "table" ? 5 : 6;
   const [coverPages, setCoverPages] = useState<ProposalCoverPage[]>([]);
   const [viewCoverId, setViewCoverId] = useState<number | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
-  // Loading animation (clean deterministic version)
+  // Loading animation
   useEffect(() => {
     if (!loading) return;
     setProgress(20);
@@ -44,7 +38,7 @@ const CreateCoverPage = () => {
     return () => clearTimeout(timeout);
   }, [loading]);
 
-  // Fetch proposals only
+  // Fetch proposals and cover pages
   useEffect(() => {
     const fetchDocs = async () => {
       try {
@@ -62,26 +56,22 @@ const CreateCoverPage = () => {
         setProgress(100);
       }
     };
-
     fetchDocs();
   }, []);
 
-  const filteredDocs = allDocs.filter((doc) =>
-    doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredDocs.slice(startIndex, endIndex);
-
+  // Reset page on search / view mode change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, viewMode]);
 
-  const hasCoverPage = (proposalId: number) => {
-    return coverPages.some((c) => c.proposal === proposalId);
-  };
+  // Derived data
+  const filteredDocs = allDocs.filter((doc) =>
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredDocs.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredDocs.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -95,292 +85,120 @@ const CreateCoverPage = () => {
 
   return (
     <>
-      <div className="p-8 lg:p-10 space-y-10 bg-[#fbfcfb] animate-in fade-in duration-500">
-        {/* Header */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2 mb-10">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-              Create Cover Page
-            </h1>
-            <p className="text-slate-500 text-sm">
-              Generate cover pages for submitted proposals.
-            </p>
-          </div>
+      <div className="p-8 lg:p-10 bg-[#fbfcfb] min-h-screen flex flex-col animate-in fade-in duration-500">
 
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
-            {/* Search */}
-            <div className="relative w-full md:w-80 group">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Search
-                  className="text-slate-400 group-focus-within:text-[#1cb35a] transition-all"
-                  size={16}
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Search proposals..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-[#1cb35a]/10 focus:border-[#1cb35a]/30 outline-none text-[13px] font-semibold"
-              />
-            </div>
+        {/* Main Content Wrapper */}
+        <div className="flex-1 flex flex-col space-y-10">
 
-            {/* View Switch */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200/50">
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-2 rounded-[12px] ${
-                  viewMode === "table"
-                    ? "bg-white text-[#1cb35a] shadow-sm"
-                    : "text-slate-400"
-                }`}
-              >
-                <Table size={16} />
-              </button>
-              <button
-                onClick={() => setViewMode("card")}
-                className={`p-2 rounded-[12px] ${
-                  viewMode === "card"
-                    ? "bg-white text-[#1cb35a] shadow-sm"
-                    : "text-slate-400"
-                }`}
-              >
-                <Grid size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">
-          {currentData.length === 0 ? (
-            <div className="py-20 text-center">
-              <FileText size={30} className="mx-auto text-slate-200 mb-4" />
-              <p className="text-slate-400 font-bold uppercase text-xs">
-                No proposals found
+          {/* Header */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                Create Cover Page
+              </h1>
+              <p className="text-slate-500 text-sm">
+                Generate cover pages for submitted proposals.
               </p>
             </div>
-          ) : viewMode === "table" ? (
-            <div className="overflow-x-auto rounded-[32px] border border-slate-100 bg-slate-50/50 p-6">
-              <table className="w-full border-separate border-spacing-y-3">
-                <thead>
-                  <tr className="text-slate-400 uppercase text-[10px] font-black tracking-[0.2em]">
-                    <th className="px-8 pb-4 text-left">Proposal Details</th>
-                    <th className="px-8 pb-4 text-center">Current Status</th>
-                    <th className="px-8 pb-4 text-center">Current Status</th>
-                    <th className="px-8 pb-4 text-right">Quick Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentData.map((doc) => {
-                    const status = getStatusStyleAdmin(
-                      doc.status as ProposalStatus,
-                    );
-                    const isApproved = doc.status === "approved";
 
-                    return (
-                      <tr
-                        key={doc.id}
-                        className="group transition-all duration-300"
-                      >
-                        {/* 1. Proposal Info - Left Module */}
-                        <td className="px-8 py-5 bg-white rounded-l-[28px] border-y border-l border-slate-100 shadow-sm group-hover:shadow-md transition-all">
-                          <div className="flex items-center gap-4">
-                            <div
-                              className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-colors ${isApproved ? "bg-emerald-50 border-emerald-100 text-emerald-500" : "bg-slate-50 border-slate-100 text-slate-400"}`}
-                            >
-                              <FileText size={22} />
-                            </div>
-                            <div>
-                              <div className="font-bold text-[15px] text-slate-800 tracking-tight group-hover:text-emerald-700 transition-colors">
-                                {doc.title}
-                              </div>
-                              <div className="text-[10px] font-mono font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
-                                Ref ID: #{String(doc.id).padStart(4, "0")}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+              {/* Search */}
+              <div className="relative w-full md:w-80 group">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                  <Search
+                    className="text-slate-400 group-focus-within:text-[#1cb35a] transition-all"
+                    size={16}
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search proposals..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none text-[13px] font-semibold"
+                />
+              </div>
 
-                        <td className="px-8 py-5 bg-white border-y border-slate-100 shadow-sm text-center">
-                          {hasCoverPage(doc.id) ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200">
-                              Created
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200">
-                              Not Created
-                            </span>
-                          )}
-                        </td>
-
-                        {/* 2. Status - Middle Module */}
-                        <td className="px-8 py-5 bg-white border-y border-slate-100 shadow-sm group-hover:shadow-md transition-all text-center">
-                          <div
-                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest ${status.className}`}
-                          >
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-40"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-current"></span>
-                            </span>
-                            {status.label}
-                          </div>
-                        </td>
-
-                        {/* 3. Action - Premium Minimalist Right Module */}
-                        <td className="px-8 py-5 bg-white rounded-r-[28px] border-y border-r border-slate-100 shadow-sm group-hover:shadow-md transition-all text-right">
-                          <div className="flex justify-end items-center gap-3">
-                            {/* VIEW COVER (Secondary Action - Subtle Icon Box) */}
-                            {hasCoverPage(doc.id) && (
-                              <button
-                                onClick={() => {
-                                  const cover = coverPages.find(
-                                    (c) => c.proposal === doc.id,
-                                  );
-                                  if (cover) {
-                                    setViewCoverId(cover.id);
-                                    setIsViewOpen(true);
-                                  }
-                                }}
-                                title="View Cover Page"
-                                className="p-3 rounded-2xl bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all duration-300 border border-transparent hover:border-slate-200"
-                              >
-                                <Eye size={18} strokeWidth={2.5} />
-                              </button>
-                            )}
-
-                            {/* CREATE/VIEW STATUS (Primary Action - The Pill Button) */}
-                            <button
-                              disabled={hasCoverPage(doc.id)}
-                              onClick={() => {
-                                if (!hasCoverPage(doc.id)) {
-                                  setSelectedProposal(doc);
-                                  setIsModalOpen(true);
-                                }
-                              }}
-                              className={`
-        flex items-center gap-3 px-6 py-3 rounded-full font-bold text-[13px] tracking-wider uppercase transition-all duration-300
-        ${
-          hasCoverPage(doc.id)
-            ? "bg-emerald-50 text-emerald-700 opacity-80 cursor-default"
-            : "bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white shadow-sm hover:shadow-emerald-200"
-        }
-      `}
-                            >
-                              {hasCoverPage(doc.id) ? (
-                                <>
-                                  <Users size={18} strokeWidth={2.5} />
-                                  <span>Cover Created</span>
-                                </>
-                              ) : (
-                                <>
-                                  <FilePlus size={18} strokeWidth={2.5} />
-                                  <span>Create Cover</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              {/* View Switch */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`p-2 rounded-[12px] ${viewMode === "table"
+                      ? "bg-white text-[#1cb35a] shadow-sm"
+                      : "text-slate-400"
+                    }`}
+                >
+                  <Table size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode("card")}
+                  className={`p-2 rounded-[12px] ${viewMode === "card"
+                      ? "bg-white text-[#1cb35a] shadow-sm"
+                      : "text-slate-400"
+                    }`}
+                >
+                  <Grid size={16} />
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {currentData.map((doc) => {
-                const status = getStatusStyleAdmin(
-                  doc.status as ProposalStatus,
-                );
+          </div>
 
-                return (
-                  <div
-                    key={doc.id}
-                    className="group relative bg-white rounded-[35px] border border-slate-100 p-2 shadow-sm hover:shadow-2xl hover:shadow-emerald-900/5 transition-all duration-500 hover:-translate-y-2 overflow-hidden"
-                  >
-                    {/* Upper Content Section */}
-                    <div className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        {/* Reference Tag */}
-                        <div className="px-3 py-1 bg-slate-50 rounded-lg border border-slate-100 text-[10px] font-mono font-bold text-slate-400">
-                          #{String(doc.id).padStart(4, "0")}
-                        </div>
-
-                        {/* Minimalist Status Indicator */}
-                        <div
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${status.className}`}
-                        >
-                          <span className="w-1 h-1 rounded-full bg-current animate-pulse" />
-                          {status.label}
-                        </div>
-                      </div>
-
-                      <h3 className="font-bold text-[17px] text-slate-800 leading-snug tracking-tight mb-6 group-hover:text-emerald-700 transition-colors line-clamp-2 min-h-[3rem]">
-                        {doc.title}
-                      </h3>
-
-                      {/* Abstract/Preview Decorative Element */}
-                      <div className="flex gap-1.5 mb-2">
-                        <div className="h-1 w-12 rounded-full bg-slate-100" />
-                        <div className="h-1 w-6 rounded-full bg-slate-100" />
-                        <div className="h-1 w-20 rounded-full bg-slate-100" />
-                      </div>
-                    </div>
-
-                    {/* Lower Action Section (Bento Bottom Bar) */}
-                    <div className="mt-auto">
-                      <button
-                        onClick={() => {
-                          setSelectedProposal(doc);
-                          setIsModalOpen(true);
-                        }}
-                        className="w-full flex items-center justify-center gap-3 py-5 rounded-[28px] bg-slate-900 text-white hover:bg-emerald-600 transition-all duration-300 group/btn shadow-xl shadow-slate-200 hover:shadow-emerald-200/50"
-                      >
-                        <div className="p-1.5 bg-white/10 rounded-lg group-hover/btn:bg-white/20 transition-colors">
-                          <FilePlus
-                            size={16}
-                            className="text-emerald-400 group-hover/btn:text-white"
-                          />
-                        </div>
-                        <span className="text-[11px] font-black uppercase tracking-[0.2em]">
-                          Create Cover
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-8">
-          <span className="text-sm text-slate-500">
-            Showing {startIndex + 1} – {Math.min(endIndex, filteredDocs.length)}{" "}
-            of {filteredDocs.length}
-          </span>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border rounded-lg disabled:opacity-30"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-slate-900 text-white rounded-lg disabled:opacity-30"
-            >
-              <ChevronRight size={14} />
-            </button>
+          {/* Content */}
+          <div className="flex-1">
+            {currentData.length === 0 ? (
+              <EmptyState icon={FileText} message="No proposals found" />
+            ) : viewMode === "table" ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <CoverPageTableView
+                  data={currentData}
+                  coverPages={coverPages}
+                  onOpenCreate={(doc) => {
+                    setSelectedProposal(doc);
+                    setIsModalOpen(true);
+                  }}
+                  onOpenView={(coverId) => {
+                    setViewCoverId(coverId);
+                    setIsViewOpen(true);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <CoverPageCardView
+                  data={currentData}
+                  coverPages={coverPages}
+                  onOpenCreate={(doc) => {
+                    setSelectedProposal(doc);
+                    setIsModalOpen(true);
+                  }}
+                  onOpenView={(coverId) => {
+                    setViewCoverId(coverId);
+                    setIsViewOpen(true);
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Pagination (Pinned Bottom) */}
+        <div className="mt-auto pt-6">
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            totalItems={filteredDocs.length}
+            itemsPerPage={itemsPerPage}
+            onPrev={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            onNext={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            onPageChange={(page) => setCurrentPage(page)}
+            itemName="proposals"
+          />
+        </div>
       </div>
+
+      {/* Modals */}
       <CreateCoverPageModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

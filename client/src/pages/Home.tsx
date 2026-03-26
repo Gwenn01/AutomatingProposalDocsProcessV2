@@ -30,7 +30,7 @@ type ActiveMenu =
   | "Overview"
   | "Monitoring Proposal"
   | "Manage Account"
-  | "Manage Documents"
+  | "Review Documents"
   | "Assign to Review"
   | "Create Cover Page"
   | "Review Proposal"
@@ -153,7 +153,7 @@ const Home: React.FC = () => {
         {active === "Overview" && <Overview />}
         {active === "Monitoring Proposal" && <MonitoringProposals />}
         {active === "Manage Account" && <ManageAccount />}
-        {active === "Manage Documents" && <ManageDocuments />}
+        {active === "Review Documents" && <ManageDocuments />}
         {active === "Assign to Review" && <AssignToReview />}
         {active === "Create Cover Page" && <CreateCoverPage />}
 
