@@ -1,6 +1,6 @@
 import { Users, Eye } from "lucide-react";
 import { type ProgramProposal } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
+import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 
 interface ProposalsCardViewProps {
   data: ProgramProposal[];
@@ -20,7 +20,7 @@ const ProposalsCardView = ({
   return (
     <>
       {data.map((doc) => {
-        const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+        const status = getStatusStyle(doc.status as ProposalStatus);
 
         return (
           <div

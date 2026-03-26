@@ -1,6 +1,6 @@
 import { FileText, Users, Check, XCircle } from "lucide-react";
 import { type ProgramProposal } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
+import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 
 interface ProposalsTableViewProps {
   data: ProgramProposal[];
@@ -30,7 +30,7 @@ const ProposalsTableView = ({
         </thead>
         <tbody className="divide-y divide-gray-100">
           {data.map((doc) => {
-            const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+            const status = getStatusStyle(doc.status as ProposalStatus);
 
             return (
               <tr key={doc.id} className="hover:bg-gray-50/50 transition-colors group">
@@ -59,7 +59,6 @@ const ProposalsTableView = ({
                 {/* 2. Status */}
                 <td className="px-6 py-5 text-center align-middle">
                   <span className={`px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 min-w-[130px] shadow-sm ${status.className}`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                     {status.label}
                   </span>
                 </td>
@@ -70,7 +69,6 @@ const ProposalsTableView = ({
                     onClick={() => onOpenReviewerModal(doc.id, doc.title)}
                     className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                   >
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     <span className="text-green-700 font-semibold text-xs">{doc.reviewer_count || 0}</span>
                     <Users size={13} className="text-green-600" />
                   </button>
