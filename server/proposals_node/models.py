@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 class Proposal(models.Model):
 
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('for_review', 'For Review'),
         ('under_review', 'Under Review'),
         ('for_revision', 'For Revision'),
@@ -29,8 +30,12 @@ class Proposal(models.Model):
         blank=True
     ) 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="for_review")
+    progress = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0
+    )
     version_no = models.IntegerField(default=1)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -8,6 +8,7 @@ export type Proposal = {
   id: number;
   title: string;
   status: string;
+  progress: string;
   proposal_type: ProposalType;
   reviewer_count: number;
   created_by?: string;

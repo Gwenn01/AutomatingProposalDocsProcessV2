@@ -1,20 +1,21 @@
 import { UserPlus, UserMinus } from "lucide-react";
 import { type ProgramProposal } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
+import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 
 interface Props {
     data: ProgramProposal[];
     assignedMap: Record<number, number>;
+    onOpenReviewerModal: (id: number, title: string) => void;
     onOpenAssign: (doc: ProgramProposal) => void;
     onOpenUnassign: (doc: ProgramProposal) => void;
 }
 
-const ProposalCardView = ({ data, assignedMap, onOpenAssign, onOpenUnassign }: Props) => {
+const ProposalCardView = ({ data, assignedMap, onOpenReviewerModal, onOpenAssign, onOpenUnassign }: Props) => {
     return (
         <>
             {data.map((doc) => {
                 const hasReviewer = assignedMap[doc.id] > 0;
-                const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+                const status = getStatusStyle(doc.status as ProposalStatus);
 
                 return (
                     <div
@@ -33,12 +34,12 @@ const ProposalCardView = ({ data, assignedMap, onOpenAssign, onOpenUnassign }: P
 
                                 {/* Reviewer Status */}
                                 {hasReviewer ? (
-                                    <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg">
+                                    <div onClick={() => onOpenReviewerModal(doc.id, doc.title)} className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg cursor-pointer">
                                         <div className="w-2 h-2 rounded-full animate-pulse bg-green-500" />
                                         <span className="text-green-700 font-semibold text-xs">{assignedMap[doc.id]} Reviewer{assignedMap[doc.id] > 1 ? "s" : ""}</span>
                                     </div>
                                 ) : (
-                                    <div className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg">
+                                    <div onClick={() => onOpenReviewerModal(doc.id, doc.title)} className="inline-flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-lg cursor-pointer">
                                         <div className="w-2 h-2 rounded-full bg-gray-300" />
                                         <span className="text-gray-400 font-semibold text-xs">No Assigned Reviewer</span>
                                     </div>

@@ -31,12 +31,12 @@ export interface ProposalsOverview {
     total_activity: number;
   };
   status: {
+    total_draft: number;
     total_under_review: number;
     total_for_review: number;
     total_for_revision: number;
     total_for_approval: number;
     total_approved: number;
-    total_rejected: number;
   };
 }
 
@@ -67,12 +67,14 @@ export interface UpdateAdminUserPayload {
 export interface ProgramProposal {
   id: number;
   child_id: number;
+  created_by: string;
   reviewer_count: number;
   title: string;
   file_path: string | null;
   proposal_type: "Program";
   status: ProposalStatus;
   version_no: number;
+  progress: string;
   created_at: string;
   user: number;
 }
@@ -158,6 +160,26 @@ export const getProposals = async (): Promise<ProgramProposal[]> => {
     method: "GET",
     headers: getAuthHeaders(),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to fetch program proposals");
+  }
+
+  return response.json();
+};
+
+// Get All Proposals
+export const getProposalsBaseType = async (
+  proposalType: string,
+): Promise<ProgramProposal[]> => {
+  const response = await fetch(
+    `${API_URL}/admin/proposals-node/${proposalType}/`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    },
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

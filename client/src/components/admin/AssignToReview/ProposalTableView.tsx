@@ -1,28 +1,49 @@
-import { FileText, UserPlus, UserMinus } from "lucide-react";
+import { FileText, UserPlus, UserMinus, Users } from "lucide-react";
 import { type ProgramProposal } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
-
+import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 interface Props {
     data: ProgramProposal[];
     assignedMap: Record<number, number>;
+    onOpenReviewerModal: (id: number, title: string) => void;
     onOpenAssign: (doc: ProgramProposal) => void;
     onOpenUnassign: (doc: ProgramProposal) => void;
+    isRefetching?: boolean;
 }
 
-const ProposalTableView = ({ data, assignedMap, onOpenAssign, onOpenUnassign }: Props) => {
+const ProposalTableView = ({ data, assignedMap, onOpenReviewerModal, onOpenAssign, onOpenUnassign, isRefetching }: Props) => {
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="relative bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {isRefetching && (
+                <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-[3px] flex items-center justify-center rounded-2xl">
+                    <div className="flex flex-col items-center gap-3 px-6 py-5 bg-white rounded-2xl shadow-lg border border-slate-100">
+
+                        {/* Spinner */}
+                        <div className="relative w-10 h-10">
+                            <div className="absolute inset-0 rounded-full border-[3px] border-emerald-100" />
+                            <div className="absolute inset-0 rounded-full border-[3px] border-emerald-500 border-t-transparent animate-spin" />
+                        </div>
+
+                        {/* Text */}
+                        <div className="text-center">
+                            <p className="text-sm font-bold text-slate-700 tracking-tight">Syncing changes</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">Refreshing proposal data...</p>
+                        </div>
+
+                    </div>
+                </div>
+            )}
             <table className="w-full">
                 <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-300">
                     <tr className="text-left text-gray-700 font-semibold text-xs uppercase tracking-wider">
                         <th className="px-6 py-4">Proposal</th>
                         <th className="px-6 py-4 text-center">Status</th>
+                        <th className="px-6 py-4 text-center">Reviewers</th>
                         <th className="px-6 py-4 text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {data.map((doc) => {
-                        const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+                        const status = getStatusStyle(doc.status as ProposalStatus);
                         const hasReviewer = assignedMap[doc.id] > 0;
 
                         return (
@@ -51,9 +72,19 @@ const ProposalTableView = ({ data, assignedMap, onOpenAssign, onOpenUnassign }: 
                                 {/* Status */}
                                 <td className="px-6 py-5 text-center align-middle">
                                     <span className={`px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 min-w-[130px] shadow-sm ${status.className}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                                         {status.label}
                                     </span>
+                                </td>
+
+                                {/* Reviewers ← add this entire td */}
+                                <td className="px-6 py-5 text-center align-middle">
+                                    <button
+                                        onClick={() => onOpenReviewerModal(doc.id, doc.title)}
+                                        className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
+                                    >
+                                        <span className="text-green-700 font-semibold text-xs">{doc.reviewer_count || 0}</span>
+                                        <Users size={13} className="text-green-600" />
+                                    </button>
                                 </td>
 
                                 {/* Actions */}

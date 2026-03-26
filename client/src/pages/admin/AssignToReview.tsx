@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Search, Table, Grid, FileText } from "lucide-react";
 import { getProposals, getAllReviewerAssignments, type ProgramProposal } from "@/api/admin-api";
+import { useToast } from "@/context/toast";
 import Loading from "@/components/Loading";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";
+import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";
 
 // ── Sub-components ─────────────────────────────────
 import ProposalTableView from "@/components/admin/AssignToReview/ProposalTableView";
@@ -18,9 +20,12 @@ const AssignToReview = () => {
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isRefetching, setIsRefetching] = useState(false);
+  const { showToast } = useToast();
   const itemsPerPage = viewMode === "table" ? 10 : 12;
 
   // ── Modals
+  const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<{ id: number; title: string } | null>(null);
   const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
@@ -78,6 +83,11 @@ const AssignToReview = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredDocs.slice(startIndex, endIndex);
 
+  const openReviewerModal = (id: number, title: string) => {
+    setSelectedProposal({ id, title });
+    setIsReviewerModalOpen(true);
+  };
+
   const openAssignModal = (doc: ProgramProposal) => {
     setSelectedProposal({ id: doc.id, title: doc.title });
     setIsAssignModalOpen(true);
@@ -88,17 +98,37 @@ const AssignToReview = () => {
     setIsUnassignModalOpen(true);
   };
 
-  const handleUpdateAssignments = async () => {
-    const proposals = await getProposals();
+  const handleAssignUpdate = async () => {
+    showToast("Reviewer assigned successfully!", "success");
+    setIsRefetching(true);
+    const [proposals, assignments] = await Promise.all([
+      getProposals(),
+      getAllReviewerAssignments(),
+    ])
     setAllDocs(proposals);
-
-    const assignments = await getAllReviewerAssignments();
     const counts: Record<number, number> = {};
     assignments.forEach(a => {
       counts[a.proposal] = (counts[a.proposal] || 0) + 1;
     });
     setAssignedMap(counts);
+    setIsRefetching(false);
   };
+
+  const handleUnassignUpdate = async () => {
+    showToast("Reviewer unassigned successfully!", "success");
+    setIsRefetching(true);
+    const [proposals, assignments] = await Promise.all([
+      getProposals(),
+      getAllReviewerAssignments(),
+    ])
+    setAllDocs(proposals);
+    const counts: Record<number, number> = {};
+    assignments.forEach(a => {
+      counts[a.proposal] = (counts[a.proposal] || 0) + 1;
+    });
+    setAssignedMap(counts);
+    setIsRefetching(false);
+  }
 
   if (loading) {
     return (
@@ -162,8 +192,10 @@ const AssignToReview = () => {
             <ProposalTableView
               data={currentData}
               assignedMap={assignedMap}
+              onOpenReviewerModal={openReviewerModal}
               onOpenAssign={openAssignModal}
               onOpenUnassign={openUnassignModal}
+              isRefetching={isRefetching}
             />
           </div>
         ) : (
@@ -171,6 +203,7 @@ const AssignToReview = () => {
             <ProposalCardView
               data={currentData}
               assignedMap={assignedMap}
+              onOpenReviewerModal={openReviewerModal}
               onOpenAssign={openAssignModal}
               onOpenUnassign={openUnassignModal}
             />
@@ -199,13 +232,19 @@ const AssignToReview = () => {
         isOpen={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
         data={selectedProposal}
-        onUpdate={handleUpdateAssignments}
+        onUpdate={handleAssignUpdate}
       />
       <UnassignModal
         isOpen={isUnassignModalOpen}
         onClose={() => setIsUnassignModalOpen(false)}
         data={selectedForUnassign}
-        onUpdate={handleUpdateAssignments}
+        onUpdate={handleUnassignUpdate}
+      />
+      <ReviewerAssignedModal
+        isOpen={isReviewerModalOpen}
+        onClose={() => setIsReviewerModalOpen(false)}
+        proposalId={selectedProposal?.id || null}
+        proposalTitle={selectedProposal?.title}
       />
     </div>
   );
