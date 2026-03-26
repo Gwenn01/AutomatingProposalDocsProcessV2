@@ -1,9 +1,11 @@
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
-import CommentInput from "../reviewer/CommentInput";
-import { type BudgetItem, type Comments, FeedbackBadge } from "../reviewer/ReviewerCommentModal";
+
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
 import { formatDate } from "@/utils/dateFormat";
+import type { BudgetItem, Comments } from "@/types/reviewer-comment-types";
+import CommentInput from "../../CommentInput";
+import { FeedbackBadge } from "../FeedbackBadge";
 
 const NA = "N/A";
 

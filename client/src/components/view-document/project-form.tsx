@@ -1,8 +1,8 @@
 import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
-import type { BudgetItem, MethodologyPhase, WorkplanItem } from "../reviewer/ReviewerCommentModal";
-import { CheckboxList } from "../view-review/checkbox-list";
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
 import { formatDate } from "@/utils/dateFormat";
+import type { BudgetItem, WorkplanItem } from "@/types/reviewer-comment-types";
+import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
 
 export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: string }> = ({ projectData, programTitle }) => {
   

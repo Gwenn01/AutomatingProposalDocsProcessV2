@@ -1,9 +1,10 @@
 import React from "react";
-import CommentInput from "../reviewer/CommentInput";
-import { type ApiProposalDetail, type Comments, FeedbackBadge } from "../reviewer/ReviewerCommentModal";
 import { CheckboxList } from "./checkbox-list";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
+import type { ApiProposalDetail, Comments } from "@/types/reviewer-comment-types";
+import CommentInput from "../../CommentInput";
+import { FeedbackBadge } from "../FeedbackBadge";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 

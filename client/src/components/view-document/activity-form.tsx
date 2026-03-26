@@ -1,8 +1,10 @@
 import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
-import { CheckboxList } from "../view-review/checkbox-list";
+
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
-import type { BudgetItem } from "../reviewer/ReviewerCommentModal";
+
 import { formatDate } from "@/utils/dateFormat";
+import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
+import type { BudgetItem } from "@/types/reviewer-comment-types";
 
 export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: string; projectTitle: string }> = ({ activityData, programTitle, projectTitle }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;

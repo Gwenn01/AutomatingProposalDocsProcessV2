@@ -1,9 +1,8 @@
 import React from "react";
-
-import { CheckboxList } from "../view-review/checkbox-list";
-import type { ApiProposalDetail } from "../reviewer/ReviewerCommentModal";
 import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
+import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
+import type { ApiProposalDetail } from "@/types/reviewer-comment-types";
 
 
 
