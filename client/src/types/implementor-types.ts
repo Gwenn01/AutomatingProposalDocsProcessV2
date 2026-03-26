@@ -90,10 +90,23 @@ export interface ApiProject {
   end_date: string | null;
 }
 
+interface ProjectList {
+  child_id: number;
+  duration_months: number;
+  end_date: string;
+  start_date: string;
+  members: string[];
+  project_title: string;
+  project_leader: string;
+  proposal_id: number;
+  title: string;
+
+}
+
 export interface ApiProjectListResponse {
   id: number; // child_id of the program-proposal
   program_title: string;
-  projects: ApiProject[];
+  projects: ProjectList[];
 }
 
 export interface ApiActivity {

@@ -3,9 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { X, ChevronRight, FileText, FolderOpen, Activity } from "lucide-react";
 import { getStatusStyle } from "@/utils/statusStyles";
 import FormSkeleton from "@/components/skeletons/FormSkeleton";
-import {
-  fetchProjectList,
-} from "@/api/reviewer-api";
+
 import {
   fetchActivityList,
   fetchActivityProposalDetail,
@@ -14,6 +12,7 @@ import {
   fetchProjectHistoryList,
   fetchActivityHistoryList,
   checkReviews,
+  fetchProjectList,
 } from "@/api/implementor-api";
 import { useAuth } from "@/context/auth-context";
 import { ActivityForm } from "./view-review-forms/activity-form";
@@ -23,7 +22,8 @@ import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
 import { useProposalEdit } from "@/hooks/useProposalEdit";
 import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/api/get-history-data-api";
-import type { ApiActivity, ApiActivityListResponse, ApiProjectListResponse } from "@/types/reviewer-types";
+import type { ApiActivity, ApiActivityListResponse } from "@/types/reviewer-types";
+import type { ApiProjectListResponse } from "@/types/implementor-types";
 
 // ================= TYPES =================
 
@@ -291,12 +291,10 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const mappedProject  = React.useMemo(() => mapReviewedToProject(projectReviewedData),   [projectReviewedData]);
   const mappedActivity = React.useMemo(() => mapReviewedToActivity(activityReviewedData), [activityReviewedData]);
 
-  console.log("Program Reviewed Data", programReviewedData)
-
-  //console.log("Mapped Project", mappedProject)
-
   // ── Resolved IDs for each PUT endpoint ───────────────────────────────────
   const programChildId    = proposalData?.child_id;
+
+  console.log("Program Child Id", programChildId)
   const programProposalId = nodeId;
   const projectChildId    = selectedProject  ? Number(selectedProject.child_id)    : null;
   const projectProposalId = selectedProject  ? Number(selectedProject.proposal_id) : null;
@@ -569,8 +567,6 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
   const activeProgramReviewedData  = historySnapshotData ?? programReviewedData;
   const activeProjectReviewedData  = historySnapshotData ?? projectReviewedData;
   const activeActivityReviewedData = historySnapshotData ?? activityReviewedData;
-
-  console.log("reviewed data of project", projectReviewedData)
 
   // ── Resolved mapped data when a history snapshot is active ────────────────
   const activeMappedProgram  = historySnapshotData ? mapReviewedToProgram(historySnapshotData)  : mappedProgram;

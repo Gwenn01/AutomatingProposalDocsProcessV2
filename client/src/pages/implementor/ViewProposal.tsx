@@ -1,16 +1,5 @@
 import React, { useState } from "react";
-import {
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  Grid,
-  Table,
-  Search,
-  X,
-  FileX,
-  Edit,
-} from "lucide-react";
-
+import { Eye, ChevronLeft, ChevronRight, Grid, Table, Search, X, FileX, Edit } from "lucide-react";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
@@ -18,7 +7,6 @@ import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-r
 import { useProposals, type Document, type ViewMode } from "@/hooks/useViewProposal";
 import GridSkeleton from "@/components/skeletons/GridSkeleton";
 
-// ================= COMPONENT =================
 const ViewProposal: React.FC = () => {
   const [viewMode, setViewMode]                   = useState<ViewMode>("grid");
   const {
@@ -45,8 +33,6 @@ const ViewProposal: React.FC = () => {
     goToPreviousPage,
   } = useProposals("Program", viewMode === "grid" ? 6 : 10);
 
-  // ── Local UI state (view-specific, not reusable) ─────────────────────────
-
   const [showNotif, setShowNotif]                 = useState<boolean>(false);
   const [selectedDoc, setSelectedDoc]             = useState<Document | null>(null);
   const [showViewerModal, setShowViewerModal]     = useState<boolean>(false);
@@ -54,7 +40,6 @@ const ViewProposal: React.FC = () => {
   const [showReviewModal, setShowReviewModal]     = useState<boolean>(false);
   const [reviewProposalData, setReviewProposalData] = useState<any | null>(null);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleViewProposal = async (doc: Document): Promise<void> => {
     setSelectedDoc(doc);
     const detail = await fetchProposalDetail(doc);
@@ -71,7 +56,6 @@ const ViewProposal: React.FC = () => {
     setShowReviewModal(true);
   };
 
-  // ================= PAGE LOADING SKELETON =================
   if (pageLoading) {
     return (
       <div className="flex-1 bg-white p-10 min-h-screen animate-pulse">
@@ -112,7 +96,6 @@ const ViewProposal: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-white px-10 pt-10 overflow-hidden">
 
-      {/* Action Loading Overlay */}
       {actionLoading && (
         <div className="absolute inset-0 bg-white/80 z-[60] flex items-center justify-center backdrop-blur-sm">
           <div className="bg-white px-14 py-10 flex flex-col items-center w-[380px] shadow-xl rounded-xl">
@@ -129,7 +112,6 @@ const ViewProposal: React.FC = () => {
         </div>
       )}
 
-      {/* Page Header */}
       <div className="mb-10 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">View Proposals</h2>
@@ -313,7 +295,7 @@ const ViewProposal: React.FC = () => {
                           className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition"
                         >
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-green-700 font-semibold text-xs">{doc.reviewer_count}</span>
+                          <span className="text-green-700 font-semibold text-xs">                            {doc.review_progress === "0 out of 0" ? "No Assigned Reviewer" : doc.review_progress}</span>
                         </button>
                       </td>
                     </tr>

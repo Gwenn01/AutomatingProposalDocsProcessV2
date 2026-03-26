@@ -54,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     implementor: [
       { label: "View Proposal", icon: Eye },
       { label: "Create Proposal", icon: Upload },
+      { label: "Drafts", icon: Eye },
       { label: "Profile Overview", icon: Eye },
     ],
     reviewer: [

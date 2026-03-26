@@ -14,15 +14,14 @@ import {
 import ReviewProposal from "./reviewer/ReviewProposal";
 import { CreateProposal, ViewProposal } from "@/pages/implementor";
 import ProfileOverview from "@/pages/ProfileOverview";
+import Drafts from "./implementor/Drafts";
 
-// Define a type for the user object
 interface User {
   fullname: string;
   role: "implementor" | "instructor" | "reviewer" | "admin" | string;
   avatar?: string;
 }
 
-// Active menu type (could be expanded later if needed)
 type ActiveMenu =
   | "View Proposal"
   | "Create Proposal"
@@ -35,6 +34,7 @@ type ActiveMenu =
   | "Assign to Review"
   | "Create Cover Page"
   | "Review Proposal"
+  | "Drafts"
   | null;
 
 const Home: React.FC = () => {
@@ -45,9 +45,10 @@ const Home: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
 
-  const toggleSidebar = () => {
-    setIsOpen((prev) => !prev);
-  };
+  // Track which draft is being edited (null = new proposal)
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+
+  const toggleSidebar = () => setIsOpen((prev) => !prev);
 
   /* ================= AUTH + ROLE DEFAULT ================= */
   useEffect(() => {
@@ -61,27 +62,23 @@ const Home: React.FC = () => {
     const parsedUser: User = JSON.parse(storedUser);
     setUser(parsedUser);
 
-    // ✅ ROLE-BASED DEFAULT PAGE
     switch (parsedUser.role) {
       case "instructor":
       case "implementor":
         setActive("View Proposal");
         break;
-
       case "reviewer":
         setActive("Review Proposal");
         break;
-
       case "admin":
         setActive("Overview");
         break;
-
       default:
         setActive(null);
     }
   }, [navigate]);
 
-  // Add a guarded navigation handler:
+  // Guarded navigation — warn if leaving a dirty proposal
   const handleSetActive = (menu: ActiveMenu) => {
     if (
       active === "Create Proposal" &&
@@ -89,14 +86,35 @@ const Home: React.FC = () => {
       menu !== "Create Proposal"
     ) {
       const confirmed = window.confirm(
-        "You have unsaved changes in your proposal. If you leave, your progress will be lost.\n\nAre you sure you want to leave?",
+        "You have unsaved changes in your proposal. If you leave, your progress will be lost.\n\nAre you sure you want to leave?"
       );
       if (!confirmed) return;
+    }
+    // Clear the draft id whenever we navigate away from Create Proposal
+    if (menu !== "Create Proposal") {
+      setActiveDraftId(null);
     }
     setActive(menu);
   };
 
-  // Optional loading guard
+  // Called from <Drafts> when user clicks "Edit Draft"
+  const handleEditDraft = (draftId: string) => {
+    setActiveDraftId(draftId);
+    setActive("Create Proposal");
+  };
+
+  // Called from <Drafts> "New Proposal" button
+  const handleNewProposal = () => {
+    setActiveDraftId(null);
+    setActive("Create Proposal");
+  };
+
+  // Called from <CreateProposal> after final submit
+  const handleSubmitSuccess = () => {
+    setActiveDraftId(null);
+    setActive("View Proposal");
+  };
+
   if (!user || !active) return null;
 
   return (
@@ -112,11 +130,24 @@ const Home: React.FC = () => {
 
       <main className="flex-1 flex flex-col overflow-y-auto relative">
         {active === "Profile Overview" && <ProfileOverview />}
+
         {/* IMPLEMENTOR / INSTRUCTOR */}
         {active === "Create Proposal" && (
-          <CreateProposal onDirtyChange={setIsProposalDirty} />
+          <CreateProposal
+            key={activeDraftId ?? "new"}   // remount cleanly when switching drafts
+            draftId={activeDraftId}
+            onDirtyChange={setIsProposalDirty}
+            onGoToDrafts={() => handleSetActive("Drafts")}
+            onSubmitSuccess={handleSubmitSuccess}
+          />
         )}
         {active === "View Proposal" && <ViewProposal />}
+        {active === "Drafts" && (
+          <Drafts
+            onEditDraft={handleEditDraft}
+            onNewProposal={handleNewProposal}
+          />
+        )}
 
         {/* ADMIN */}
         {active === "Overview" && <Overview />}
