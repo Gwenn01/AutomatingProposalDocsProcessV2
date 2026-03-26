@@ -79,7 +79,7 @@ interface UseExistingReviewOptions {
   isOpen: boolean;
   activeTab: TabType;
   programNodeId: number | null;
-  selectedProjectProposal: number;
+  selectedProjectProposal?: number;
   selectedActivityProposal?: number | string;
 }
 
@@ -120,7 +120,6 @@ export function useExistingReview({
     fetchExistingReview(nodeId)
       .then((data) => {
         if (!cancelled) setExistingReview(data ?? null);
-        console.log("Review Data", data)
       })
       .catch(() => {
         if (!cancelled) setExistingReview(null);
@@ -150,7 +149,7 @@ interface UseHistoryPanelOptions {
   isOpen: boolean;
   activeTab: TabType;
   programNodeId: number | null;
-  selectedProjectProposal: number;
+  selectedProjectProposal?: number;
   selectedActivityProposal?: number | string;
   selectedProject: ProjectItem | null;
   selectedActivity: ActivityItem | null;
@@ -504,5 +503,7 @@ export function useSidebarTree({ isOpen, childId }: UseSidebarTreeOptions) {
     handleSelectActivity,
     loadActivitiesForProject,
     reset,
+    setSelectedActivity,
+    setActivityDetail
   };
 }
