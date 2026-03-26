@@ -118,6 +118,11 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
     }
   };
 
+  const handleView = async (id: number) => {
+    // Wire to your API: e.g. getProposal(id)
+    console.log("View proposal", id);
+  };
+
   const handleApproveBudget = (id: number) => {
     // Wire to your API: e.g. approveProposal(id)
     console.log("Approve proposal", id);
@@ -154,7 +159,7 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
       <ProposalsBudgetTable
         proposals={proposals}
         totalBudget={config?.total_budget ?? 0}
-        onView={(id) => console.log("view", id)}
+        onView={handleView}
         onApproveBudget={handleApproveBudget}
         onSetBudget={handleSetBudget}
       />
