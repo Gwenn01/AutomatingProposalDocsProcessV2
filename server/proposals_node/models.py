@@ -37,6 +37,7 @@ class Proposal(models.Model):
     )
     budget_approved = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, default=0)
     version_no = models.IntegerField(default=1)
+    trigger_review_reset = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

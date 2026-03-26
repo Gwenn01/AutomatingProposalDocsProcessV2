@@ -13,6 +13,9 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
     # If newly created proposal → do nothing
     if created:
         return
+    # only reset when the implementor make an update if not return 
+    if not getattr(instance, "trigger_review_reset", False):
+        return
 
     # Get all reviews for this proposal
     reviews = ProposalReview.objects.filter(proposal_node=instance)
