@@ -138,8 +138,8 @@ class ProgramProposalSerializer(serializers.ModelSerializer):
         instance.proposal.save()
 
         # reset the trigger
-        instance.trigger_review_reset = False
-        instance.save(update_fields=["trigger_review_reset"])
+        instance.proposal.trigger_review_reset = False
+        instance.proposal.save(update_fields=["trigger_review_reset"])
         # ---------------------------------------
         # STEP 4: Update ProgramProposal fields
         # ---------------------------------------

@@ -48,7 +48,7 @@ class ProposalSerializer(serializers.ModelSerializer):
         return obj.user.profile.name
     
     def get_budget_requested(self, obj):
-        if obj.proposal_type != "program":
+        if obj.proposal_type != "Program":
             return None
         data = obj.program_details.budget_requirements or []
         total = Decimal("0")
