@@ -65,6 +65,15 @@ const MonitoringProposals = () => {
     fetchData();
   }, []);
 
+  const refreshData = async () => {
+    try {
+      const data = await getProposalsBaseType("Program");
+      setProposals(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // ── Filter proposals to selected year ─────────────────────────────────────
   const proposalsForYear = useMemo(
     () =>
@@ -100,7 +109,11 @@ const MonitoringProposals = () => {
       )}
 
       {activeTab === "budget" && (
-        <BudgetTab proposals={proposalsForYear} selectedYear={selectedYear} />
+        <BudgetTab
+          proposals={proposalsForYear}
+          selectedYear={selectedYear}
+          onRefresh={refreshData}
+        />
       )}
     </div>
   );

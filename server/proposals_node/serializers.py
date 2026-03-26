@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Proposal
+from .models import Proposal, YearConfig
 from decimal import Decimal, ROUND_HALF_UP
 
 class ProposalSerializer(serializers.ModelSerializer):
@@ -58,3 +58,18 @@ class ProposalSerializer(serializers.ModelSerializer):
 
         return str(total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
     
+    
+class YearConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = YearConfig
+        fields = ['year', 'total_budget', 'used_budget', 'is_locked']
+
+    def validate_year(self, value):
+        if value < 2000:
+            raise serializers.ValidationError("Invalid year")
+        return value
+
+    def validate_total_budget(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Budget cannot be negative")
+        return value

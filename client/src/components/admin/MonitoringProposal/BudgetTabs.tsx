@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { setYearConfig, getYearConfig } from "@/api/admin-api";
+import {
+  setYearConfig,
+  getYearConfig,
+  setBudgetProposal,
+} from "@/api/admin-api";
 import type { Proposal, YearConfig } from "./types";
 import ProposalsBudgetTable from "./BudgetTabs/ProposalsBudgetTable";
 import YearConfigPanel from "./BudgetTabs/YearConfigPannel";
@@ -8,9 +12,10 @@ import YearConfigPanel from "./BudgetTabs/YearConfigPannel";
 type Props = {
   proposals: Proposal[];
   selectedYear: number;
+  onRefresh: () => Promise<void>;
 };
 
-const BudgetTab = ({ proposals, selectedYear }: Props) => {
+const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
   const [config, setConfig] = useState<YearConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -99,9 +104,18 @@ const BudgetTab = ({ proposals, selectedYear }: Props) => {
     }
   };
 
-  const handleSetBudget = (id: number, val: number) => {
+  const handleSetBudget = async (id: number, val: number) => {
     // Wire to your API: e.g. patchProposalBudget(id, val)
     console.log("Set budget", id, val);
+    try {
+      setLoading(true);
+      await setBudgetProposal(id, val);
+      await onRefresh();
+    } catch (err) {
+      console.log("Failed to set budget", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApproveBudget = (id: number) => {

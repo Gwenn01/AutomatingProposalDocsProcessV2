@@ -238,6 +238,26 @@ export const getYearConfig = async (year: number): Promise<YearConfig> => {
   return response.json();
 };
 
+export const setBudgetProposal = async (
+  proposalId: number,
+  amount: number,
+): Promise<any> => {
+  const response = await fetch(
+    `${API_URL}/admin/set-proposal-budget/${proposalId}/${amount}/`,
+    {
+      method: "PUT", // or PUT depending on backend
+      headers: getAuthHeaders(),
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to set proposal budget");
+  }
+
+  return response.json();
+};
+
 // ================================================================================
 // ================================================================================
 
