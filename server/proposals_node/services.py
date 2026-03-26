@@ -53,12 +53,12 @@ class OverviewService:
                 proposal['total_activity'] = item['total']
 
         status = {
+            'total_draft': 0,
             'total_under_review': 0,
             'total_for_review': 0,
             'total_for_revision': 0,
             'total_for_approval': 0,
             'total_approved': 0,
-            'total_rejected': 0
         }
 
         for item in status_counts:

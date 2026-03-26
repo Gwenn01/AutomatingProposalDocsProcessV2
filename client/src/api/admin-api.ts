@@ -31,12 +31,12 @@ export interface ProposalsOverview {
     total_activity: number;
   };
   status: {
+    total_draft: number;
     total_under_review: number;
     total_for_review: number;
     total_for_revision: number;
     total_for_approval: number;
     total_approved: number;
-    total_rejected: number;
   };
 }
 

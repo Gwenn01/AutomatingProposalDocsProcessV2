@@ -81,12 +81,12 @@ const AdminOverview = () => {
 
   // workflow
   const statusBarData = [
+    { key: "draft", value: proposals.status.total_draft },
     { key: "under_review", value: proposals.status.total_under_review },
     { key: "for_review", value: proposals.status.total_for_review },
     { key: "for_revision", value: proposals.status.total_for_revision },
     { key: "for_approval", value: proposals.status.total_for_approval },
     { key: "approved", value: proposals.status.total_approved },
-    { key: "rejected", value: proposals.status.total_rejected },
   ];
 
   // ── Render ──────────────────────────────────────────────────────
@@ -104,7 +104,6 @@ const AdminOverview = () => {
 
       <WorkflowBreakdown statusBarData={statusBarData} />
       <StatusBarChart statusBarData={statusBarData} />
-
       {/* Analytics: Pie + Bar side by side */}
       <div className="grid grid-cols-1 xl:grid-cols-10 gap-8">
         <UsersPieChart

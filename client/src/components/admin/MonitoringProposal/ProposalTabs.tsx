@@ -4,22 +4,18 @@ import {
   Filter,
   FileText,
   Eye,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Layers,
 } from "lucide-react";
 import type { Proposal, StatusFilter } from "./types";
-import { getProgress, formatBudget, TYPE_BADGE, progressColor } from "./helper";
+import { getProgress, TYPE_BADGE, progressColor } from "./helper";
 import { getStatusStyleAdmin } from "@/utils/statusStyles";
 
 // ── Proposal table row ────────────────────────────────────────────────────────
 const ProposalRow = ({ doc }: { doc: Proposal }) => {
   const status = getStatusStyleAdmin(doc.status as any);
   const prog = getProgress(doc.status);
-  const overBudget =
-    (doc.budget_requested ?? 0) > (doc.budget_approved ?? 0) &&
-    doc.budget_approved !== 0;
 
   return (
     <tr className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors group">
@@ -69,26 +65,6 @@ const ProposalRow = ({ doc }: { doc: Proposal }) => {
         <p className="text-[10px] text-center mt-1 font-semibold text-slate-500">
           {doc.progress}%
         </p>
-      </td>
-
-      {/* Budget */}
-      <td className="p-4 text-center">
-        {doc.budget_requested ? (
-          <div>
-            <p
-              className={`text-sm font-semibold ${overBudget ? "text-rose-600" : "text-slate-700"}`}
-            >
-              {formatBudget(doc.budget_requested)}
-            </p>
-            {overBudget && (
-              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-500 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full mt-0.5">
-                <AlertTriangle size={8} /> Over
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-slate-300 text-sm">—</span>
-        )}
       </td>
 
       {/* Action */}
@@ -169,27 +145,22 @@ const ProposalsTab = ({ proposals }: Props) => {
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-100">
             <tr>
-              {[
-                "Proposal",
-                "Type",
-                "Status",
-                "Progress",
-                "Budget",
-                "Action",
-              ].map((h, i) => (
-                <th
-                  key={h}
-                  className={`p-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 ${
-                    i === 0
-                      ? "text-left"
-                      : i === 5
-                        ? "text-right"
-                        : "text-center"
-                  }`}
-                >
-                  {h}
-                </th>
-              ))}
+              {["Proposal", "Type", "Status", "Progress", "Action"].map(
+                (h, i) => (
+                  <th
+                    key={h}
+                    className={`p-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 ${
+                      i === 0
+                        ? "text-left"
+                        : i === 5
+                          ? "text-right"
+                          : "text-center"
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
           <tbody>
