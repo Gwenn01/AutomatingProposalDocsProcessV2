@@ -9,6 +9,7 @@ class ProposalSerializer(serializers.ModelSerializer):
     reviewed_count = serializers.SerializerMethodField()
     review_progress = serializers.SerializerMethodField()
     child_title = serializers.SerializerMethodField()
+    created_by = serializers.SerializerMethodField()
 
     class Meta:
         model = Proposal
@@ -41,3 +42,6 @@ class ProposalSerializer(serializers.ModelSerializer):
             return obj.project_details.project_title
         if obj.proposal_type == "Activity" and hasattr(obj, 'activity_details'):
             return obj.activity_details.activity_title
+        
+    def get_created_by(self, obj):
+        return obj.user.profile.name

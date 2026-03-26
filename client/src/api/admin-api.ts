@@ -67,6 +67,7 @@ export interface UpdateAdminUserPayload {
 export interface ProgramProposal {
   id: number;
   child_id: number;
+  created_by: string;
   reviewer_count: number;
   title: string;
   file_path: string | null;

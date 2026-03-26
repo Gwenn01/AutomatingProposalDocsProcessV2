@@ -10,7 +10,7 @@ type Tab = {
 
 // Replaced emojis with modern SVG icons
 const TABS: Tab[] = [
-  { key: "proposals", label: "Proposals", icon: ClipboardList },
+  { key: "proposals", label: "Progress", icon: ClipboardList },
   { key: "budget", label: "Budget", icon: Wallet },
   { key: "access", label: "Access", icon: Lock },
 ];
