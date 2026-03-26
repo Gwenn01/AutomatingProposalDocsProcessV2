@@ -1,6 +1,6 @@
 import { FileText, UserPlus, UserMinus, Users } from "lucide-react";
 import { type ProgramProposal } from "@/api/admin-api";
-import { getStatusStyleAdmin, type ProposalStatus } from "@/utils/statusStyles";
+import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 interface Props {
     data: ProgramProposal[];
     assignedMap: Record<number, number>;
@@ -43,7 +43,7 @@ const ProposalTableView = ({ data, assignedMap, onOpenReviewerModal, onOpenAssig
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {data.map((doc) => {
-                        const status = getStatusStyleAdmin(doc.status as ProposalStatus);
+                        const status = getStatusStyle(doc.status as ProposalStatus);
                         const hasReviewer = assignedMap[doc.id] > 0;
 
                         return (
@@ -72,7 +72,6 @@ const ProposalTableView = ({ data, assignedMap, onOpenReviewerModal, onOpenAssig
                                 {/* Status */}
                                 <td className="px-6 py-5 text-center align-middle">
                                     <span className={`px-4 py-2 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 min-w-[130px] shadow-sm ${status.className}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                                         {status.label}
                                     </span>
                                 </td>

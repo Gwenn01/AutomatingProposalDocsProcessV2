@@ -5,6 +5,7 @@ import { useToast } from "@/context/toast";
 import Loading from "@/components/Loading";
 import AssignModal from "@/components/admin/AssignModal";
 import UnassignModal from "@/components/admin/UnassignModal";
+import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";
 
 // ── Sub-components ─────────────────────────────────
 import ProposalTableView from "@/components/admin/AssignToReview/ProposalTableView";
@@ -24,6 +25,7 @@ const AssignToReview = () => {
   const itemsPerPage = viewMode === "table" ? 10 : 12;
 
   // ── Modals
+  const [isReviewerModalOpen, setIsReviewerModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<{ id: number; title: string } | null>(null);
   const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
@@ -80,6 +82,11 @@ const AssignToReview = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredDocs.slice(startIndex, endIndex);
+
+  const openReviewerModal = (id: number, title: string) => {
+    setSelectedProposal({ id, title });
+    setIsReviewerModalOpen(true);
+  };
 
   const openAssignModal = (doc: ProgramProposal) => {
     setSelectedProposal({ id: doc.id, title: doc.title });
@@ -185,6 +192,7 @@ const AssignToReview = () => {
             <ProposalTableView
               data={currentData}
               assignedMap={assignedMap}
+              onOpenReviewerModal={openReviewerModal}
               onOpenAssign={openAssignModal}
               onOpenUnassign={openUnassignModal}
               isRefetching={isRefetching}
@@ -195,6 +203,7 @@ const AssignToReview = () => {
             <ProposalCardView
               data={currentData}
               assignedMap={assignedMap}
+              onOpenReviewerModal={openReviewerModal}
               onOpenAssign={openAssignModal}
               onOpenUnassign={openUnassignModal}
             />
@@ -230,6 +239,12 @@ const AssignToReview = () => {
         onClose={() => setIsUnassignModalOpen(false)}
         data={selectedForUnassign}
         onUpdate={handleUnassignUpdate}
+      />
+      <ReviewerAssignedModal
+        isOpen={isReviewerModalOpen}
+        onClose={() => setIsReviewerModalOpen(false)}
+        proposalId={selectedProposal?.id || null}
+        proposalTitle={selectedProposal?.title}
       />
     </div>
   );
