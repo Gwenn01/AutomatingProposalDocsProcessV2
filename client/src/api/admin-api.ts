@@ -75,6 +75,8 @@ export interface ProgramProposal {
   status: ProposalStatus;
   version_no: number;
   progress: string;
+  budget_requested: number;
+  budget_approved: number;
   created_at: string;
   user: number;
 }
@@ -111,6 +113,13 @@ export interface CreateCoverPageResponse {
   message: string;
 }
 
+export interface YearConfig {
+  year: number;
+  total_budget: number;
+  used_budget: number;
+  is_locked: boolean;
+}
+
 const API_URL = "http://127.0.0.1:8000/api";
 
 const getAuthHeaders = () => {
@@ -122,7 +131,7 @@ const getAuthHeaders = () => {
   };
 };
 
-// Get Users Overview
+// Get Users Overview ====================================================
 export const getUsersOverview = async (): Promise<UsersOverview> => {
   const response = await fetch(`${API_URL}/users/admin/overview-users/`, {
     method: "GET",
@@ -137,7 +146,7 @@ export const getUsersOverview = async (): Promise<UsersOverview> => {
   return response.json();
 };
 
-// Get Proposals Overview
+// Get Proposals Overview==================================================
 export const getProposalsOverview = async (
   year: number,
 ): Promise<ProposalsOverview> => {
@@ -154,7 +163,7 @@ export const getProposalsOverview = async (
   return response.json();
 };
 
-// Get All Proposals
+// Get All Proposals=============================================================
 export const getProposals = async (): Promise<ProgramProposal[]> => {
   const response = await fetch(`${API_URL}/admin/proposals-node/Program/`, {
     method: "GET",
@@ -169,7 +178,9 @@ export const getProposals = async (): Promise<ProgramProposal[]> => {
   return response.json();
 };
 
-// Get All Proposals
+// Get All Proposals===============================================================
+// MONITORING PROPOSAL
+// ================================================================================
 export const getProposalsBaseType = async (
   proposalType: string,
 ): Promise<ProgramProposal[]> => {
@@ -188,6 +199,47 @@ export const getProposalsBaseType = async (
 
   return response.json();
 };
+
+// set the year budget
+export const setYearConfig = async (data: {
+  year: number;
+  total_budget: number;
+  used_budget?: number;
+  is_locked?: boolean;
+}): Promise<YearConfig> => {
+  const response = await fetch(`${API_URL}/admin/set-year-config/`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to set year config");
+  }
+
+  return response.json();
+};
+
+export const getYearConfig = async (year: number): Promise<YearConfig> => {
+  const response = await fetch(`${API_URL}/admin/get-year-config/${year}/`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to fetch year config");
+  }
+
+  return response.json();
+};
+
+// ================================================================================
+// ================================================================================
 
 // Get All Reviewers
 export const getAllReviewers = async (): Promise<ApiUser[]> => {

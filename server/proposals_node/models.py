@@ -35,8 +35,19 @@ class Proposal(models.Model):
         decimal_places=2,
         default=0
     )
+    budget_approved = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, default=0)
     version_no = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
+    
+class YearConfig(models.Model):
+    year = models.IntegerField()
+    total_budget = models.DecimalField(   max_digits=12, decimal_places=2, default=0)
+    used_budget = models.DecimalField(  max_digits=12, decimal_places=2, default=0)
+    is_locked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.year)

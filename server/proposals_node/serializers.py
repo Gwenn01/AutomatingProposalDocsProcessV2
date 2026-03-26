@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Proposal
-
+from decimal import Decimal, ROUND_HALF_UP
 
 class ProposalSerializer(serializers.ModelSerializer):
 
@@ -10,6 +10,7 @@ class ProposalSerializer(serializers.ModelSerializer):
     review_progress = serializers.SerializerMethodField()
     child_title = serializers.SerializerMethodField()
     created_by = serializers.SerializerMethodField()
+    budget_requested = serializers.SerializerMethodField()
 
     class Meta:
         model = Proposal
@@ -45,3 +46,15 @@ class ProposalSerializer(serializers.ModelSerializer):
         
     def get_created_by(self, obj):
         return obj.user.profile.name
+    
+    def get_budget_requested(self, obj):
+        data = obj.program_details.budget_requirements or []
+
+        total = Decimal("0")
+
+        for item in data:
+            amount = item.get("amount", 0)
+            total += Decimal(str(amount))
+
+        return str(total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
+    

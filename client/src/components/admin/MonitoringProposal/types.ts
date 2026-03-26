@@ -1,22 +1,22 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // monitoring/types.ts
 // ─────────────────────────────────────────────────────────────────────────────
-
 export type ProposalType = "Program" | "Project" | "Activity";
 
 export type Proposal = {
   id: number;
   title: string;
   status: string;
-  progress: string;
+  progress?: string;
   proposal_type: ProposalType;
-  reviewer_count: number;
+  reviewer_count?: number;
   created_by?: string;
   parent_program?: string;
   parent_project?: string;
   budget_requested?: number;
   budget_approved?: number;
   child_id?: number;
+  created_at?: string;
 };
 
 export type YearConfig = {
@@ -27,11 +27,8 @@ export type YearConfig = {
 };
 
 export type ImplementorLock = {
-  user_id: number;
+  id: number;
   name: string;
-  email: string;
-  is_locked: boolean;
-  proposals_count: number;
   total_budget_used: number;
   has_pending_budget_request: boolean;
 };

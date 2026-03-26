@@ -1,24 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Loading from "@/components/Loading";
 import { getProposalsBaseType } from "@/api/admin-api";
 
 import type {
   Proposal,
-  YearConfig,
-  ImplementorLock,
   ActiveTab,
 } from "@/components/admin/MonitoringProposal/types";
-import {
-  MOCK_YEAR_CONFIG,
-  MOCK_IMPLEMENTORS,
-} from "@/components/admin/MonitoringProposal/helper";
 
 import MonitoringHeader from "@/components/admin/MonitoringProposal/MonitoringHeader";
-//import MonitoringStats from "@/components/admin/MonitoringProposal/MonitoringStats";
 import MonitoringTabs from "@/components/admin/MonitoringProposal/MonitoringTabs";
 import ProposalsTab from "@/components/admin/MonitoringProposal/ProposalTabs";
 import BudgetTab from "@/components/admin/MonitoringProposal/BudgetTabs";
-import AccessTab from "@/components/admin/MonitoringProposal/AccessTabs";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -28,13 +20,25 @@ const MonitoringProposals = () => {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [yearConfigs, setYearConfigs] =
-    useState<Record<number, YearConfig>>(MOCK_YEAR_CONFIG);
-  const [implementors, setImplementors] =
-    useState<ImplementorLock[]>(MOCK_IMPLEMENTORS);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [activeTab, setActiveTab] = useState<ActiveTab>("proposals");
 
+  // ── Derive unique years from proposals' created_at ────────────────────────
+  const yearKeys = useMemo(() => {
+    const years = proposals
+      .filter((p) => !!p.created_at)
+      .map((p) => new Date(p.created_at!).getFullYear());
+    return [...new Set(years)].sort((a, b) => b - a); // descending
+  }, [proposals]);
+
+  // Auto-select most recent year if current selection isn't in the list
+  useEffect(() => {
+    if (yearKeys.length > 0 && !yearKeys.includes(selectedYear)) {
+      setSelectedYear(yearKeys[0]);
+    }
+  }, [yearKeys]);
+
+  // ── Loading progress bar ──────────────────────────────────────────────────
   useEffect(() => {
     if (!loading) return;
     let value = 0;
@@ -45,19 +49,13 @@ const MonitoringProposals = () => {
     return () => clearInterval(interval);
   }, [loading]);
 
+  // ── Fetch proposals ───────────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const data = await getProposalsBaseType("Program");
-        console.log(data);
-        const augmented: Proposal[] = data.map((p: Proposal, i: number) => ({
-          ...p,
-          budget_requested:
-            (i + 1) * 120_000 + Math.floor(Math.random() * 80_000),
-          budget_approved: i % 3 === 0 ? 0 : (i + 1) * 100_000,
-        }));
-        setProposals(augmented);
+        setProposals(data);
       } catch (err) {
         console.error("Failed to fetch proposals", err);
       } finally {
@@ -67,43 +65,15 @@ const MonitoringProposals = () => {
     fetchData();
   }, []);
 
-  const config: YearConfig = yearConfigs[selectedYear] ?? {
-    year: selectedYear,
-    total_budget: 0,
-    used_budget: 0,
-    is_locked: false,
-  };
-
-  const toggleYearLock = () =>
-    setYearConfigs((prev) => ({
-      ...prev,
-      [selectedYear]: {
-        ...prev[selectedYear],
-        is_locked: !prev[selectedYear].is_locked,
-      },
-    }));
-
-  const updateBudget = (val: number) =>
-    setYearConfigs((prev) => ({
-      ...prev,
-      [selectedYear]: { ...prev[selectedYear], total_budget: val },
-    }));
-
-  const toggleImplementorLock = (id: number) =>
-    setImplementors((prev) =>
-      prev.map((imp) =>
-        imp.user_id === id ? { ...imp, is_locked: !imp.is_locked } : imp,
+  // ── Filter proposals to selected year ─────────────────────────────────────
+  const proposalsForYear = useMemo(
+    () =>
+      proposals.filter(
+        (p) =>
+          p.created_at && new Date(p.created_at).getFullYear() === selectedYear,
       ),
-    );
-
-  const approveBudgetRequest = (id: number) =>
-    setImplementors((prev) =>
-      prev.map((imp) =>
-        imp.user_id === id
-          ? { ...imp, has_pending_budget_request: false }
-          : imp,
-      ),
-    );
+    [proposals, selectedYear],
+  );
 
   if (loading) {
     return (
@@ -119,39 +89,18 @@ const MonitoringProposals = () => {
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen animate-in fade-in duration-500">
       <MonitoringHeader
         selectedYear={selectedYear}
-        yearKeys={Object.keys(yearConfigs).map(Number)}
-        config={config}
+        yearKeys={yearKeys}
         onYearChange={setSelectedYear}
       />
-      {/* <MonitoringStats
-        proposals={proposals}
-        config={config}
-        implementors={implementors}
-      /> */}
+
       <MonitoringTabs active={activeTab} onChange={setActiveTab} />
 
-      {activeTab === "proposals" && <ProposalsTab proposals={proposals} />}
-
-      {activeTab === "budget" && (
-        <BudgetTab
-          config={config}
-          proposals={proposals}
-          implementors={implementors}
-          onToggleLock={toggleYearLock}
-          onBudgetChange={updateBudget}
-          onApproveRequest={approveBudgetRequest}
-        />
+      {activeTab === "proposals" && (
+        <ProposalsTab proposals={proposalsForYear} />
       )}
 
-      {activeTab === "access" && (
-        <AccessTab
-          config={config}
-          selectedYear={selectedYear}
-          implementors={implementors}
-          onToggleGlobalLock={toggleYearLock}
-          onToggleImplementor={toggleImplementorLock}
-          onApproveBudget={approveBudgetRequest}
-        />
+      {activeTab === "budget" && (
+        <BudgetTab proposals={proposalsForYear} selectedYear={selectedYear} />
       )}
     </div>
   );

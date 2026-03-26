@@ -1,5 +1,5 @@
 import React from "react";
-import { ClipboardList, Wallet, Lock } from "lucide-react";
+import { ClipboardList, Wallet } from "lucide-react";
 import type { ActiveTab } from "./types";
 
 type Tab = {
@@ -12,7 +12,7 @@ type Tab = {
 const TABS: Tab[] = [
   { key: "proposals", label: "Progress", icon: ClipboardList },
   { key: "budget", label: "Budget", icon: Wallet },
-  { key: "access", label: "Access", icon: Lock },
+  //{ key: "access", label: "Access", icon: Lock },
 ];
 
 type Props = {
