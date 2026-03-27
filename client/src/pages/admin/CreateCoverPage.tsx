@@ -151,46 +151,50 @@ const CreateCoverPage = () => {
             {currentData.length === 0 ? (
               <EmptyState icon={FileText} message="No proposals found" />
             ) : viewMode === "table" ? (
-              <CoverPageTableView
-                data={currentData}
-                coverPages={coverPages}
-                onOpenCreate={(doc) => {
-                  setSelectedProposal(doc);
-                  setIsModalOpen(true);
-                }}
-                onOpenView={(coverId) => {
-                  setViewCoverId(coverId);
-                  setIsViewOpen(true);
-                }}
-                onOpenEdit={(coverId, doc) => {
-                  setEditCoverId(coverId);
-                  setSelectedProposal(doc);
-                  setIsEditOpen(true);
-                }}
-              />
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <CoverPageTableView
+                  data={currentData}
+                  coverPages={coverPages}
+                  onOpenCreate={(doc) => {
+                    setSelectedProposal(doc);
+                    setIsModalOpen(true);
+                  }}
+                  onOpenView={(coverId) => {
+                    setViewCoverId(coverId);
+                    setIsViewOpen(true);
+                  }}
+                  onOpenEdit={(coverId, doc) => {
+                    setEditCoverId(coverId);
+                    setSelectedProposal(doc);
+                    setIsEditOpen(true);
+                  }}
+                />
+              </div>
             ) : (
-              <CoverPageCardView
-                data={currentData}
-                coverPages={coverPages}
-                onOpenCreate={(doc) => {
-                  setSelectedProposal(doc);
-                  setIsModalOpen(true);
-                }}
-                onOpenView={(coverId) => {
-                  setViewCoverId(coverId);
-                  const found = allDocs.find(
-                    (doc) =>
-                      coverPages.find((cp) => cp.id === coverId)?.proposal === doc.id
-                  );
-                  setSelectedProposal(found || null);
-                  setIsViewOpen(true);
-                }}
-                onOpenEdit={(coverId, doc) => {
-                  setEditCoverId(coverId);
-                  setSelectedProposal(doc);
-                  setIsEditOpen(true);
-                }}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <CoverPageCardView
+                  data={currentData}
+                  coverPages={coverPages}
+                  onOpenCreate={(doc) => {
+                    setSelectedProposal(doc);
+                    setIsModalOpen(true);
+                  }}
+                  onOpenView={(coverId) => {
+                    setViewCoverId(coverId);
+                    const found = allDocs.find(
+                      (doc) =>
+                        coverPages.find((cp) => cp.id === coverId)?.proposal === doc.id
+                    );
+                    setSelectedProposal(found || null);
+                    setIsViewOpen(true);
+                  }}
+                  onOpenEdit={(coverId, doc) => {
+                    setEditCoverId(coverId);
+                    setSelectedProposal(doc);
+                    setIsEditOpen(true);
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>

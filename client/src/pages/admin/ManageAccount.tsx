@@ -1,66 +1,61 @@
 import { useState, useEffect } from "react";
-import {
-  Edit,
-  Trash2,
-  Search,
-  UserPlus,
-  Table,
-  Grid,
-  User2,
-} from "lucide-react";
-import EditProfileAdmin from "@/components/admin/EditProfileAdminModal";
-import AddAccountModal from "@/components/admin/AddAccountModal";
-import DeleteAccountConfirmationModal from "@/components/admin/DeleteAccountConfirmationModal";
+import { Search, Table, Grid, UserPlus, User2 } from "lucide-react";
 import { getAllAccounts, type ApiUser } from "@/api/admin-api";
 import { useToast } from "@/context/toast";
 import Loading from "@/components/Loading";
 
-type ViewMode = "table" | "card";
+// Components
+import AccountsTableView from "@/components/admin/ManageAccounts/AccountsTableView";
+import AccountsCardView from "@/components/admin/ManageAccounts/AccountsCardView";
+import AdminPagination from "@/components/admin/Pagination";
+import EmptyState from "@/components/admin/EmptyState";
 
-const ManageAccount = () => {
+// Modals
+import EditProfileAdmin from "@/components/admin/EditProfileAdminModal";
+import AddAccountModal from "@/components/admin/AddAccountModal";
+import DeleteAccountConfirmationModal from "@/components/admin/DeleteAccountConfirmationModal";
+
+const ManageAccounts = () => {
   const { showToast } = useToast();
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [users, setUsers] = useState<ApiUser[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
-  const [progress, setProgress] = useState<number>(0);
 
+  // ── State ─────────────────────────────────────────────
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = viewMode === "table" ? 5 : 6;
+
+  const [selectedUser, setSelectedUser] = useState<ApiUser | null>(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // ── Loading animation ─────────────────────────────────
   useEffect(() => {
     if (!loading) return;
     setProgress(0);
     let value = 0;
     const interval = setInterval(() => {
-      value += Math.random() * 10 + 5;
-      if (value >= 95) {
-        value = 95;
-        clearInterval(interval);
-      }
-      setProgress(value);
-    }, 250);
-
+      value += Math.random() * 10;
+      setProgress(Math.min(value, 95));
+    }, 300);
     return () => clearInterval(interval);
   }, [loading]);
 
-  const fetchUsers = async (): Promise<void> => {
+  // ── Fetch users ───────────────────────────────────────
+  const fetchUsers = async () => {
     try {
       setLoading(true);
-      setProgress(0);
       const data = await getAllAccounts();
       setUsers(data);
-      setProgress(100);
-      setTimeout(() => {
-        setLoading(false);
-      }, 400);
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch users");
-      setUsers([]);
-      setLoading(false);
+      showToast("Failed to fetch users", "error");
     } finally {
       setLoading(false);
     }
@@ -70,417 +65,175 @@ const ManageAccount = () => {
     fetchUsers();
   }, []);
 
-  /* =========================
-     Handlers
-  ========================= */
+  // ── Reset page on filter/view change ──────────────────
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, viewMode]);
 
-  const handleEditClick = (user: ApiUser): void => {
+  // ── Handlers ─────────────────────────────────────────
+  const handleEditClick = (user: ApiUser) => {
     setSelectedUser(user);
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteClick = (user: ApiUser): void => {
+  const handleDeleteClick = (user: ApiUser) => {
     setSelectedUser(user);
     setIsDeleteModalOpen(true);
   };
 
-  const handleUserAdded = async (): Promise<void> => {
+  const handleUserAdded = async () => {
     showToast("Creating account...", "info");
     setIsAddModalOpen(false);
-    showToast("New account created successfully!", "success");
+    showToast("New account created!", "success");
     await fetchUsers();
   };
 
-  const handleUserUpdated = async (): Promise<void> => {
+  const handleUserUpdated = async () => {
     showToast("Updating profile...", "info");
     setIsEditModalOpen(false);
-    showToast("User profile updated!", "success");
+    showToast("User updated!", "success");
     await fetchUsers();
   };
 
-  const handleUserDeleted = async (): Promise<void> => {
-    showToast("Processing request...", "info");
-    showToast("Account permanently deleted.", "success");
+  const handleUserDeleted = async () => {
+    showToast("Deleting account...", "info");
+    showToast("Account deleted.", "success");
     await fetchUsers();
   };
 
+  // ── Derived Data ─────────────────────────────────────
   const filteredUsers = users.filter((user) => {
     const name = user.profile.name.toLowerCase();
     const email = user.email.toLowerCase();
     const query = searchQuery.toLowerCase();
-
     return name.includes(query) || email.includes(query);
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredUsers.slice(startIndex, endIndex);
+
+  // ── Loading State ────────────────────────────────────
   if (loading) {
     return (
       <Loading
         title="Loading Accounts"
-        subtitle="Fetching all registered users in the system"
+        subtitle="Fetching registered users..."
         progress={progress}
       />
     );
   }
 
-  if (error) return <p className="p-8">{error}</p>;
-
+  // ── UI ──────────────────────────────────────────────
   return (
-    <div className="relative h-auto p-8 lg:p-10 bg-[#fbfcfb]">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-2 mb-10">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Manage Accounts</h1>
-          <p className="text-gray-500 text-sm">
-            View and manage all registered users in the system.
-          </p>
-        </div>
+    <>
+      <div className="p-8 lg:p-10 bg-[#fbfcfb] min-h-screen flex flex-col animate-in fade-in duration-500">
 
-        <div className="flex items-center gap-4">
-          <div className="relative w-72">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-              size={16}
-            />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white outline-none text-xs font-bold text-slate-700"
-            />
+        {/* Main Wrapper */}
+        <div className="flex-1 flex flex-col space-y-10">
+
+          {/* Header */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 px-2">
+
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                Manage Accounts
+              </h1>
+              <p className="text-slate-500 text-sm">
+                View and manage all registered users.
+              </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
+
+              {/* Search */}
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search accounts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 h-11 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-300 outline-none text-[13px] font-semibold"
+                />
+              </div>
+
+              {/* View Toggle */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-[16px] border border-slate-200">
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`p-2 rounded-[12px] ${viewMode === "table"
+                      ? "bg-white text-[#1cb35a] shadow-sm"
+                      : "text-slate-400"
+                    }`}
+                >
+                  <Table size={16} />
+                </button>
+
+                <button
+                  onClick={() => setViewMode("card")}
+                  className={`p-2 rounded-[12px] ${viewMode === "card"
+                      ? "bg-white text-[#1cb35a] shadow-sm"
+                      : "text-slate-400"
+                    }`}
+                >
+                  <Grid size={16} />
+                </button>
+              </div>
+
+              {/* Create Button */}
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 bg-[#00923f] text-white px-5 h-11 rounded-[16px] font-semibold shadow-sm hover:bg-[#007a35] transition"
+              >
+                <UserPlus size={14} />
+                Create
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center bg-slate-100 p-1 rounded-[16px]">
-            <button
-              onClick={() => setViewMode("table")}
-              className={`p-2 rounded-[12px] ${
-                viewMode === "table" ? "bg-white text-[#1cb35a]" : ""
-              }`}
-            >
-              <Table size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode("card")}
-              className={`p-2 rounded-[12px] ${
-                viewMode === "card" ? "bg-white text-[#1cb35a]" : ""
-              }`}
-            >
-              <Grid size={16} />
-            </button>
-          </div>
-
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-[#00923f] text-white px-5 h-11 rounded-[16px] font-bold"
-          >
-            <UserPlus size={14} />
-            Create
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="bg-white p-8 mt-12 rounded-[32px] shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-slate-100 overflow-hidden">
-        {viewMode === "table" ? (
-          <div className="overflow-x-hidden">
-            <table className="w-full border-separate border-spacing-y-4">
-              <thead>
-                <tr className="text-slate-400 uppercase text-[10px] tracking-[0.2em] font-black">
-                  <th className="pb-2 px-8 text-left">ID</th>
-                  <th className="pb-2 px-6 text-left">User Details</th>
-                  <th className="pb-2 px-6 text-left">Role</th>
-                  <th className="pb-2 px-6 text-center">Actions</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="group transition-all duration-300 hover:translate-x-1"
-                  >
-                    {/* User ID Column */}
-                    <td className="py-5 px-8 group-hover:bg-white first:rounded-l-[32px] border-y border-l border-transparent group-hover:border-slate-100 transition-all duration-300 relative overflow-hidden">
-                      {/* Monospace ID with Badge Effect */}
-                      <div className="flex items-center">
-                        <span className="relative z-10 font-mono text-[11px] font-black tracking-tighter px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 group-hover:bg-green-50 group-hover:text-green-600 transition-colors duration-300">
-                          #{user?.id ? String(user.id).padStart(2, "0") : "00"}
-                        </span>
-
-                        {/* Subtle Vertical Indicator on Hover */}
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-green-500 group-hover:h-1/2 transition-all duration-500 rounded-r-full" />
-                      </div>
-                    </td>
-
-                    {/* User Details - Enhanced Identity Style */}
-                    <td className="py-5 px-6 group-hover:bg-white border-y border-transparent group-hover:border-slate-100 transition-all duration-300">
-                      <div className="flex items-center gap-4">
-                        {/* Icon Container */}
-                        <div className="relative flex-shrink-0">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:scale-105 group-hover:bg-green-50 group-hover:border-green-200 transition-all duration-500 shadow-sm">
-                            <User2
-                              size={20}
-                              strokeWidth={2.5}
-                              className="text-slate-500 group-hover:text-green-600 transition-colors duration-500"
-                            />
-                          </div>
-
-                          {/* Online Status Indicator */}
-                          <div className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-20 group-hover:opacity-75 transition-opacity" />
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-white" />
-                          </div>
-                        </div>
-
-                        {/* Text Details */}
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-bold text-slate-800 text-[14px] tracking-tight leading-none mb-1 group-hover:text-green-700 transition-colors">
-                            {user.profile.name}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] text-slate-400 font-medium tracking-tight truncate max-w-[180px]">
-                              {user.email}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-5 px-6 transition-all duration-300">
-                      <div className="flex items-center">
-                        <span
-                          className={`
-                            inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] 
-                            transition-all duration-500 cursor-default border backdrop-blur-sm
-                            ${
-                              user.profile.role === "admin"
-                                ? "bg-blue-50/50 text-blue-700 border-blue-100/50 ring-1 ring-blue-500/5 group-hover:bg-gradient-to-br group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:text-white group-hover:border-blue-400 group-hover:shadow-[0_10px_20px_-10px_rgba(59,130,246,0.5)]"
-                                : user.profile.role === "implementor"
-                                  ? "bg-emerald-50/50 text-emerald-700 border-emerald-100/50 ring-1 ring-emerald-500/5 group-hover:bg-gradient-to-br group-hover:from-emerald-500 group-hover:to-teal-600 group-hover:text-white group-hover:border-emerald-400 group-hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)]"
-                                  : "bg-amber-50/50 text-amber-700 border-amber-100/50 ring-1 ring-amber-500/5 group-hover:bg-gradient-to-br group-hover:from-amber-500 group-hover:to-orange-600 group-hover:text-white group-hover:border-amber-400 group-hover:shadow-[0_10px_20px_-10px_rgba(245,158,11,0.5)]"
-                            }
-                          `}
-                        >
-                          {/* Premium Status Dot */}
-                          <div className="relative mr-3 flex items-center justify-center">
-                            {/* The "Glow" Layer */}
-                            <span
-                              className={`absolute w-2.5 h-2.5 rounded-full animate-pulse opacity-60 ${
-                                user.profile.role === "admin"
-                                  ? "bg-blue-400"
-                                  : user.profile.role === "implementor"
-                                    ? "bg-emerald-400"
-                                    : "bg-amber-400"
-                              }`}
-                            />
-                            {/* The "Core" Layer */}
-                            <span
-                              className={`relative w-1.5 h-1.5 rounded-full shadow-inner ${
-                                user.profile.role === "admin"
-                                  ? "bg-blue-500 group-hover:bg-white"
-                                  : user.profile.role === "implementor"
-                                    ? "bg-emerald-500 group-hover:bg-white"
-                                    : "bg-amber-500 group-hover:bg-white"
-                              } transition-colors duration-300`}
-                            />
-                          </div>
-
-                          <span className="relative top-[0.5px]">
-                            {user.profile.role}
-                          </span>
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Actions - Modern Soft-UI Style */}
-                    <td className="py-5 px-6 group-hover:bg-white last:rounded-r-[32px] border-y border-r border-transparent group-hover:border-slate-100 transition-all duration-300">
-                      <div className="flex items-center justify-center gap-2">
-                        {/* Edit Action */}
-                        <button
-                          onClick={() => handleEditClick(user)}
-                          title="Edit User"
-                          className="group/edit relative p-2.5 bg-slate-100/50 text-slate-500 rounded-xl hover:bg-emerald-500 hover:text-white hover:shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] transition-all duration-300 active:scale-90"
-                        >
-                          <Edit
-                            size={18}
-                            strokeWidth={2.5}
-                            className="transition-transform duration-300 group-hover/edit:rotate-12 group-hover/edit:scale-110"
-                          />
-                        </button>
-
-                        {/* Delete Action */}
-                        <button
-                          onClick={() => handleDeleteClick(user)}
-                          title="Delete Account"
-                          className="group/delete relative p-2.5 bg-slate-100/50 text-slate-500 rounded-xl hover:bg-red-500 hover:text-white hover:shadow-[0_8px_20px_-6px_rgba(239,68,68,0.5)] transition-all duration-300 active:scale-90"
-                        >
-                          <Trash2
-                            size={18}
-                            strokeWidth={2.5}
-                            className="transition-transform duration-300 group-hover/delete:translate-y-[-1px] group-hover/delete:scale-110"
-                          />
-                        </button>
-
-                        {/* Separator Line (Optional Decorative) */}
-                        <div className="w-[1px] h-4 bg-slate-200 mx-1 group-hover:bg-slate-100 transition-colors" />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {filteredUsers.length === 0 && (
-              <div className="py-10 text-center text-slate-400">
-                No accounts found.
+          {/* Content */}
+          <div className="flex-1">
+            {currentData.length === 0 ? (
+              <EmptyState icon={User2} message="No accounts found" />
+            ) : viewMode === "table" ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <AccountsTableView
+                  data={currentData}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <AccountsCardView
+                  data={currentData}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                />
               </div>
             )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-            {filteredUsers.map((user) => {
-              // 1. Dynamic Color Logic
-              const roleConfig = {
-                admin: {
-                  bg: "bg-blue-50/50",
-                  text: "text-blue-600",
-                  border: "border-blue-100",
-                  glow: "shadow-blue-200/40",
-                  avatar: "bg-blue-100 text-blue-600",
-                },
-                reviewer: {
-                  bg: "bg-amber-50/50",
-                  text: "text-amber-600",
-                  border: "border-amber-100",
-                  glow: "shadow-amber-200/40",
-                  avatar: "bg-amber-100 text-amber-600",
-                },
-                implementor: {
-                  bg: "bg-emerald-50/50",
-                  text: "text-emerald-600",
-                  border: "border-emerald-100",
-                  glow: "shadow-emerald-200/40",
-                  avatar: "bg-emerald-100 text-emerald-600",
-                },
-              };
+        </div>
 
-              const currentRole =
-                (user.profile.role?.toLowerCase() as keyof typeof roleConfig) ||
-                "reviewer";
-              const style = roleConfig[currentRole];
-
-              return (
-                <div
-                  key={user.id}
-                  className="group relative bg-white rounded-[40px] p-3 border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.02)] hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] hover:border-slate-300 transition-all duration-500 flex flex-col h-full overflow-hidden"
-                >
-                  {/* Subtle Background Mesh Glow */}
-                  <div
-                    className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-[80px] opacity-0 group-hover:opacity-40 transition-opacity duration-700 ${style.bg}`}
-                  />
-
-                  <div className="relative z-10 p-5 flex flex-col h-full">
-                    {/* Header Row */}
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                        <span className="font-mono text-[9px] font-black tracking-widest text-slate-400 uppercase">
-                          #{String(user.id).padStart(3, "0")}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl border ${style.bg} ${style.text} ${style.border} shadow-sm transition-transform duration-500 group-hover:scale-105`}
-                      >
-                        <div
-                          className={`w-1.5 h-1.5 rounded-full ${currentRole === "admin" ? "bg-blue-500" : currentRole === "reviewer" ? "bg-amber-500" : "bg-emerald-500"} animate-pulse`}
-                        />
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                          {user.profile.role}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Identity Section - Bento Split */}
-                    <div className="flex items-center gap-5 mb-8">
-                      <div
-                        className={`relative w-20 h-20 shrink-0 rounded-[32px] ${style.avatar} flex items-center justify-center text-xl font-black shadow-inner overflow-hidden group-hover:shadow-lg transition-all duration-500 ${style.glow}`}
-                      >
-                        {user.profile.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()}
-                        {/* Glass Reflection on Avatar */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/30 to-white/0" />
-                      </div>
-
-                      <div className="flex flex-col min-w-0">
-                        <h3 className="font-black text-slate-900 text-xl tracking-tight leading-tight truncate group-hover:text-slate-700 transition-colors">
-                          {user.profile.name}
-                        </h3>
-                        <p className="text-slate-400 text-sm font-medium truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Information Bento Row */}
-                    <div className="grid grid-cols-2 gap-2 mb-8">
-                      <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-all duration-300">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                          Department
-                        </p>
-                        <p className="text-[11px] font-bold text-slate-700 truncate">
-                          {user.profile.department || "General"}
-                        </p>
-                      </div>
-                      <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-all duration-300">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                          Location
-                        </p>
-                        <p className="text-[11px] font-bold text-slate-700 truncate">
-                          {user.profile.campus || "Main"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Action Footer */}
-                    <div className="mt-auto flex gap-3 pt-5 border-t border-slate-50">
-                      <button
-                        onClick={() => handleEditClick(user)}
-                        className="flex-1 group/btn relative flex items-center justify-center gap-2 h-12 rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-200 active:scale-95 overflow-hidden"
-                      >
-                        {/* Shimmer Effect Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
-
-                        <Edit
-                          size={14}
-                          strokeWidth={3}
-                          className="relative z-10 group-hover/btn:rotate-12 group-hover/btn:scale-110 transition-transform duration-300"
-                        />
-
-                        <span className="relative z-10">Edit Profile</span>
-
-                        {/* Glow Layer */}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-emerald-400/10 blur-xl" />
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteClick(user)}
-                        className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center transition-all duration-300 hover:bg-rose-500 hover:text-white hover:border-rose-500 active:scale-95"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Top Edge Light Reflection */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* Pagination */}
+        <div className="mt-auto pt-6">
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            totalItems={filteredUsers.length}
+            itemsPerPage={itemsPerPage}
+            onPrev={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onNext={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            onPageChange={(page) => setCurrentPage(page)}
+            itemName="accounts"
+          />
+        </div>
       </div>
 
       {/* Modals */}
@@ -489,6 +242,7 @@ const ManageAccount = () => {
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleUserAdded}
       />
+
       <EditProfileAdmin
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -503,8 +257,8 @@ const ManageAccount = () => {
         userId={selectedUser?.id || null}
         userName={selectedUser?.profile.name || null}
       />
-    </div>
+    </>
   );
 };
 
-export default ManageAccount;
+export default ManageAccounts;
