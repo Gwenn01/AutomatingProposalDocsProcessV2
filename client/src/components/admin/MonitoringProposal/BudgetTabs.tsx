@@ -7,6 +7,9 @@ import {
 import type { Proposal, YearConfig } from "./types";
 import ProposalsBudgetTable from "./BudgetTabs/ProposalsBudgetTable";
 import YearConfigPanel from "./BudgetTabs/YearConfigPannel";
+import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
+import Loading from "@/components/Loading";
+import { useProposals } from "@/hooks/useViewProposal";
 
 // ── Main BudgetTab ────────────────────────────────────────────────────────────
 type Props = {
@@ -19,12 +22,41 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
   const [config, setConfig] = useState<YearConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Derive used_budget from approved proposals (don't trust API value)
+  // ── Doc viewer state ────────────────────────────────────────────────────
+  const [isDocViewerOpen, setIsDocViewerOpen] = useState(false);
+  const [selectedProposalData, setSelectedProposalData] = useState<any | null>(
+    null,
+  );
+  const [selectedProposalStatus, setSelectedProposalStatus] = useState("");
+  const [selectedProposalTitle, setSelectedProposalTitle] = useState("");
+
+  // ── Hook (same as ManageDocuments) ─────────────────────────────────────
+  const { fetchProposalDetail, actionLoading: docViewerLoading } =
+    useProposals("Program");
+
+  // ── Modal loading progress overlay ──────────────────────────────────────
+  const [modalProgress, setModalProgress] = useState(0);
+  useEffect(() => {
+    if (!docViewerLoading) {
+      setModalProgress(0);
+      return;
+    }
+    setModalProgress(0);
+    let value = 0;
+    const interval = setInterval(() => {
+      value += Math.random() * 15;
+      setModalProgress(Math.min(value, 90));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [docViewerLoading]);
+
+  // ── Derive used_budget from proposals ───────────────────────────────────
   const usedBudget = proposals.reduce(
     (sum, p) => sum + Number(p.budget_requested ?? 0),
     0,
   );
-  // Fetch config whenever year changes
+
+  // ── Fetch config whenever year changes ──────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     const fetch = async () => {
@@ -39,7 +71,6 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
             is_locked: response.is_locked,
           });
       } catch {
-        // No config yet for this year — create a blank one
         if (!cancelled) {
           setConfig({
             year: selectedYear,
@@ -58,6 +89,7 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
     };
   }, [selectedYear]);
 
+  // ── Handlers ────────────────────────────────────────────────────────────
   const updateBudget = async (val: number) => {
     if (!config) return;
     setLoading(true);
@@ -105,36 +137,44 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
   };
 
   const handleSetBudget = async (id: number, val: number) => {
-    // Wire to your API: e.g. patchProposalBudget(id, val)
-    console.log("Set budget", id, val);
     try {
       setLoading(true);
       await setBudgetProposal(id, val);
       await onRefresh();
     } catch (err) {
-      console.log("Failed to set budget", err);
+      console.error("Failed to set budget", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleView = async (id: number) => {
-    // Wire to your API: e.g. getProposal(id)
-    console.log("View proposal", id);
+  // ── openDocViewer: identical to ManageDocuments pattern ─────────────────
+  const openDocViewer = async (proposal: Proposal) => {
+    const detail = await fetchProposalDetail({
+      proposal_id: proposal.id,
+      child_id: proposal.child_id ?? 0,
+      reviewer_count: proposal.reviewer_count ?? 0,
+      reviewed_count: 0,
+      review_progress: "",
+      title: proposal.title,
+      file_path: "",
+      status: proposal.status,
+      submitted_at: null,
+      reviews: 0,
+    });
+    if (detail) {
+      setSelectedProposalData(detail);
+      setSelectedProposalStatus(proposal.status);
+      setSelectedProposalTitle(proposal.title);
+      setIsDocViewerOpen(true);
+    }
   };
 
-  const handleApproveBudget = (id: number) => {
-    // Wire to your API: e.g. approveProposal(id)
-    console.log("Approve proposal", id);
-  };
-
+  // ── Loading skeleton ────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="space-y-6 w-full animate-pulse">
-        {/* Placeholder for YearConfigPanel */}
         <div className="h-24 md:h-32 bg-slate-100 rounded-xl border border-slate-200 w-full" />
-
-        {/* Placeholder for ProposalsBudgetTable */}
         <div className="h-[400px] bg-slate-100 rounded-xl border border-slate-200 w-full flex flex-col p-4 space-y-4">
           <div className="h-8 bg-slate-200 rounded-md w-1/3" />
           <div className="h-12 bg-slate-200 rounded-md w-full" />
@@ -145,25 +185,53 @@ const BudgetTab = ({ proposals, selectedYear, onRefresh }: Props) => {
     );
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {config && (
-        <YearConfigPanel
-          config={config}
-          usedBudget={usedBudget}
-          onToggleLock={toggleLock}
-          onBudgetChange={updateBudget}
-        />
-      )}
+    <>
+      <div className="space-y-6">
+        {config && (
+          <YearConfigPanel
+            config={config}
+            usedBudget={usedBudget}
+            onToggleLock={toggleLock}
+            onBudgetChange={updateBudget}
+          />
+        )}
 
-      <ProposalsBudgetTable
-        proposals={proposals}
-        totalBudget={config?.total_budget ?? 0}
-        onView={handleView}
-        onApproveBudget={handleApproveBudget}
-        onSetBudget={handleSetBudget}
-      />
-    </div>
+        <ProposalsBudgetTable
+          proposals={proposals}
+          totalBudget={config?.total_budget ?? 0}
+          onSetBudget={handleSetBudget}
+          onViewDocs={(id) => {
+            const found = proposals.find((p) => p.id === id);
+            if (found) openDocViewer(found);
+          }}
+        />
+
+        {/* Modal loading overlay — identical to ManageDocuments */}
+        {docViewerLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+            <Loading
+              title="Fetching Document"
+              subtitle="Loading proposal details, please wait…"
+              progress={modalProgress}
+            />
+          </div>
+        )}
+
+        {/* Document Viewer Modal */}
+        <DocumentViewerModal
+          isOpen={isDocViewerOpen}
+          onClose={() => {
+            setIsDocViewerOpen(false);
+            setSelectedProposalData(null);
+          }}
+          proposalData={selectedProposalData}
+          proposalStatus={selectedProposalStatus}
+          proposalTitle={selectedProposalTitle}
+        />
+      </div>
+    </>
   );
 };
 

@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
-  CheckCircle2,
   Layers,
-  Eye,
   TrendingUp,
   TrendingDown,
   PencilLine,
@@ -10,6 +8,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 import type { Proposal } from "../types";
 import { TYPE_BADGE } from "../helper";
@@ -26,15 +25,13 @@ const ITEMS_PER_PAGE = 8;
 const ProposalsBudgetTable = ({
   proposals,
   totalBudget,
-  onView,
-  onApproveBudget,
   onSetBudget,
+  onViewDocs,
 }: {
   proposals: Proposal[];
   totalBudget: number;
-  onView: (id: number) => void;
-  onApproveBudget: (id: number) => void;
   onSetBudget: (id: number, val: number) => void;
+  onViewDocs?: (id: number) => void;
 }) => {
   const [budgetDrafts, setBudgetDrafts] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -131,7 +128,9 @@ const ProposalsBudgetTable = ({
             const isEditing = editingId === p.id;
             const approved = toNum(p.budget_approved);
             const requested = toNum(p.budget_requested);
-            const over = approved > 0 && approved > requested;
+            const isUnder = approved < requested;
+            const isOver = approved > requested;
+            const isEqual = approved === requested;
 
             return (
               <tr
@@ -174,9 +173,21 @@ const ProposalsBudgetTable = ({
 
                 {/* Budget Requested */}
                 <td className="px-5 py-3.5 text-center">
-                  <p className="text-sm font-bold tabular-nums text-slate-700">
-                    {fmt(requested)}
-                  </p>
+                  <div className="flex items-center justify-center gap-1.5">
+                    {/* Indicator dot */}
+                    {(isUnder || isOver) && (
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          isUnder ? "bg-rose-500" : "bg-emerald-500"
+                        }`}
+                      />
+                    )}
+
+                    {/* Amount */}
+                    <p className="text-sm font-bold tabular-nums text-slate-700">
+                      {fmt(requested)}
+                    </p>
+                  </div>
                 </td>
 
                 {/* Approved Budget — inline edit */}
@@ -216,18 +227,33 @@ const ProposalsBudgetTable = ({
                   ) : approved > 0 ? (
                     <div>
                       <p
-                        className={`text-sm font-bold tabular-nums ${isApproved ? "text-emerald-600" : over ? "text-rose-600" : "text-slate-700"}`}
+                        className={`text-sm font-bold tabular-nums ${
+                          isOver
+                            ? "text-emerald-600"
+                            : isUnder
+                              ? "text-rose-600"
+                              : "text-slate-700"
+                        }`}
                       >
                         {fmt(approved)}
                       </p>
-                      {over && (
+
+                      {/* Indicator */}
+                      {isUnder && (
                         <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-500 mt-0.5">
+                          <TrendingDown size={9} /> Below request
+                        </span>
+                      )}
+
+                      {isOver && (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 mt-0.5">
                           <TrendingUp size={9} /> Over request
                         </span>
                       )}
-                      {isApproved && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 mt-0.5">
-                          <TrendingDown size={9} /> Counted
+
+                      {isEqual && (
+                        <span className="text-[9px] font-bold text-slate-400 mt-0.5">
+                          Exact match
                         </span>
                       )}
                     </div>
@@ -253,20 +279,16 @@ const ProposalsBudgetTable = ({
                         <PencilLine size={11} /> Set
                       </button>
                     )}
-                    {p.status === "for_approval" && (
+
+                    {/* ← INSERT THIS */}
+                    {onViewDocs && (
                       <button
-                        onClick={() => onApproveBudget(p.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider transition-all duration-200"
+                        onClick={() => onViewDocs(p.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-500 text-[10px] font-bold uppercase tracking-wider transition-all duration-200"
                       >
-                        <CheckCircle2 size={11} /> Approve
+                        <FileText size={11} /> View
                       </button>
                     )}
-                    <button
-                      onClick={() => onView(p.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-500 text-[10px] font-bold uppercase tracking-wider transition-all duration-200"
-                    >
-                      <Eye size={12} /> View
-                    </button>
                   </div>
                 </td>
               </tr>
