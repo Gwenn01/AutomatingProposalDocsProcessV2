@@ -29,7 +29,7 @@ class Proposal(models.Model):
         null=True,
         blank=True
     ) 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="for_review")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     progress = models.DecimalField(
         max_digits=5,
         decimal_places=2,

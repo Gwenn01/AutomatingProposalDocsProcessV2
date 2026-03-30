@@ -6,12 +6,14 @@ from .views import (
     AdminOverviewView,
     AdminYearConfigView,
     AdminSetImplementorProposalBudgetView,
-    ReviewerApproveProposalView
+    ReviewerApproveProposalView,
+    UpdateProposalProgressView
 )
 
 urlpatterns = [
     # user access proposal
     path("proposals-node/<str:proposal_type>/", ProposalList.as_view(), name="proposal-list"),
+    path("implementor/update-progress/<int:proposal_id>/", UpdateProposalProgressView.as_view(), name="update-proposal-progress"),
     # reviewer access proposal
     path("reviewer-approve/<int:proposal_id>/", ReviewerApproveProposalView.as_view(), name="reviewer-approve-proposal"),
     # admin access proposal

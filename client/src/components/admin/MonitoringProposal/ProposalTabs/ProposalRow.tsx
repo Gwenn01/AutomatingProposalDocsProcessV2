@@ -1,12 +1,17 @@
 import { Layers, Eye } from "lucide-react";
 import type { Proposal } from "../types";
-import { getProgress, TYPE_BADGE, progressColor } from "../helper";
+import { TYPE_BADGE, progressColor } from "../helper";
 import { getStatusStyleAdmin } from "@/utils/statusStyles";
 
 // ── Proposal table row ────────────────────────────────────────────────────────
 const ProposalRow = ({ doc }: { doc: Proposal }) => {
   const status = getStatusStyleAdmin(doc.status as any);
-  const prog = getProgress(doc.status);
+
+  // doc.progress is 0–1 (e.g. 0.50), convert to 0–100 for display
+  const progPercent = Math.min(
+    Math.round(parseFloat(String(doc.progress ?? "0")) * 100),
+    100,
+  );
 
   return (
     <tr className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors group">
@@ -46,16 +51,20 @@ const ProposalRow = ({ doc }: { doc: Proposal }) => {
       </td>
 
       {/* Progress */}
-      <td className="p-4 min-w-[130px]">
-        <div className="w-full bg-slate-100 h-2 rounded-full">
-          <div
-            className={`h-2 rounded-full transition-all duration-700 ${progressColor(prog)}`}
-            style={{ width: `${prog}%` }}
-          />
+      <td className="p-4 min-w-[140px]">
+        <div className="flex flex-col items-center gap-1.5">
+          {/* Track */}
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${progressColor(progPercent)}`}
+              style={{ width: `${progPercent}%` }}
+            />
+          </div>
+          {/* Label */}
+          <p className="text-[11px] font-bold tabular-nums text-slate-500">
+            {progPercent}%
+          </p>
         </div>
-        <p className="text-[10px] text-center mt-1 font-semibold text-slate-500">
-          {doc.progress}%
-        </p>
       </td>
 
       {/* Action */}

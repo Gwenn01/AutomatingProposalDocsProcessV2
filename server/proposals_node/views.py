@@ -27,6 +27,29 @@ class ProposalList(APIView):
 
         serializer = ProposalSerializer(proposals, many=True)
         return Response(serializer.data)
+
+# implementor progress proposal node
+class UpdateProposalProgressView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, proposal_id):
+        proposal = get_object_or_404(Proposal, id=proposal_id)
+        return proposal
+    
+    def put(self, request, proposal_id, format=None):
+        proposal = self.get_object(proposal_id)
+        progress = request.data.get("progress")
+        proposal.progress = progress
+        proposal.save()
+        if proposal:
+            return Response({
+                "message": "Proposal progress updated successfully",
+                "proposal_id": proposal_id,
+                "progress": proposal.progress
+            }, status=status.HTTP_200_OK)
+        return Response({
+            "message": "Failed to update proposal progress",
+        }, status=status.HTTP_400_BAD_REQUEST)
     
 # ADMIN VIEWS get all proposal ===========================================================================
 # get overview data
