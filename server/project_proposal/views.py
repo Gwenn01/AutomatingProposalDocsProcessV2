@@ -16,6 +16,7 @@ from .mapper import ProjectHistoryMapper
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
 from proposals_node.models import Proposal
+from proposals_node.services import YearConfigService
 from notifications.models import Notification
 from reviewer.models import ProposalReviewer
 # Create your views here.
@@ -45,6 +46,7 @@ class ProjectProposalList(APIView):
     #         )
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # update the specific fields of a project proposal
+# project proposal creations
 class ProjectProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -64,6 +66,9 @@ class ProjectProposalDetail(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, pk):
+        if YearConfigService.check_year_lock(request.data.get('year')):
+            return Response({"message": "The creation of proposals is locked. You cannot submit a proposal until the admin unlock."}, status=status.HTTP_400_BAD_REQUEST)
+        
         project_proposal = self.get_object(pk)
         serializer = ProjectProposalSerializer(
             project_proposal,

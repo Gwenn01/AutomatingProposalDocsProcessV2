@@ -2,6 +2,7 @@ from django.db.models import Count
 from .models import Proposal
 from program_proposal.models import ProgramProposal
 from django.db.models import Count, Q
+from .models import YearConfig
 
 
 class OverviewService:
@@ -70,3 +71,12 @@ class OverviewService:
         data['proposal'] = proposal
         data['status'] = status
         return data
+    
+class YearConfigService:
+
+    @staticmethod
+    def check_year_lock(year):
+        config = YearConfig.objects.filter(year=year).first()
+        if config:
+            return config.is_locked
+        return False

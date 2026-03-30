@@ -15,6 +15,7 @@ from .mapper import ActivityHistoryMapper
 from notifications.services import NotificationService
 from reviewer.services import ProposalReviewerServices
 from proposals_node.models import Proposal
+from proposals_node.services import YearConfigService
 from notifications.models import Notification
 from reviewer.models import ProposalReviewer
 
@@ -33,6 +34,7 @@ class ActivityProposalList(APIView):
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # get the activity proposal and update the activity proposal that created during project creation
+# creation of activity proposal
 class ActivityProposalDetail(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -49,6 +51,9 @@ class ActivityProposalDetail(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def put(self, request, pk):
+        if YearConfigService.check_year_lock(request.data.get('year')):
+            return Response({"message": "The creation of proposals is locked. You cannot submit a proposal until the admin unlock."}, status=status.HTTP_400_BAD_REQUEST)
+        
         activity_proposal = self.get_object(pk)
         serializer = ActivityProposalSerializer(
             activity_proposal,

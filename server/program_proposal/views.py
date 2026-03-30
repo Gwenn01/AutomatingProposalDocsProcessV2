@@ -16,6 +16,7 @@ from .serializers import (
 )
 from .mapper import ProgramHistoryMapper
 from proposals_node.models import Proposal
+from proposals_node.services import YearConfigService
 from notifications.services import NotificationService
 from reviewer.models import ProposalReviewer
 from reviewer.services import ProposalReviewerServices
@@ -39,6 +40,9 @@ class ProgramProposalList(APIView):
     #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        if YearConfigService.check_year_lock(request.data.get('year')):
+            return Response({"message": "The creation of proposals is locked. You cannot submit a proposal until the admin unlock."}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = ProgramProposalSerializer(
             data=request.data,
             context={"request": request}
