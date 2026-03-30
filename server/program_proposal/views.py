@@ -40,7 +40,7 @@ class ProgramProposalList(APIView):
     #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        if YearConfigService.check_year_lock(request.data.get('year')):
+        if YearConfigService.check_year_lock():
             return Response({"message": "The creation of proposals is locked. You cannot submit a proposal until the admin unlock."}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = ProgramProposalSerializer(
@@ -51,7 +51,7 @@ class ProgramProposalList(APIView):
             serializer.save()
             # add notification to admin
             NotificationService.admin_notifications(
-                f"New program proposal submitted by {request.user.username}"
+                f"New program proposal submitted by Mr/Mrs.{request.user.profile.name} with title '{serializer.data.get('program_title')}'."
             )
             return Response(
                 {

@@ -2,7 +2,7 @@
 // monitoring/MonitoringHeader.tsx
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { Calendar, Search, Table, Grid } from "lucide-react";
+import { Calendar, Search } from "lucide-react";
 import NotificationBell, {
   type Notification,
 } from "@/components/NotificationBell";

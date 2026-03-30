@@ -75,8 +75,6 @@ class OverviewService:
 class YearConfigService:
 
     @staticmethod
-    def check_year_lock(year):
-        config = YearConfig.objects.filter(year=year).first()
-        if config:
-            return config.is_locked
-        return False
+    def check_year_lock():
+        config = YearConfig.objects.order_by('-created_at').first()
+        return config.is_locked if config else False
