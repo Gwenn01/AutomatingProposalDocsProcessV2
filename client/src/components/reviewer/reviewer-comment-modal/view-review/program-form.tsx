@@ -9,37 +9,62 @@ import { FeedbackBadge } from "../FeedbackBadge";
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 
 /**
- * Renders the correct slot for a form section:
- *   - showCommentInputs=true  → editable CommentInput
- *   - showExistingFeedback    → FeedbackBadge (skeleton while loading, value/placeholder after)
- *   - otherwise               → nothing
+ * Lock ALL inputs only when at least one feedback field is an empty string "".
+ *
+ * null  = reviewer intentionally skipped → keep editable
+ * ""    = field was submitted (even if blank) → lock everything
+ * "abc" = has content → show as badge, others stay unlocked unless "" exists
  */
+function shouldLockAll(review: any): boolean {
+  if (!review) return false;
+  return Object.values(review).some((v) => v === "");
+}
+
 const SectionFeedback: React.FC<{
-  show: boolean;
   showInput: boolean;
-  loading: boolean;
+  reviewLoading: boolean;
+  existingReview: any | null;
+  feedbackValue: string | null | undefined;
+  allLocked: boolean;
   label: string;
-  value?: string;
   inputKey: string;
   inputLabel: string;
   comments: Comments;
   onCommentChange: (k: string, v: string) => void;
   disabled: boolean;
-}> = ({ show, showInput, loading, label, value, inputKey, inputLabel, comments, onCommentChange, disabled }) => {
-  if (showInput) {
+}> = ({
+  showInput,
+  reviewLoading,
+  existingReview,
+  feedbackValue,
+  allLocked,
+  label,
+  inputKey,
+  inputLabel,
+  comments,
+  onCommentChange,
+  disabled,
+}) => {
+  const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
+
+  // Field has real content → show badge
+  if (!showInput && existingReview && isFilled) {
+    return <FeedbackBadge label={label} value={feedbackValue} loading={reviewLoading} />;
+  }
+
+  // Field is null or "" → show input, locked only if allLocked
+  if (showInput || existingReview) {
     return (
       <CommentInput
         sectionName={inputLabel}
         onCommentChange={onCommentChange}
         InputValue={inputKey}
         value={comments[inputKey] || ""}
-        disabled={disabled}
+        disabled={disabled || allLocked}
       />
     );
   }
-  if (show) {
-    return <FeedbackBadge label={label} value={value} loading={loading} />;
-  }
+
   return null;
 };
 
@@ -51,17 +76,31 @@ export const ProgramForm: React.FC<{
   showCommentInputs: boolean;
   existingReview?: any | null;
   reviewLoading?: boolean;
-}> = ({ proposalData, comments, onCommentChange, alreadyReviewed, showCommentInputs, existingReview, reviewLoading = false }) => {
+}> = ({
+  proposalData,
+  comments,
+  onCommentChange,
+  alreadyReviewed,
+  showCommentInputs,
+  existingReview,
+  reviewLoading = false,
+}) => {
+  // Lock all inputs only when any field is exactly ""
+  const allLocked = shouldLockAll(existingReview);
 
-  const showFeedback = !showCommentInputs && (reviewLoading || !!existingReview);
-
-  const sf = (label: string, inputLabel: string, inputKey: string, value?: string) => (
+  const sf = (
+    label: string,
+    inputLabel: string,
+    inputKey: string,
+    feedbackValue: string | null | undefined,
+  ) => (
     <SectionFeedback
-      show={showFeedback}
       showInput={showCommentInputs}
-      loading={reviewLoading}
+      reviewLoading={reviewLoading}
+      existingReview={existingReview ?? null}
+      feedbackValue={feedbackValue}
+      allLocked={allLocked}
       label={label}
-      value={value}
       inputKey={inputKey}
       inputLabel={inputLabel}
       comments={comments}

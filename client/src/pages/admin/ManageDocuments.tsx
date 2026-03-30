@@ -32,8 +32,7 @@ const ManageDocuments = () => {
   } | null>(null);
 
   // ── Notification state ────────────────────────────────────────────────────
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+
   const [showNotifications, setShowNotifications] = useState(false);
 
   // ── DocumentViewerModal state ─────────────────────────────────────────────
@@ -57,6 +56,9 @@ const ManageDocuments = () => {
 
   // ── Modal loading progress ────────────────────────────────────────────────
   const [modalProgress, setModalProgress] = useState(0);
+
+  const [showNotif, setShowNotif]                 = useState<boolean>(false);
+  const { markNotifRead, notifications, unreadCount } = useProposals();
 
   useEffect(() => {
     if (!docViewerLoading) {
@@ -106,26 +108,6 @@ const ManageDocuments = () => {
   }, [searchQuery, viewMode]);
 
   // ── Notifications ─────────────────────────────────────────────────────────
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const data = await getNotifications();
-      setNotifications(data || []);
-      setUnreadCount((data || []).filter((n: Notification) => !n.is_read).length);
-    } catch (error) {
-      console.error("Failed to fetch notifications", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  const handleReadNotification = (id: string | number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-    );
-    setUnreadCount((prev) => Math.max(prev - 1, 0));
-  };
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const filteredDocs = allDocs.filter((doc) =>
@@ -241,14 +223,14 @@ const ManageDocuments = () => {
 
               {/* Notification Bell */}
               <div className="ml-4">
-                <NotificationBell
-                  notifications={notifications}
-                  unreadCount={unreadCount}
-                  show={showNotifications}
-                  onToggle={() => setShowNotifications((prev) => !prev)}
-                  onClose={() => setShowNotifications(false)}
-                  onRead={handleReadNotification}
-                />
+                  <NotificationBell
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    show={showNotif}
+                    onToggle={() => setShowNotif((p) => !p)}
+                    onClose={() => setShowNotif(false)}
+                    onRead={markNotifRead}
+                  />
               </div>
             </div>
           </div>

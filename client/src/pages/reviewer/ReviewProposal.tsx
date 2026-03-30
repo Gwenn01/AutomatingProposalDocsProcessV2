@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Grid,
@@ -20,6 +20,22 @@ import FormSkeleton from "@/components/skeletons/FormSkeleton";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import { useReviewerProposals, type Proposal } from "@/hooks/useReviewerProposal";
 import GridSkeleton from "@/components/skeletons/GridSkeleton";
+
+// ── Persistence keys ───────────────────────────────────────────────────────
+const SK = {
+  VIEW_MODE:          "rp_viewMode",
+  ACTIVE_FILTER:      "rp_activeFilter",
+  SHOW_VIEWER:        "rp_showViewerModal",
+  SHOW_REVIEWER:      "rp_showReviewerModal",
+  SHOW_REVIEWER_LIST: "rp_showReviewerList",
+  SELECTED_DOC_ID:    "rp_selectedDocId",
+  SELECTED_PROP_ID:   "rp_selectedProposalId",
+} as const;
+
+function persist(key: string, value: string | null) {
+  if (value === null) localStorage.removeItem(key);
+  else localStorage.setItem(key, value);
+}
 
 const ReviewProposal: React.FC = () => {
   const { showToast } = useToast();
@@ -43,28 +59,89 @@ const ReviewProposal: React.FC = () => {
     markNotifRead,
   } = useReviewerProposals();
 
-  // ── Local UI state ────────────────────────────────────────────────────────
-  const [viewMode, setViewMode]               = useState<"grid" | "table">("grid");
-  const [showNotif, setShowNotif]             = useState<boolean>(false);
-  const [showViewerModal, setShowViewerModal] = useState<boolean>(false);
-  const [showReviewerModal, setShowReviewerModal] = useState<boolean>(false);
-  const [showReviewerList, setShowReviewerList]   = useState<boolean>(false);
-  const [selectedDoc, setSelectedDoc]         = useState<Proposal | null>(null);
-  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null);
+  // ── Local UI state (initialised from localStorage) ────────────────────────
+  const [viewMode, setViewMode] = useState<"grid" | "table">(
+    () => (localStorage.getItem(SK.VIEW_MODE) as "grid" | "table") || "grid"
+  );
+  const [showNotif,           setShowNotif]           = useState(false);
+  const [showViewerModal,     setShowViewerModal]     = useState(
+    () => localStorage.getItem(SK.SHOW_VIEWER) === "true"
+  );
+  const [showReviewerModal,   setShowReviewerModal]   = useState(
+    () => localStorage.getItem(SK.SHOW_REVIEWER) === "true"
+  );
+  const [showReviewerList,    setShowReviewerList]    = useState(
+    () => localStorage.getItem(SK.SHOW_REVIEWER_LIST) === "true"
+  );
+  const [selectedDoc,         setSelectedDoc]         = useState<Proposal | null>(null);
+  const [selectedProposalId,  setSelectedProposalId]  = useState<string | null>(
+    () => localStorage.getItem(SK.SELECTED_PROP_ID)
+  );
+
+  // The proposal_id of the doc whose modal should be restored after proposals load
+  const [pendingDocId, setPendingDocId] = useState<string | null>(
+    () => localStorage.getItem(SK.SELECTED_DOC_ID)
+  );
+
+  // ── Persist simple flags whenever they change ─────────────────────────────
+  useEffect(() => { persist(SK.VIEW_MODE,          viewMode);                          }, [viewMode]);
+  useEffect(() => { persist(SK.SHOW_VIEWER,        showViewerModal    ? "true" : null); }, [showViewerModal]);
+  useEffect(() => { persist(SK.SHOW_REVIEWER,      showReviewerModal  ? "true" : null); }, [showReviewerModal]);
+  useEffect(() => { persist(SK.SHOW_REVIEWER_LIST, showReviewerList   ? "true" : null); }, [showReviewerList]);
+  useEffect(() => { persist(SK.SELECTED_PROP_ID,   selectedProposalId);                }, [selectedProposalId]);
+
+  // ── Restore modal + selectedDoc once proposals are loaded ─────────────────
+  useEffect(() => {
+    if (loading || !pendingDocId || filteredProposals.length === 0) return;
+
+    const match = filteredProposals.find(
+      (p) => String(p.proposal_id) === pendingDocId
+    );
+    if (!match) return;
+
+    // Restore the doc and silently fetch its detail so modals are fully populated
+    (async () => {
+      const detail = await fetchDetail(match);
+      if (!detail) return;
+      setSelectedDoc(match);
+      // showViewerModal / showReviewerModal are already true from localStorage init
+    })();
+
+    setPendingDocId(null); // only restore once
+  }, [loading, filteredProposals, pendingDocId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleViewProposal = async (doc: Proposal): Promise<void> => {
     const detail = await fetchDetail(doc);
     if (!detail) return;
     setSelectedDoc(doc);
+    persist(SK.SELECTED_DOC_ID, String(doc.proposal_id));
     setShowViewerModal(true);
+    setShowReviewerModal(false);
   };
 
   const handleViewReview = async (doc: Proposal): Promise<void> => {
     const detail = await fetchDetail(doc);
     if (!detail) return;
     setSelectedDoc(doc);
+    persist(SK.SELECTED_DOC_ID, String(doc.proposal_id));
     setShowReviewerModal(true);
+    setShowViewerModal(false);
+  };
+
+  const handleCloseViewerModal = () => {
+    setShowViewerModal(false);
+    persist(SK.SELECTED_DOC_ID, null);
+  };
+
+  const handleCloseReviewerModal = () => {
+    setShowReviewerModal(false);
+    persist(SK.SELECTED_DOC_ID, null);
+  };
+
+  const handleCloseReviewerList = () => {
+    setShowReviewerList(false);
+    setSelectedProposalId(null);
   };
 
   const handleReview = (proposal: Proposal) =>
@@ -273,7 +350,10 @@ const ReviewProposal: React.FC = () => {
                             <span>Review</span>
                           </button>
                           <button
-                            onClick={() => { setSelectedProposalId(proposal.proposal_id); setShowReviewerList(true); }}
+                            onClick={() => {
+                              setSelectedProposalId(proposal.proposal_id);
+                              setShowReviewerList(true);
+                            }}
                             className="flex-none flex items-center justify-center bg-gray-900 text-white p-3 hover:bg-gray-700 transition-colors rounded-md"
                             title="View Others"
                           >
@@ -337,7 +417,10 @@ const ReviewProposal: React.FC = () => {
                                 <FileText className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => { setSelectedProposalId(proposal.proposal_id); setShowReviewerList(true); }}
+                                onClick={() => {
+                                  setSelectedProposalId(proposal.proposal_id);
+                                  setShowReviewerList(true);
+                                }}
                                 className="p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
                                 title="View Others"
                               >
@@ -362,14 +445,14 @@ const ReviewProposal: React.FC = () => {
         proposalData={proposalDetail}
         proposalStatus={selectedDoc?.status ?? ""}
         proposalTitle={selectedDoc?.title ?? ""}
-        onClose={() => { setShowViewerModal(false); }}
+        onClose={handleCloseViewerModal}
       />
 
       <ReviewerCommentModal
         isOpen={showReviewerModal}
         proposalData={selectedDoc}
         proposalDetail={proposalDetail}
-        onClose={() => { setShowReviewerModal(false); }}
+        onClose={handleCloseReviewerModal}
         reviewe={selectedDoc?.reviewer_id}
         review_id={selectedDoc?.review_id}
       />
@@ -377,14 +460,9 @@ const ReviewProposal: React.FC = () => {
       <ReviewerListStatus
         isOpen={showReviewerList}
         proposalId={
-          selectedProposalId !== null
-            ? Number(selectedProposalId)
-            : undefined
+          selectedProposalId !== null ? Number(selectedProposalId) : undefined
         }
-        onClose={() => {
-          setShowReviewerList(false);
-          setSelectedProposalId(null);
-        }}
+        onClose={handleCloseReviewerList}
       />
     </div>
   );

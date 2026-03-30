@@ -9,21 +9,89 @@ import { FeedbackBadge } from "../FeedbackBadge";
 
 const NA = "N/A";
 
-/** Renders the right slot: input / feedback badge / nothing */
+/**
+ * Lock ALL inputs only when at least one feedback field is an empty string "".
+ *
+ * null  = reviewer intentionally skipped → keep editable
+ * ""    = field was submitted (even if blank) → lock everything
+ * "abc" = has content → show as badge, others stay unlocked unless "" exists
+ */
+function shouldLockAll(review: any): boolean {
+  if (!review) return false;
+  return Object.values(review).some((v) => v === "");
+}
+
+/**
+ * Map from inputKey (comments state key) → existingReview field name.
+ * Allows SF to read the persisted value from existingReview when locked.
+ */
+const REVIEW_FIELD_MAP: Record<string, string> = {
+  act_profile_feedback:                    "profile_feedback",
+  act_implementing_agency_feedback:        "implementing_agency_feedback",
+  act_extension_site_feedback:             "extension_site_feedback",
+  act_tagging_cluster_extension_feedback:  "tagging_cluster_extension_feedback",
+  act_sdg_academic_program_feedback:       "sdg_academic_program_feedback",
+  act_rationale_feedback:                  "rationale_feedback",
+  act_objectives_feedback:                 "objectives_feedback",
+  act_methodology_feedback:                "methodology_feedback",
+  act_expected_output_feedback:            "expected_output_feedback",
+  act_work_plan_feedback:                  "work_plan_feedback",
+  act_budget_feedback:                     "budget_requirements_feedback",
+};
+
 const SF: React.FC<{
-  show: boolean;
   showInput: boolean;
-  loading: boolean;
+  reviewLoading: boolean;
+  existingReview: any | null;
+  feedbackValue: string | null | undefined;
+  allLocked: boolean;
   label: string;
-  value?: string;
   inputKey: string;
   inputLabel: string;
   comments: Comments;
   onCommentChange: (k: string, v: string) => void;
   disabled: boolean;
-}> = ({ show, showInput, loading, label, value, inputKey, inputLabel, comments, onCommentChange, disabled }) => {
-  if (showInput) return <CommentInput sectionName={inputLabel} onCommentChange={onCommentChange} InputValue={inputKey} value={comments[inputKey] || ""} disabled={disabled} />;
-  if (show) return <FeedbackBadge label={label} value={value} loading={loading} />;
+}> = ({
+  showInput,
+  reviewLoading,
+  existingReview,
+  feedbackValue,
+  allLocked,
+  label,
+  inputKey,
+  inputLabel,
+  comments,
+  onCommentChange,
+  disabled,
+}) => {
+  const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
+
+  // Field has real content → show badge
+  if (!showInput && existingReview && isFilled) {
+    return <FeedbackBadge label={label} value={feedbackValue} loading={reviewLoading} />;
+  }
+
+  // Field is null or "" → show input
+  // When locked, read persisted value from existingReview so the textarea
+  // shows what was actually submitted instead of the empty local comments state.
+  if (showInput || existingReview) {
+    const reviewField = REVIEW_FIELD_MAP[inputKey];
+    const lockedValue =
+      allLocked && reviewField !== undefined
+        ? (existingReview?.[reviewField] ?? "")
+        : undefined;
+
+    return (
+      <CommentInput
+        sectionName={inputLabel}
+        onCommentChange={onCommentChange}
+        InputValue={inputKey}
+        value={lockedValue !== undefined ? lockedValue : (comments[inputKey] || "")}
+        disabled={disabled || allLocked}
+      />
+    );
+  }
+
   return null;
 };
 
@@ -37,16 +105,41 @@ export const ActivityForm: React.FC<{
   showCommentInputs: boolean;
   existingReview?: any | null;
   reviewLoading?: boolean;
-}> = ({ activityData, programTitle, projectTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs, existingReview, reviewLoading = false }) => {
+}> = ({
+  activityData,
+  programTitle,
+  projectTitle,
+  comments,
+  onCommentChange,
+  alreadyReviewed,
+  showCommentInputs,
+  existingReview,
+  reviewLoading = false,
+}) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
-  const showFeedback = !showCommentInputs && (reviewLoading || !!existingReview);
+  const allLocked = shouldLockAll(existingReview);
 
-  const sf = (label: string, inputLabel: string, inputKey: string, value?: string) => (
-    <SF show={showFeedback} showInput={showCommentInputs} loading={reviewLoading} label={label} value={value} inputKey={inputKey} inputLabel={inputLabel} comments={comments} onCommentChange={onCommentChange} disabled={alreadyReviewed} />
+  const sf = (
+    label: string,
+    inputLabel: string,
+    inputKey: string,
+    feedbackValue: string | null | undefined,
+  ) => (
+    <SF
+      showInput={showCommentInputs}
+      reviewLoading={reviewLoading}
+      existingReview={existingReview ?? null}
+      feedbackValue={feedbackValue}
+      allLocked={allLocked}
+      label={label}
+      inputKey={inputKey}
+      inputLabel={inputLabel}
+      comments={comments}
+      onCommentChange={onCommentChange}
+      disabled={alreadyReviewed}
+    />
   );
-
-  console.log("existing REview", existingReview)
 
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
@@ -227,11 +320,18 @@ export const ActivityForm: React.FC<{
                   <td className="px-4 py-3 font-bold text-center">Amount (PhP)</td>
                 </tr>
                 {(activityData.budget_requirements || []).length > 0
-                  ? activityData.budget_requirements.map((row: BudgetItem, i: number) => (<tr key={i} className="border-b border-black"><td className="border-r border-black px-4 py-3">{val(row.item)}</td><td className="px-4 py-3 text-right">₱ {row.amount}</td></tr>))
+                  ? activityData.budget_requirements.map((row: BudgetItem, i: number) => (
+                    <tr key={i} className="border-b border-black">
+                      <td className="border-r border-black px-4 py-3">{val(row.item)}</td>
+                      <td className="px-4 py-3 text-right">₱ {row.amount}</td>
+                    </tr>
+                  ))
                   : <tr><td colSpan={2} className="text-center px-4 py-3 text-gray-500">No budget data available</td></tr>}
                 <tr className="font-bold bg-gray-100 border-t border-black">
                   <td className="border-r border-black px-4 py-3 text-right font-bold">Total</td>
-                  <td className="px-4 py-3 text-right">₱ {(activityData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">
+                    ₱ {(activityData.budget_requirements || []).reduce((sum: number, r: BudgetItem) => sum + Number(r.amount || 0), 0).toLocaleString()}
+                  </td>
                 </tr>
               </tbody>
             </table>

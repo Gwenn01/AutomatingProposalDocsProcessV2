@@ -20,7 +20,7 @@ import {
   mapSnapshotToProject,
   mapSnapshotToActivity,
 } from "@/constants/reviewer/mappers";
-import { useReviewState, useExistingReview, useHistoryPanel, useSidebarTree } from "@/hooks/useReviewerState";
+import { useReviewState, useExistingReview, useHistoryPanel, useSidebarTree, useCurrentReview } from "@/hooks/useReviewerState";
 import {
   ReviewedBanner,
   VersionHistoryItem,
@@ -72,6 +72,57 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
       selectedActivityProposal: sidebar.selectedActivity?.proposal,
     });
 
+    const { currentReviewData, currentReviewLoading, reset: resetCurrentReview } =
+      useCurrentReview({
+        isOpen,
+        activeTab,
+        programNodeId,
+        selectedProjectProposal: sidebar.selectedProject?.proposal,
+        selectedActivityProposal: sidebar.selectedActivity?.proposal,
+      });
+// ── Pre-fill comment inputs from previous review when on current version ──
+useEffect(() => {
+  if (!currentReviewData) {
+    reviewState.setComments({});
+    return;
+  }
+
+  const feedbackKeyMap: Record<string, string> = {
+    profile_feedback: "profile_feedback",
+    implementing_agency_feedback: "implementing_agency_feedback",
+    extension_site_feedback: "extension_site_feedback",
+    tagging_cluster_extension_feedback: "tagging_cluster_extension_feedback",
+    sdg_academic_program_feedback: "sdg_academic_program_feedback",
+    rationale_feedback: "rationale_feedback",
+    significance_feedback: "significance_feedback",
+    general_objectives_feedback: "general_objectives_feedback",
+    specific_objectives_feedback: "specific_objectives_feedback",
+    objectives_feedback: "objectives_feedback",
+    methodology_feedback: "methodology_feedback",
+    expected_output_feedback: "expected_output_feedback",
+    sustainability_plan_feedback: "sustainability_plan_feedback",
+    org_staffing_feedback: "org_staffing_feedback",
+    work_plan_feedback: "work_plan_feedback",
+    budget_requirements_feedback: "budget_requirements_feedback",
+  };
+
+  const prefix =
+    activeTab === "project" ? "proj_" :
+    activeTab === "activity" ? "act_" :
+    "";
+
+  const prefilled: Record<string, string> = {};
+
+  Object.entries(feedbackKeyMap).forEach(([apiKey, baseKey]) => {
+    const value = currentReviewData[apiKey];
+    if (value) {
+      prefilled[`${prefix}${baseKey}`] = value;
+    }
+  });
+
+  reviewState.setComments(prefilled);
+}, [currentReviewData, activeTab]);
+
   const history = useHistoryPanel({
     isOpen,
     activeTab,
@@ -83,8 +134,12 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
   });
 
   // ── Derived display flags ───────────────────────────────────────────────
+  const isCurrentVersion =
+    !history.selectedHistoryVersion ||
+    history.selectedHistoryVersion.status === "current";
+
   const showCommentInputs =
-    !history.isViewingHistory && !existingReviewLoading && !existingReview;
+    isCurrentVersion ;
 
   const showExistingFeedback =
     !history.isViewingHistory && (existingReviewLoading || !!existingReview);
@@ -112,24 +167,26 @@ const ReviewerCommentModal: React.FC<ReviewerCommentModalProps> = ({
       history.reset();
       reviewState.reset();
       resetExistingReview();
+      resetCurrentReview();
     }
   }, [isOpen]);
 
   // ── Tab navigation helpers ──────────────────────────────────────────────
-  const switchToProjectTab = () => {
-    setActiveTab("project");
-    reviewState.reset();
-    if (!sidebar.selectedProject && sidebar.projectList.length > 0) {
-      sidebar.handleSelectProject(sidebar.projectList[0]);
-    }
-  };
+const switchToProjectTab = () => {
+  setActiveTab("project");
+  // Don't reset comments here — useEffect will repopulate from currentReviewData
+  reviewState.setDecision("needs_revision");
+  if (!sidebar.selectedProject && sidebar.projectList.length > 0) {
+    sidebar.handleSelectProject(sidebar.projectList[0]);
+  }
+};
 
-  const switchToActivityTab = () => {
-    setActiveTab("activity");
-    reviewState.reset();
-    sidebar.setSelectedActivity?.(null);
-    sidebar.setActivityDetail?.(null);
-  };
+const switchToActivityTab = () => {
+  setActiveTab("activity");
+  reviewState.setDecision("needs_revision");
+  sidebar.setSelectedActivity?.(null);
+  sidebar.setActivityDetail?.(null);
+};
 
   // ── Review submission ───────────────────────────────────────────────────
   const buildPayload = (overrideDecision?: "needs_revision" | "approved") =>

@@ -83,7 +83,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
             onBlur={() => setIsFocused(false)}
             placeholder={
               disabled
-                ? "Review submitted. Waiting for revision..."
+                ? "Review submitted. No Comment Provided."
                 : "Enter your review comments here..."
             }
             className={`w-full px-3 py-2 border rounded-md resize-none transition-all focus:outline-none text-sm ${

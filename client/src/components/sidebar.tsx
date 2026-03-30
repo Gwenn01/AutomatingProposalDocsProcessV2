@@ -14,6 +14,7 @@ import { extensionLogo } from "../assets";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../utils/auth";
 import { useToast } from "@/context/toast";
+import type { ActiveMenu } from "@/pages/Home";
 
 // Type definitions
 type Role = "implementor" | "reviewer" | "admin";
@@ -31,10 +32,10 @@ interface User {
 
 interface SidebarProps {
   active: string;
-  setActive: (label: string) => void;
+  setActive: (label: ActiveMenu) => void;
   isOpen: boolean;
   toggleSidebar?: () => void;
-  role: Role;
+  role: string;
   user: User;
 }
 

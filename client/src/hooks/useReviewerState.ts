@@ -10,6 +10,7 @@ import {
   fetchProgramHistoryList,
   fetchProjectHistoryList,
   fetchActivityHistoryList,
+  fetchReviewedProposal,
 } from "@/api/implementor-api";
 import {
   fetchProgramHistoryData,
@@ -32,7 +33,7 @@ import type { ProposalReviewResponse, ReviewerProjectList } from "@/types/review
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useReviewState() {
-  const [comments, setComments] = useState<Comments>({});
+  const [comments, setCommentsState] = useState<Comments>({});
   const [decision, setDecision] = useState<DecisionType>("needs_revision");
   const [reviewRound, setReviewRound] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,12 +41,12 @@ export function useReviewState() {
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
 
   const handleCommentChange = (inputKey: string, value: string) =>
-    setComments((prev) => ({ ...prev, [inputKey]: value }));
+    setCommentsState((prev) => ({ ...prev, [inputKey]: value }));
 
   const hasAnyComment = Object.values(comments).some((c) => c?.trim() !== "");
 
   const reset = () => {
-    setComments({});
+    setCommentsState({});
     setDecision("needs_revision");
     setReviewRound(1);
     setIsSubmitting(false);
@@ -68,6 +69,7 @@ export function useReviewState() {
     handleCommentChange,
     hasAnyComment,
     reset,
+    setComments: setCommentsState
   };
 }
 
@@ -506,4 +508,74 @@ export function useSidebarTree({ isOpen, childId }: UseSidebarTreeOptions) {
     setSelectedActivity,
     setActivityDetail
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useCurrentReview — fetches the reviewer's own previous comments for the
+// current version (used to pre-fill comment inputs when status === "current")
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface UseCurrentReviewOptions {
+  isOpen: boolean;
+  activeTab: TabType;
+  programNodeId: number | null;
+  selectedProjectProposal?: number;
+  selectedActivityProposal?: number | string;
+}
+
+export function useCurrentReview({
+  isOpen,
+  activeTab,
+  programNodeId,
+  selectedProjectProposal,
+  selectedActivityProposal,
+}: UseCurrentReviewOptions) {
+  const [currentReviewData, setCurrentReviewData] = useState<any | null>(null);
+  const [currentReviewLoading, setCurrentReviewLoading] = useState(false);
+  
+
+  const resolveArgs = (): { nodeId: number; type: "program" | "project" | "activity" } | null => {
+    if (activeTab === "activity" && selectedActivityProposal)
+      return { nodeId: Number(selectedActivityProposal), type: "activity" };
+    if (activeTab === "project" && selectedProjectProposal)
+      return { nodeId: Number(selectedProjectProposal), type: "project" };
+    if (programNodeId)
+      return { nodeId: programNodeId, type: "program" };
+    return null;
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const args = resolveArgs();
+    if (!args) {
+      setCurrentReviewData(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCurrentReviewData(null);
+    setCurrentReviewLoading(true);
+
+    fetchReviewedProposal(args.nodeId, args.type)
+      .then((data) => {
+        if (!cancelled) setCurrentReviewData(data ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentReviewData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCurrentReviewLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [isOpen, activeTab, selectedProjectProposal, selectedActivityProposal, programNodeId]);
+
+  const reset = () => {
+    setCurrentReviewData(null);
+    setCurrentReviewLoading(false);
+    
+  };
+
+  return { currentReviewData, currentReviewLoading, reset };
 }
