@@ -46,6 +46,8 @@ export const ActivityForm: React.FC<{
     <SF show={showFeedback} showInput={showCommentInputs} loading={reviewLoading} label={label} value={value} inputKey={inputKey} inputLabel={inputLabel} comments={comments} onCommentChange={onCommentChange} disabled={alreadyReviewed} />
   );
 
+  console.log("existing REview", existingReview)
+
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
       <div className="text-center mb-8 space-y-1">

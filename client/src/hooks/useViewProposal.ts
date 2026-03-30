@@ -4,7 +4,7 @@ import { getNotifications, markNotificationRead, type Notification } from "@/api
 import { useAuth } from "@/context/auth-context";
 
 // ================= TYPE DEFINITIONS =================
-export type ProposalType = "Program" | "Research" | "Extension"; // ← extend as needed
+export type ProposalType = "Program" | "Project" | "Activity"; // ← extend as needed
 
 export interface Document {
   proposal_id: string | number;
