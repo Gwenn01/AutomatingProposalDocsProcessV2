@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Loading from "@/components/Loading";
 import { getProposalsBaseType } from "@/api/admin-api";
+import { getNotifications } from "@/api/get-notification-api";
+import { type Notification } from "@/components/NotificationBell";
 
 import type {
   Proposal,
@@ -23,12 +25,23 @@ const MonitoringProposals = () => {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [activeTab, setActiveTab] = useState<ActiveTab>("proposals");
 
+  // ── Search ────────────────────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // ── View mode ─────────────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+
+  // ── Notifications ─────────────────────────────────────────────────────────
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
   // ── Derive unique years from proposals' created_at ────────────────────────
   const yearKeys = useMemo(() => {
     const years = proposals
       .filter((p) => !!p.created_at)
       .map((p) => new Date(p.created_at!).getFullYear());
-    return [...new Set(years)].sort((a, b) => b - a); // descending
+    return [...new Set(years)].sort((a, b) => b - a);
   }, [proposals]);
 
   // Auto-select most recent year if current selection isn't in the list
@@ -74,15 +87,46 @@ const MonitoringProposals = () => {
     }
   };
 
-  // ── Filter proposals to selected year ─────────────────────────────────────
+  // ── Fetch notifications ───────────────────────────────────────────────────
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(data || []);
+      setUnreadCount(
+        (data || []).filter((n: Notification) => !n.is_read).length,
+      );
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleReadNotification = (id: string | number) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+    );
+    setUnreadCount((prev) => Math.max(prev - 1, 0));
+  };
+
+  // ── Filter + search proposals for selected year ───────────────────────────
   const proposalsForYear = useMemo(
     () =>
       proposals.filter(
         (p) =>
-          p.created_at && new Date(p.created_at).getFullYear() === selectedYear,
+          p.created_at &&
+          new Date(p.created_at).getFullYear() === selectedYear &&
+          p.title.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
-    [proposals, selectedYear],
+    [proposals, selectedYear, searchQuery],
   );
+
+  // ── Reset search when year or tab changes ─────────────────────────────────
+  useEffect(() => {
+    setSearchQuery("");
+  }, [selectedYear, activeTab]);
 
   if (loading) {
     return (
@@ -100,12 +144,25 @@ const MonitoringProposals = () => {
         selectedYear={selectedYear}
         yearKeys={yearKeys}
         onYearChange={setSelectedYear}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        showNotifications={showNotifications}
+        onToggleNotifications={() => setShowNotifications((prev) => !prev)}
+        onCloseNotifications={() => setShowNotifications(false)}
+        onReadNotification={handleReadNotification}
       />
 
       <MonitoringTabs active={activeTab} onChange={setActiveTab} />
 
       {activeTab === "proposals" && (
-        <ProposalsTab proposals={proposalsForYear} />
+        <ProposalsTab
+          proposals={proposalsForYear}
+          // viewMode={viewMode}        // ← pass down so tab respects the switch
+        />
       )}
 
       {activeTab === "budget" && (

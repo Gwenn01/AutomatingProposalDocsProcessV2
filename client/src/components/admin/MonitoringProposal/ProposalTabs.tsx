@@ -1,73 +1,48 @@
 import { useState, useEffect } from "react";
-import {
-  Search,
-  Filter,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Filter, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Proposal, StatusFilter } from "./types";
 import ProposalRow from "./ProposalTabs/ProposalRow";
 
 type Props = { proposals: Proposal[] };
+
 const ITEMS_PER_PAGE = 8;
 
 const ProposalsTab = ({ proposals }: Props) => {
-  const [search, setSearch] = useState("");
   const [statusFilter, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
 
+  // Reset page when filter or incoming proposals change
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [statusFilter, proposals]);
 
-  const filtered = proposals.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = proposals.filter(
+    (p) => statusFilter === "all" || p.status === statusFilter,
+  );
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filtered.length);
-  const currentData = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentData = filtered.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-4">
-      {/* Search + Filters */}
-      <div className="flex flex-col md:flex-row gap-3">
-        {/* Search */}
-        <div className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            size={15}
-          />
-          <input
-            type="text"
-            placeholder="Search proposals..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300"
-          />
-        </div>
-
-        {/* Status dropdown */}
-        <div className="flex items-center gap-2 ml-auto">
-          <Filter size={13} className="text-slate-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatus(e.target.value as StatusFilter)}
-            className="text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none cursor-pointer"
-          >
-            <option value="all">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Submitted</option>
-            <option value="under_review">Under Review</option>
-            <option value="for_revision">For Revision</option>
-            <option value="for_approval">For Approval</option>
-            <option value="approved">Approved</option>
-          </select>
-        </div>
+      {/* Status filter — search is now in the header */}
+      <div className="flex items-center justify-end gap-2">
+        <Filter size={13} className="text-slate-400" />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatus(e.target.value as StatusFilter)}
+          className="text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none cursor-pointer"
+        >
+          <option value="all">All Statuses</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Submitted</option>
+          <option value="under_review">Under Review</option>
+          <option value="for_revision">For Revision</option>
+          <option value="for_approval">For Approval</option>
+          <option value="approved">Approved</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -82,7 +57,7 @@ const ProposalsTab = ({ proposals }: Props) => {
                     className={`p-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 ${
                       i === 0
                         ? "text-left"
-                        : i === 5
+                        : i === 4
                           ? "text-right"
                           : "text-center"
                     }`}
@@ -111,7 +86,6 @@ const ProposalsTab = ({ proposals }: Props) => {
 
         {/* Pagination Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/60">
-          {/* Left: range + total */}
           <p className="text-xs text-slate-500">
             <strong className="text-slate-700">
               {filtered.length > 0 ? startIndex + 1 : 0}
@@ -121,7 +95,6 @@ const ProposalsTab = ({ proposals }: Props) => {
             proposals
           </p>
 
-          {/* Center: page indicator */}
           <p className="text-xs text-slate-500">
             Page{" "}
             <strong className="text-slate-700">
@@ -130,7 +103,6 @@ const ProposalsTab = ({ proposals }: Props) => {
             of <strong className="text-slate-700">{totalPages}</strong>
           </p>
 
-          {/* Right: prev / next */}
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(p - 1, 1))}

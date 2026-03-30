@@ -8,14 +8,16 @@ from .models import Notification
 from .serializers import NotificationSerializer
 # Create your views here.
 
+# get the notifications for the user
 class NotificationList(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        notifications = Notification.objects.filter(user=request.user)
+        notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+  
+# mark notification as read  
 class NotificationDetails(APIView):
     permission_classes = [IsAuthenticated]
 

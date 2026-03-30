@@ -12,6 +12,7 @@ from .serializers import (
     YearConfigSerializer
 )
 from .services import OverviewService
+from notifications.services import NotificationService
 # Create your views here.
 
 # IMPLEMENTOR VIEWS get list of proposal
@@ -62,14 +63,21 @@ class AdminYearConfigView(APIView):
             )
             return Response(YearConfigSerializer(config).data)
 
-        return Response(serializer.errors, status=400)
-        
+        return Response(serializer.errors, status=400) 
+
+# set budget for implementor proposal
 class AdminSetImplementorProposalBudgetView(APIView):
     permission_classes = [IsAdminUser]
 
     def put(self, request, proposal_id, budget, format=None):
         try:
             proposal = Proposal.objects.get(id=proposal_id)
+            # generate notification to implementor
+            NotificationService.create_notification(
+                user=proposal.user,
+                message = f"The budget for the proposal '{proposal.title}' has been set to {budget} by the administrator."
+            )
+
             proposal.budget_approved = budget
             proposal.save()
 
