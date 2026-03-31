@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.db.models import Max
 
 from proposals_node.models import Proposal
 from reviewer.models import ProposalReviewer
@@ -19,6 +20,13 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
 
     # Get all reviews for this proposal
     reviews = ProposalReview.objects.filter(proposal_node=instance)
+    
+    #  Count existing history correctly
+    last_round = ProposalReviewHistory.objects.filter(
+        proposal_node=instance
+    ).aggregate(max_round=Max('review_round'))['max_round'] or 0
+
+    new_round = last_round + 1
 
     for review in reviews:
 
@@ -41,13 +49,6 @@ def move_reviews_to_history(sender, instance, created, **kwargs):
             review.budget_requirements_feedback,
         ]):
             continue
-
-        #  Count existing history correctly
-        history_count = ProposalReviewHistory.objects.filter(
-            proposal_node=review.proposal_node
-        ).count()
-
-        new_round = history_count + 1
 
         # 1️ Create history record
         ProposalReviewHistory.objects.create(

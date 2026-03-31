@@ -110,4 +110,4 @@ class ProposalReviewHistory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"History of Review {self.review_round}"
+        return f"History of Review {self.proposal_node.title} by reviewer {self.proposal_reviewer.id} for proposal {self.proposal_node.id} - Round {self.review_round} "
