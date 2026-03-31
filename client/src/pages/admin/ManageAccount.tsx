@@ -164,8 +164,8 @@ const ManageAccounts = () => {
                 <button
                   onClick={() => setViewMode("table")}
                   className={`p-2 rounded-[12px] ${viewMode === "table"
-                      ? "bg-white text-[#1cb35a] shadow-sm"
-                      : "text-slate-400"
+                    ? "bg-white text-[#1cb35a] shadow-sm"
+                    : "text-slate-400"
                     }`}
                 >
                   <Table size={16} />
@@ -174,8 +174,8 @@ const ManageAccounts = () => {
                 <button
                   onClick={() => setViewMode("card")}
                   className={`p-2 rounded-[12px] ${viewMode === "card"
-                      ? "bg-white text-[#1cb35a] shadow-sm"
-                      : "text-slate-400"
+                    ? "bg-white text-[#1cb35a] shadow-sm"
+                    : "text-slate-400"
                     }`}
                 >
                   <Grid size={16} />
