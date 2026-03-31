@@ -13,6 +13,7 @@ import MonitoringHeader from "@/components/admin/MonitoringProposal/MonitoringHe
 import MonitoringTabs from "@/components/admin/MonitoringProposal/MonitoringTabs";
 import ProposalsTab from "@/components/admin/MonitoringProposal/ProposalTabs";
 import BudgetTab from "@/components/admin/MonitoringProposal/BudgetTabs";
+import { useProposals } from "@/hooks/useViewProposal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -31,10 +32,10 @@ const MonitoringProposals = () => {
   // ── View mode ─────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
-  // ── Notifications ─────────────────────────────────────────────────────────
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const { markNotifRead, notifications, unreadCount } = useProposals();
 
   // ── Derive unique years from proposals' created_at ────────────────────────
   const yearKeys = useMemo(() => {
@@ -87,29 +88,8 @@ const MonitoringProposals = () => {
     }
   };
 
-  // ── Fetch notifications ───────────────────────────────────────────────────
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const data = await getNotifications();
-      setNotifications(data || []);
-      setUnreadCount(
-        (data || []).filter((n: Notification) => !n.is_read).length,
-      );
-    } catch (error) {
-      console.error("Failed to fetch notifications", error);
-    }
-  }, []);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
 
-  const handleReadNotification = (id: string | number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-    );
-    setUnreadCount((prev) => Math.max(prev - 1, 0));
-  };
 
   // ── Filter + search proposals for selected year ───────────────────────────
   const proposalsForYear = useMemo(
@@ -153,7 +133,7 @@ const MonitoringProposals = () => {
         showNotifications={showNotifications}
         onToggleNotifications={() => setShowNotifications((prev) => !prev)}
         onCloseNotifications={() => setShowNotifications(false)}
-        onReadNotification={handleReadNotification}
+        onReadNotification={markNotifRead}
       />
 
       <MonitoringTabs active={activeTab} onChange={setActiveTab} />
