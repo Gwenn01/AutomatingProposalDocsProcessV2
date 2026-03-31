@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Search, Table, Grid, FileText } from "lucide-react";
 import { getProposals, type ProgramProposal } from "@/api/admin-api";
-import { getNotifications } from "@/api/get-notification-api";
-import NotificationBell, { type Notification } from "@/components/NotificationBell";
+import NotificationBell from "@/components/NotificationBell";
 import Loading from "@/components/Loading";
 import ReviewerAssignedModal from "@/components/admin/ReviewerAssignedModal";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
@@ -32,8 +31,6 @@ const ManageDocuments = () => {
   } | null>(null);
 
   // ── Notification state ────────────────────────────────────────────────────
-
-  const [showNotifications, setShowNotifications] = useState(false);
 
   // ── DocumentViewerModal state ─────────────────────────────────────────────
   const [isDocViewerOpen, setIsDocViewerOpen] = useState(false);

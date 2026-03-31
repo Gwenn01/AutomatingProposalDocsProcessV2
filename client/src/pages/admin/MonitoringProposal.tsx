@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Loading from "@/components/Loading";
 import { getProposalsBaseType } from "@/api/admin-api";
-import { getNotifications } from "@/api/get-notification-api";
-import { type Notification } from "@/components/NotificationBell";
 
 import type {
   Proposal,
@@ -87,9 +85,6 @@ const MonitoringProposals = () => {
       console.error(err);
     }
   };
-
-
-
 
   // ── Filter + search proposals for selected year ───────────────────────────
   const proposalsForYear = useMemo(
