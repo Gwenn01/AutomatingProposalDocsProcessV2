@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Filter, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Proposal, StatusFilter } from "./types";
 import ProposalRow from "./ProposalTabs/ProposalRow";
+import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
+import Loading from "@/components/Loading";
+import { useProposals } from "@/hooks/useViewProposal";
 
 type Props = { proposals: Proposal[] };
 
@@ -10,7 +13,33 @@ const ITEMS_PER_PAGE = 8;
 const ProposalsTab = ({ proposals }: Props) => {
   const [statusFilter, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
+  // state for the proposal viewer modal
+  const [isDocViewerOpen, setIsDocViewerOpen] = useState(false);
+  const [selectedProposalData, setSelectedProposalData] = useState<any | null>(
+    null,
+  );
+  const [selectedProposalStatus, setSelectedProposalStatus] = useState("");
+  const [selectedProposalTitle, setSelectedProposalTitle] = useState("");
 
+  // hook for the proposal viewer modal (same as in BudgetTab)
+  const { fetchProposalDetail, actionLoading: docViewerLoading } =
+    useProposals("Program");
+
+  // loading animation
+  const [modalProgress, setModalProgress] = useState(0);
+
+  useEffect(() => {
+    if (!docViewerLoading) {
+      setModalProgress(0);
+      return;
+    }
+    let value = 0;
+    const interval = setInterval(() => {
+      value += Math.random() * 15;
+      setModalProgress(Math.min(value, 90));
+    }, 200);
+    return () => clearInterval(interval);
+  }, [docViewerLoading]);
   // Reset page when filter or incoming proposals change
   useEffect(() => {
     setPage(1);
@@ -19,11 +48,34 @@ const ProposalsTab = ({ proposals }: Props) => {
   const filtered = proposals.filter(
     (p) => statusFilter === "all" || p.status === statusFilter,
   );
-
+  // helper function to sort proposals by date
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filtered.length);
   const currentData = filtered.slice(startIndex, endIndex);
+
+  // viewer function
+  const openDocViewer = async (proposal: Proposal) => {
+    const detail = await fetchProposalDetail({
+      proposal_id: proposal.id,
+      child_id: proposal.child_id ?? 0,
+      reviewer_count: proposal.reviewer_count ?? 0,
+      reviewed_count: 0,
+      review_progress: "",
+      title: proposal.title,
+      file_path: "",
+      status: proposal.status,
+      submitted_at: null,
+      reviews: 0,
+    });
+
+    if (detail) {
+      setSelectedProposalData(detail);
+      setSelectedProposalStatus(proposal.status);
+      setSelectedProposalTitle(proposal.title);
+      setIsDocViewerOpen(true);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -70,10 +122,37 @@ const ProposalsTab = ({ proposals }: Props) => {
           </thead>
           <tbody>
             {currentData.map((doc) => (
-              <ProposalRow key={doc.id} doc={doc} />
+              <ProposalRow
+                key={doc.id}
+                doc={doc}
+                onView={() => openDocViewer(doc)}
+              />
             ))}
           </tbody>
         </table>
+
+        {/* Modal loading */}
+        {docViewerLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <Loading
+              title="Fetching Document"
+              subtitle="Loading proposal details, please wait…"
+              progress={modalProgress}
+            />
+          </div>
+        )}
+
+        {/* Document Viewer */}
+        <DocumentViewerModal
+          isOpen={isDocViewerOpen}
+          onClose={() => {
+            setIsDocViewerOpen(false);
+            setSelectedProposalData(null);
+          }}
+          proposalData={selectedProposalData}
+          proposalStatus={selectedProposalStatus}
+          proposalTitle={selectedProposalTitle}
+        />
 
         {currentData.length === 0 && (
           <div className="p-16 text-center">

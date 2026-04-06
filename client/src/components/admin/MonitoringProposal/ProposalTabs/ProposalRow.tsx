@@ -4,7 +4,13 @@ import { TYPE_BADGE, progressColor } from "../helper";
 import { getStatusStyleAdmin } from "@/utils/statusStyles";
 
 // ── Proposal table row ────────────────────────────────────────────────────────
-const ProposalRow = ({ doc }: { doc: Proposal }) => {
+const ProposalRow = ({
+  doc,
+  onView,
+}: {
+  doc: Proposal;
+  onView: () => void;
+}) => {
   const status = getStatusStyleAdmin(doc.status as any);
 
   // doc.progress is 0–1 (e.g. 0.50), convert to 0–100 for display
@@ -69,7 +75,10 @@ const ProposalRow = ({ doc }: { doc: Proposal }) => {
 
       {/* Action */}
       <td className="p-4 text-right">
-        <button className="p-2 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-500 transition-all duration-200">
+        <button
+          onClick={onView}
+          className="p-2 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-500 transition-all duration-200"
+        >
           <Eye size={15} />
         </button>
       </td>
