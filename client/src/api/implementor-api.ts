@@ -332,3 +332,18 @@ export async function checkReviews(proposal_id: number): Promise<any> {
   const res = await authFetch(`${BASE_URL}/proposal/${proposal_id}/check-reviews/`)
   return handleResponse<any>(res);
 }
+
+// implementor-api.ts — add this function
+
+export async function fetchHistoryReview(
+  proposalNode: number,
+  historyId: number,
+  version: number,
+  proposalType: "program" | "project" | "activity"
+): Promise<any> {
+  const res = await authFetch(
+    `${BASE_URL}/proposal-review/proposal-history/${proposalNode}/${historyId}/${version}/${proposalType}/`
+  );
+  return handleResponse<any>(res);
+}
+

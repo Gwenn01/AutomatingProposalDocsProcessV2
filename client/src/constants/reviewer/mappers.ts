@@ -143,3 +143,87 @@ export function normalizeHistoryList(raw: any): any[] {
     ),
   }));
 }
+
+
+export type HistoryReviewEntry = {
+  reviewer_name: string;
+  comment: string;
+};
+
+export type NormalizedHistoryReview = Record<string, HistoryReviewEntry[] | null>;
+
+export function normalizeHistoryReview(
+  raw: any,
+  type: "program" | "project" | "activity"
+): NormalizedHistoryReview | null {
+  if (!raw) return null;
+
+  // Returns array of { reviewer_name, comment } or null if no reviews
+  const pick = (section: any): HistoryReviewEntry[] | null => {
+    const reviews = section?.reviews;
+    if (!Array.isArray(reviews) || reviews.length === 0) return null;
+    const entries = reviews
+      .filter((r: any) => r?.comment?.trim())
+      .map((r: any) => ({
+        reviewer_name: r.reviewer_name ?? "Reviewer",
+        comment: r.comment,
+      }));
+    return entries.length > 0 ? entries : null;
+  };
+
+  if (type === "program") {
+    return {
+      profile_feedback:                   pick(raw.profile),
+      implementing_agency_feedback:       pick(raw.agencies),
+      extension_site_feedback:            pick(raw.extension_sites),
+      tagging_cluster_extension_feedback: pick(raw.tagging_clustering_extension),
+      sdg_academic_program_feedback:      pick(raw.sdg_and_academic_program),
+      rationale_feedback:                 pick(raw.rationale),
+      significance_feedback:              pick(raw.significance),
+      general_objectives_feedback:        pick(raw.objectives),
+      specific_objectives_feedback:       null,
+      methodology_feedback:               pick(raw.methodology),
+      expected_output_feedback:           pick(raw.expected_output_6ps),
+      sustainability_plan_feedback:       pick(raw.sustainability_plan),
+      org_staffing_feedback:              pick(raw.organization_and_staffing),
+      work_plan_feedback:                 pick(raw.workplan),
+      budget_requirements_feedback:       pick(raw.budget_requirements),
+    };
+  }
+
+  if (type === "project") {
+    return {
+      profile_feedback:                   pick(raw.profile),
+      implementing_agency_feedback:       pick(raw.agencies),
+      extension_site_feedback:            pick(raw.extension_sites),
+      tagging_cluster_extension_feedback: pick(raw.tagging_clustering_extension),
+      sdg_academic_program_feedback:      pick(raw.sdg_and_academic_program),
+      rationale_feedback:                 pick(raw.rationale),
+      significance_feedback:              pick(raw.significance),
+      general_objectives_feedback:        pick(raw.objectives),
+      specific_objectives_feedback:       null,
+      methodology_feedback:               pick(raw.methodology),
+      expected_output_feedback:           pick(raw.expected_output_6ps),
+      sustainability_plan_feedback:       pick(raw.sustainability_plan),
+      org_staffing_feedback:              pick(raw.organization_and_staffing),
+      work_plan_feedback:                 pick(raw.workplan),
+      budget_requirements_feedback:       pick(raw.budget_requirements),
+    };
+  }
+
+  // activity
+  return {
+    profile_feedback:                   pick(raw.profile),
+    implementing_agency_feedback:       pick(raw.agencies),
+    extension_site_feedback:            pick(raw.extension_sites),
+    tagging_cluster_extension_feedback: pick(raw.tagging_clustering_extension),
+    sdg_academic_program_feedback:      pick(raw.sdg_and_academic_program),
+    rationale_feedback:                 pick(raw.rationale),
+    significance_feedback:              pick(raw.significance),
+    objectives_feedback:                pick(raw.objectives),
+    methodology_feedback:               pick(raw.methodology),
+    expected_output_feedback:           pick(raw.expected_output_6ps),
+    work_plan_feedback:                 pick(raw.plan_of_activity),
+    budget_requirements_feedback:       pick(raw.budget_requirements),
+  };
+}

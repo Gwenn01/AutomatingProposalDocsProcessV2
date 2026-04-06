@@ -18,6 +18,8 @@ type ProjectListFields = {
   is_reviewed: boolean;
   assigned_at: string | null;
   activities?: ApiActivity[];
+  start_date: string;
+  end_date: string;
 };
 
 type ProjectItem = ProjectListFields;
@@ -44,6 +46,8 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
   const activities = activitiesCache[project.child_id] ?? [];
   const isLoadingActivities = loadingCache[project.child_id] ?? false;
   const isExpanded = activeTab === "activity" && isProjectSelected;
+
+  console.log("STATUS", project)
 
   return (
     <div className="group/node">
@@ -83,7 +87,7 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
           {project.project_leader && (
             <p className="text-[10px] text-gray-400 truncate mb-1">{project.project_leader}</p>
           )}
-          {activeTab === "project" && <StatusBadge reviewed={project.is_reviewed} size="sm" />}
+          {/* {activeTab === "project" && <StatusBadge reviewed={project.is_reviewed} size="sm" />} */}
         </div>
 
         {/* Chevron for activity tab */}
@@ -170,7 +174,7 @@ const ActivityRow: React.FC<ActivityRowProps> = ({ act, isSelected, onSelect }) 
         {formatDate(act.activity_date)}
       </p>
       <div className="mt-1">
-        <StatusBadge reviewed={act.is_reviewed} size="xs" />
+        
       </div>
     </div>
   </button>

@@ -1,16 +1,12 @@
 // view-review-forms/program-form.tsx
 import React from "react";
 import { CheckboxList } from "./checkbox-list";
-import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
+import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import type { ApiProposalDetail, Comments } from "../view-reviewed-document";
-import PreviousComment from "@/components/reviewer/PreviousComment";
 import { formatDate } from "@/utils/dateFormat";
-import { Clock } from "lucide-react";
-import { CommentHeader } from "./ui/comment-header";
 import {
   EditableText,
   EditableTextarea,
-  EditableArray,
   EditableKeyValueList,
   EditableSiteList,
   EditableWorkplanList,
@@ -85,12 +81,6 @@ export const ProgramForm: React.FC<{
     </div>
   );
 
-   console.log("Program Data", proposalData)
-
-   console.log("raw profile reviews", reviewedData?.profile?.reviews);
-   //const profileReviews = validReviews(reviewedData?.profile?.reviews);
-console.log("filtered profileReviews", profileReviews);
-
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
@@ -128,9 +118,9 @@ console.log("filtered profileReviews", profileReviews);
           ))}
         </div>
       </div>
-      <CommentHeader sectionName="Profile">
+
         <SectionReviews reviews={profileReviews} sectionName="Profile" {...sectionProps} />
-      </CommentHeader>
+
 
       {/* IMPLEMENTING / COOPERATING AGENCY */}
       <div className="overflow-x-auto">
@@ -159,9 +149,9 @@ console.log("filtered profileReviews", profileReviews);
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="Implementing & Cooperating Agency">
+
         <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" {...sectionProps} />
-      </CommentHeader>
+
 
       {/* EXTENSION SITES */}
       <div className="font-bold p-3 text-base flex items-center"><VerticalLine />EXTENSION SITE/S OR VENUE/S</div>
@@ -205,9 +195,9 @@ console.log("filtered profileReviews", profileReviews);
             </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="Extension Site/s">
+
         <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" {...sectionProps} />
-      </CommentHeader>
+
 
       {/* TAGGING / CLUSTER / AGENDA */}
       <div className="overflow-x-auto">
@@ -236,9 +226,9 @@ console.log("filtered profileReviews", profileReviews);
             </tr>
             <tr>
               <td colSpan={2} className="p-0">
-                <CommentHeader sectionName="Tagging, Cluster & Extension Agenda">
+
                   <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" {...sectionProps} />
-                </CommentHeader>
+
               </td>
             </tr>
             <tr className="border border-black">
@@ -260,9 +250,9 @@ console.log("filtered profileReviews", profileReviews);
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="SDG & Academic Program">
+
         <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" {...sectionProps} />
-      </CommentHeader>
+
 
       <div className="text-gray-700 leading-relaxed">
         {/* II. RATIONALE */}
@@ -274,9 +264,9 @@ console.log("filtered profileReviews", profileReviews);
               : <p className="text-base whitespace-pre-line">{val(proposalData.rationale)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Rationale">
+
           <SectionReviews reviews={rationaleReviews} sectionName="Rationale" {...sectionProps} />
-        </CommentHeader>
+
 
         {/* III. SIGNIFICANCE */}
         <div className="p-2 border-b border-black">
@@ -287,9 +277,9 @@ console.log("filtered profileReviews", profileReviews);
               : <p className="text-base whitespace-pre-line">{val(proposalData.significance)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Significance">
+
           <SectionReviews reviews={significanceReviews} sectionName="Significance" {...sectionProps} />
-        </CommentHeader>
+
 
         {/* IV. OBJECTIVES */}
         <div className="p-2 border-b border-black">
@@ -298,16 +288,16 @@ console.log("filtered profileReviews", profileReviews);
           {isEditing
             ? <EditableTextarea value={draft.general_objectives} onChange={(v) => set("general_objectives", v)} isEditing={isEditing} rows={4} />
             : <p className="p-5 text-base">{val(proposalData.general_objectives)}</p>}
-          <CommentHeader sectionName="General Objectives">
+
             <SectionReviews reviews={generalObjReviews} sectionName="General Objectives" {...sectionProps} />
-          </CommentHeader>
+
           <p className="text-base font-semibold mb-2 mt-3">Specific:</p>
           {isEditing
             ? <EditableTextarea value={draft.specific_objectives} onChange={(v) => set("specific_objectives", v)} isEditing={isEditing} rows={4} />
             : <p className="p-5 text-base">{val(proposalData.specific_objectives)}</p>}
-          <CommentHeader sectionName="Specific Objectives">
+
             <SectionReviews reviews={specificObjReviews} sectionName="Specific Objectives" {...sectionProps} />
-          </CommentHeader>
+
         </div>
 
         {/* V. METHODOLOGY */}
@@ -318,9 +308,7 @@ console.log("filtered profileReviews", profileReviews);
               : <p className="text-base whitespace-pre-line">{val(proposalData.methodology)}</p>}
 
         </div>
-        <CommentHeader sectionName="Methodology">
           <SectionReviews reviews={methodologyReviews} sectionName="Methodology" {...sectionProps} />
-        </CommentHeader>
 
         {/* VI. EXPECTED OUTPUT */}
         <div>
@@ -352,9 +340,8 @@ console.log("filtered profileReviews", profileReviews);
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Expected Output">
           <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" {...sectionProps} />
-        </CommentHeader>
+
 
         {/* VII. SUSTAINABILITY PLAN */}
         <div className="p-2 border-b border-black">
@@ -363,9 +350,7 @@ console.log("filtered profileReviews", profileReviews);
             ? <EditableTextarea value={draft.sustainability_plan} onChange={(v) => set("sustainability_plan", v)} isEditing={isEditing} rows={4} />
             : <p className="text-base whitespace-pre-line">{val(proposalData.sustainability_plan)}</p>}
         </div>
-        <CommentHeader sectionName="Sustainability Plan">
           <SectionReviews reviews={sustainabilityReviews} sectionName="Sustainability Plan" {...sectionProps} />
-        </CommentHeader>
 
         {/* VIII. ORG & STAFFING */}
         <div>
@@ -409,9 +394,7 @@ console.log("filtered profileReviews", profileReviews);
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Organization & Staffing">
           <SectionReviews reviews={orgStaffingReviews} sectionName="Organization & Staffing" {...sectionProps} />
-        </CommentHeader>
 
         {/* IX. WORKPLAN */}
         <div>
@@ -473,9 +456,7 @@ console.log("filtered profileReviews", profileReviews);
             </table>
           </div>
         </div>
-        <CommentHeader sectionName="Work Plan">
           <SectionReviews reviews={workplanReviews} sectionName="Work Plan" {...sectionProps} />
-        </CommentHeader>
 
         {/* X. BUDGET */}
         <div>
@@ -522,9 +503,8 @@ console.log("filtered profileReviews", profileReviews);
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Budget Requirement">
           <SectionReviews reviews={budgetReviews} sectionName="Budget" {...sectionProps} />
-        </CommentHeader>
+
       </div>
     </section>
   );

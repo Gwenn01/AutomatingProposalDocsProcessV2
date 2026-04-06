@@ -5,6 +5,8 @@ import { formatDate } from "@/utils/dateFormat";
 import type { BudgetItem, Comments } from "@/types/reviewer-comment-types";
 import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
+import { HistoryReviewBadge } from "./HistoryReviewBadge";
+import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
 
 /**
  * Lock ALL inputs only when at least one feedback field is an empty string "".
@@ -15,14 +17,52 @@ import { FeedbackBadge } from "../FeedbackBadge";
  */
 function shouldLockAll(review: any): boolean {
   if (!review) return false;
-  return Object.values(review).some((v) => v === "");
+
+  const feedbackFields = [
+    "profile_feedback",
+    "implementing_agency_feedback",
+    "extension_site_feedback",
+    "tagging_cluster_extension_feedback",
+    "sdg_academic_program_feedback",
+    "rationale_feedback",
+    "significance_feedback",
+    "general_objectives_feedback",
+    "specific_objectives_feedback",
+    "objectives_feedback",
+    "methodology_feedback",
+    "expected_output_feedback",
+    "sustainability_plan_feedback",
+    "org_staffing_feedback",
+    "work_plan_feedback",
+    "budget_requirements_feedback",
+  ];
+
+  const values = feedbackFields.map((k) => review[k]);
+
+  // If there are no null values → every field was submitted → lock
+  const hasAnyNull = values.some((v) => v === null || v === undefined);
+  return !hasAnyNull;
 }
+
+const REVIEW_FIELD_MAP: Record<string, string> = {
+  proj_profile_feedback:                    "profile_feedback",
+  proj_implementing_agency_feedback:        "implementing_agency_feedback",
+  proj_extension_site_feedback:             "extension_site_feedback",
+  proj_tagging_cluster_extension_feedback:  "tagging_cluster_extension_feedback",
+  proj_sdg_academic_program_feedback:       "sdg_academic_program_feedback",
+  proj_rationale_feedback:                  "rationale_feedback",
+  proj_objectives_feedback:                 "objectives_feedback",
+  proj_methodology_feedback:                "methodology_feedback",
+  proj_expected_output_feedback:            "expected_output_feedback",
+  proj_work_plan_feedback:                  "work_plan_feedback",
+  proj_budget_feedback:                     "budget_requirements_feedback",
+};
 
 const SectionFeedback: React.FC<{
   showInput: boolean;
   reviewLoading: boolean;
   existingReview: any | null;
-  feedbackValue: string | null | undefined;
+  feedbackValue: string | HistoryReviewEntry[] | null | undefined;
   allLocked: boolean;
   label: string;
   inputKey: string;
@@ -43,21 +83,38 @@ const SectionFeedback: React.FC<{
   onCommentChange,
   disabled,
 }) => {
-  const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
-
-  // Field has real content → show badge
-  if (!showInput && existingReview && isFilled) {
-    return <FeedbackBadge label={label} value={feedbackValue} loading={reviewLoading} />;
+  // ── History mode: feedbackValue is HistoryReviewEntry[] ───────────────
+  if (!showInput && Array.isArray(feedbackValue)) {
+    if (feedbackValue.length === 0) return null;
+    return <HistoryReviewBadge label={label} entries={feedbackValue} />;
   }
 
-  // Field is null or "" → show input, locked only if allLocked
+  // ── Current version mode: feedbackValue is string | null ─────────────
+  const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
+
+  // Has review text → show existing FeedbackBadge
+  if (!showInput && existingReview && isFilled) {
+    return <FeedbackBadge label={label} value={feedbackValue as string} loading={reviewLoading} />;
+  }
+
+  // Viewing history with no comment for this section → nothing
+  if (!showInput && existingReview && !isFilled) {
+    return null;
+  }
+
+  // Editable / locked input for current version
   if (showInput || existingReview) {
+    const reviewField = REVIEW_FIELD_MAP[inputKey];
+    const lockedValue =
+      allLocked && reviewField !== undefined
+        ? (existingReview?.[reviewField] ?? "")
+        : undefined;
     return (
       <CommentInput
         sectionName={inputLabel}
         onCommentChange={onCommentChange}
         InputValue={inputKey}
-        value={comments[inputKey] || ""}
+        value={lockedValue !== undefined ? lockedValue : comments[inputKey] || ""}
         disabled={disabled || allLocked}
       />
     );
@@ -79,7 +136,7 @@ export const ProjectForm: React.FC<{
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
 
   // Lock all inputs only when any field is exactly ""
-  const allLocked = shouldLockAll(existingReview);
+  const allLocked = !showCommentInputs ? false : shouldLockAll(existingReview);
 
   const sf = (
     label: string,

@@ -1,12 +1,9 @@
 // view-review-forms/project-form.tsx
-import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
+import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
-import type { BudgetItem, Comments, MethodologyPhase, WorkplanItem } from "../view-reviewed-document";
-import PreviousComment from "@/components/reviewer/PreviousComment";
-import { Clock } from "lucide-react";
+import type { BudgetItem, Comments } from "../view-reviewed-document";
 import { formatDate } from "@/utils/dateFormat";
-import { CommentHeader } from "./ui/comment-header";
 import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList, EditableSiteList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableProject } from "@/hooks/useProposalEdit";
 import { SectionReviews, validReviews } from "./ui/SectionReviews";
@@ -54,8 +51,6 @@ const hasAnyReviewAcrossSections =
    rationaleReviews, significanceReviews, generalObjReviews, specificObjReviews,
    methodologyReviews, expectedOutputReviews, budgetReviews, workplanReviews].some((r) => r.length > 0);
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
-
-  //console.log("Project Data", projectData)
 
   return (
     <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-serif text-gray-900 leading-relaxed p-5">
@@ -105,9 +100,7 @@ const hasAnyReviewAcrossSections =
           </p>
         </div>
       </div>
-      <CommentHeader sectionName="Profile">
         <SectionReviews reviews={profileReviews} sectionName="Profile" {...sectionProps} />
-      </CommentHeader>
 
       {/* IMPLEMENTING / COOPERATING AGENCY */}
       <div className="overflow-x-auto">
@@ -137,9 +130,7 @@ const hasAnyReviewAcrossSections =
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="Implementing & Cooperating Agency">
         <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" {...sectionProps} />
-      </CommentHeader>
 
       {/* EXTENSION SITES */}
       <div className="font-bold mt-2 mb-3 px-2 flex items-center"><VerticalLine />Extension Site/s or Venue/s</div>
@@ -183,9 +174,7 @@ const hasAnyReviewAcrossSections =
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="Extension Sites">
         <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" {...sectionProps} />
-      </CommentHeader>
 
       {/* TAGGING / CLUSTER / AGENDA / SDG */}
       <div className="overflow-x-auto">
@@ -214,9 +203,7 @@ const hasAnyReviewAcrossSections =
             </tr>
             <tr>
               <td colSpan={2} className="p-0">
-                <CommentHeader sectionName="Tagging, Cluster & Extension Agenda">
                   <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" {...sectionProps} />
-                </CommentHeader>
               </td>
             </tr>
             <tr className="border border-black">
@@ -238,9 +225,7 @@ const hasAnyReviewAcrossSections =
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="SDG & Academic Program">
         <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" {...sectionProps} />
-      </CommentHeader>
 
       <div className="text-gray-700 leading-relaxed">
         {/* II. RATIONALE */}
@@ -252,9 +237,8 @@ const hasAnyReviewAcrossSections =
               : <p className="text-base whitespace-pre-line">{val(projectData.rationale)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Project Rationale">
+
           <SectionReviews reviews={rationaleReviews} sectionName="Project Rationale" {...sectionProps} />
-        </CommentHeader>
 
         {/* III. SIGNIFICANCE */}
         <div className="p-2 border-b border-black">
@@ -265,9 +249,8 @@ const hasAnyReviewAcrossSections =
               : <p className="text-base whitespace-pre-line">{val(projectData.significance)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Project Significance">
+
           <SectionReviews reviews={significanceReviews} sectionName="Project Significance" {...sectionProps} />
-        </CommentHeader>
 
         {/* IV. OBJECTIVES */}
         <div className="border-b border-black p-2">
@@ -340,9 +323,8 @@ const hasAnyReviewAcrossSections =
               : <p className="text-base">{NA}</p>
           )} */}
         </div>
-        <CommentHeader sectionName="Project Methodology">
+
           <SectionReviews reviews={methodologyReviews} sectionName="Project Methodology" {...sectionProps} />
-        </CommentHeader>
 
         {/* VI. EXPECTED OUTPUT */}
         <div>
@@ -374,9 +356,8 @@ const hasAnyReviewAcrossSections =
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Expected Output">
+
           <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" {...sectionProps} />
-        </CommentHeader>
 
         {/* IX. WORKPLAN */}
 <div>
@@ -426,9 +407,7 @@ const hasAnyReviewAcrossSections =
     </table>
   </div>
 </div>
-<CommentHeader sectionName="Work Plan">
   <SectionReviews reviews={workplanReviews} sectionName="Work Plan" {...sectionProps} />
-</CommentHeader>
 
         {/* VII. BUDGET */}
         <div>
@@ -475,9 +454,8 @@ const hasAnyReviewAcrossSections =
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Budget Requirement">
           <SectionReviews reviews={budgetReviews} sectionName="Project Budget" {...sectionProps} />
-        </CommentHeader>
+
       </div>
     </section>
   );

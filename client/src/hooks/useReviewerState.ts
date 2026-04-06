@@ -27,6 +27,8 @@ import type {
   ActivityItem,
 } from "@/types/reviewer-comment-types";
 import type { ProposalReviewResponse, ReviewerProjectList } from "@/types/reviewer-types";
+import { fetchHistoryReview } from "@/api/implementor-api";
+import { normalizeHistoryReview } from "@/constants/reviewer/mappers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // useReviewState — comment inputs, decision, and submission flags
@@ -176,6 +178,9 @@ export function useHistoryPanel({
     null
   );
   const [historySnapshotLoading, setHistorySnapshotLoading] = useState(false);
+  const [historyReview, setHistoryReview] = useState<any | null>(null);
+  const [historyReviewLoading, setHistoryReviewLoading] = useState(false);
+  
 
   // ── Program history ─────────────────────────────────────────────────────
 
@@ -270,48 +275,63 @@ export function useHistoryPanel({
 
   // ── Snapshot loader ─────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (
-      !selectedHistoryVersion ||
-      selectedHistoryVersion.status === "current"
-    ) {
-      setHistorySnapshotData(null);
-      return;
-    }
-
-    const { history_id, proposal_id, version } = selectedHistoryVersion;
-
-    const resolvedId =
-      activeTab === "project"
-        ? selectedProject?.proposal ?? proposal_id
-        : activeTab === "activity"
-        ? selectedActivity?.proposal ?? proposal_id
-        : programNodeId ?? proposal_id;
-
-    const fetcher =
-      activeTab === "project"
-        ? fetchProjectHistoryData
-        : activeTab === "activity"
-        ? fetchActivityHistoryData
-        : fetchProgramHistoryData;
-
-    setHistorySnapshotLoading(true);
+useEffect(() => {
+  if (
+    !selectedHistoryVersion ||
+    selectedHistoryVersion.status === "current"
+  ) {
     setHistorySnapshotData(null);
+    setHistoryReview(null);
+    return;
+  }
 
-    fetcher(Number(resolvedId), Number(history_id), version)
-      .then(setHistorySnapshotData)
-      .catch((err) => {
-        console.error("[HistorySnapshot]", err);
-        setHistorySnapshotData(null);
-      })
-      .finally(() => setHistorySnapshotLoading(false));
-  }, [
-    selectedHistoryVersion,
-    activeTab,
-    programNodeId,
-    selectedProject?.proposal,
-    selectedActivity?.proposal,
-  ]);
+  const { history_id, proposal_id, version } = selectedHistoryVersion;
+
+  const resolvedId =
+    activeTab === "project"
+      ? selectedProject?.proposal ?? proposal_id
+      : activeTab === "activity"
+      ? selectedActivity?.proposal ?? proposal_id
+      : programNodeId ?? proposal_id;
+
+  const reviewType: "program" | "project" | "activity" =
+    activeTab === "project"   ? "project"
+    : activeTab === "activity" ? "activity"
+    : "program";
+
+  const snapshotFetcher =
+    activeTab === "project"   ? fetchProjectHistoryData
+    : activeTab === "activity" ? fetchActivityHistoryData
+    : fetchProgramHistoryData;
+
+  setHistorySnapshotLoading(true);
+  setHistorySnapshotData(null);
+  setHistoryReviewLoading(true);
+  setHistoryReview(null);
+
+  Promise.all([
+    snapshotFetcher(Number(resolvedId), Number(history_id), version).catch((err) => {
+      console.error("[HistorySnapshot]", err);
+      return null;
+    }),
+    fetchHistoryReview(Number(resolvedId), Number(history_id), version, reviewType).catch((err) => {
+      console.error("[HistoryReview]", err);
+      return null;
+    }),
+  ]).then(([snapshotData, rawReview]) => {
+    setHistorySnapshotData(snapshotData);
+    setHistoryReview(normalizeHistoryReview(rawReview, reviewType));
+  }).finally(() => {
+    setHistorySnapshotLoading(false);
+    setHistoryReviewLoading(false);
+  });
+}, [
+  selectedHistoryVersion,
+  activeTab,
+  programNodeId,
+  selectedProject?.proposal,
+  selectedActivity?.proposal,
+]);
 
   // ── Computed ────────────────────────────────────────────────────────────
 
@@ -332,6 +352,7 @@ export function useHistoryPanel({
     setActivityHistory([]);
     setSelectedHistoryVersion(null);
     setHistorySnapshotData(null);
+    setHistoryReview(null);          
   };
 
   return {
@@ -341,6 +362,8 @@ export function useHistoryPanel({
     setSelectedHistoryVersion,
     historySnapshotData,
     historySnapshotLoading,
+    historyReview,
+    historyReviewLoading,
     isViewingHistory,
     reset,
   };

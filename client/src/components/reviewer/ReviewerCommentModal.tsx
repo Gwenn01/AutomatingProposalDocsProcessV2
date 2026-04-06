@@ -141,8 +141,20 @@ useEffect(() => {
   const showCommentInputs =
     isCurrentVersion ;
 
-  const showExistingFeedback =
-    !history.isViewingHistory && (existingReviewLoading || !!existingReview);
+const showExistingFeedback =
+  !history.isViewingHistory && (existingReviewLoading || !!existingReview);
+
+// When browsing history → use the normalized history review.
+// When on current version → use existingReview (the already-submitted review).
+const activeExistingReview = history.isViewingHistory
+  ? history.historyReview
+  : showExistingFeedback
+  ? existingReview
+  : null;
+
+const activeReviewLoading = history.isViewingHistory
+  ? history.historyReviewLoading
+  : existingReviewLoading;
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
@@ -308,13 +320,34 @@ const switchToActivityTab = () => {
             <div className="flex-1 overflow-y-auto relative bg-white">
               {history.historySnapshotLoading && <SnapshotLoadingOverlay />}
 
+              {/* In the <div className="p-10"> block, before <FormArea /> */}
+{/* {history.isViewingHistory && (
+  <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    {history.historyReviewLoading
+      ? "Loading reviews for this version…"
+      : history.historyReview
+      ? "Showing reviewer feedback from this historical version"
+      : "No reviewer feedback recorded for this version"}
+  </div>
+)} */}
+
+{/* {showExistingFeedback && !history.isViewingHistory && (
+  <ReviewedBanner
+    loading={existingReviewLoading}
+    review={existingReview}
+  />
+)} */}
+
               <div className="p-10">
-                {showExistingFeedback && (
+                {/* {showExistingFeedback && (
                   <ReviewedBanner
                     loading={existingReviewLoading}
                     review={existingReview}
                   />
-                )}
+                )} */}
 
                 <FormArea
                   activeTab={activeTab}
@@ -332,8 +365,10 @@ const switchToActivityTab = () => {
                   comments={reviewState.comments}
                   onCommentChange={reviewState.handleCommentChange}
                   showCommentInputs={showCommentInputs}
-                  existingReview={showExistingFeedback ? existingReview : null}
-                  reviewLoading={existingReviewLoading}
+                  //existingReview={showExistingFeedback ? existingReview : null}
+                  //reviewLoading={existingReviewLoading}
+                  existingReview={activeExistingReview}
+                  reviewLoading={activeReviewLoading}
                 />
               </div>
 

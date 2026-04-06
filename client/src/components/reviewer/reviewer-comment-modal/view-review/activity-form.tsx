@@ -6,6 +6,8 @@ import { formatDate } from "@/utils/dateFormat";
 import type { BudgetItem, Comments } from "@/types/reviewer-comment-types";
 import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
+import { HistoryReviewBadge } from "./HistoryReviewBadge";
+import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
 
 const NA = "N/A";
 
@@ -18,9 +20,27 @@ const NA = "N/A";
  */
 function shouldLockAll(review: any): boolean {
   if (!review) return false;
-  return Object.values(review).some((v) => v === "");
-}
 
+  const feedbackFields = [
+    "profile_feedback",
+    "implementing_agency_feedback",
+    "extension_site_feedback",
+    "tagging_cluster_extension_feedback",
+    "sdg_academic_program_feedback",
+    "rationale_feedback",
+    "objectives_feedback",
+    "methodology_feedback",
+    "expected_output_feedback",
+    "work_plan_feedback",
+    "budget_requirements_feedback",
+  ];
+
+  const values = feedbackFields.map((k) => review[k]);
+
+  // If there are no null values → every field was submitted → lock
+  const hasAnyNull = values.some((v) => v === null || v === undefined);
+  return !hasAnyNull;
+}
 /**
  * Map from inputKey (comments state key) → existingReview field name.
  * Allows SF to read the persisted value from existingReview when locked.
@@ -43,7 +63,7 @@ const SF: React.FC<{
   showInput: boolean;
   reviewLoading: boolean;
   existingReview: any | null;
-  feedbackValue: string | null | undefined;
+  feedbackValue: string | HistoryReviewEntry[] | null | undefined;
   allLocked: boolean;
   label: string;
   inputKey: string;
@@ -64,16 +84,23 @@ const SF: React.FC<{
   onCommentChange,
   disabled,
 }) => {
-  const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
-
-  // Field has real content → show badge
-  if (!showInput && existingReview && isFilled) {
-    return <FeedbackBadge label={label} value={feedbackValue} loading={reviewLoading} />;
+  // ── History mode: array of reviewer entries ───────────────────────────
+  if (!showInput && Array.isArray(feedbackValue)) {
+    if (feedbackValue.length === 0) return null;
+    return <HistoryReviewBadge label={label} entries={feedbackValue} />;
   }
 
-  // Field is null or "" → show input
-  // When locked, read persisted value from existingReview so the textarea
-  // shows what was actually submitted instead of the empty local comments state.
+  // ── Current version mode ──────────────────────────────────────────────
+  const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
+
+  if (!showInput && existingReview && isFilled) {
+    return <FeedbackBadge label={label} value={feedbackValue as string} loading={reviewLoading} />;
+  }
+
+  if (!showInput && existingReview && !isFilled) {
+    return null;
+  }
+
   if (showInput || existingReview) {
     const reviewField = REVIEW_FIELD_MAP[inputKey];
     const lockedValue =
@@ -118,7 +145,9 @@ export const ActivityForm: React.FC<{
 }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
-  const allLocked = shouldLockAll(existingReview);
+  const allLocked = !showCommentInputs ? false : shouldLockAll(existingReview);
+
+  console.log("Existing Review Activity", existingReview)
 
   const sf = (
     label: string,

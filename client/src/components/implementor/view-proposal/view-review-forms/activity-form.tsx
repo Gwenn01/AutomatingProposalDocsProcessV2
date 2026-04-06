@@ -2,11 +2,8 @@
 import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
-import PreviousComment from "@/components/reviewer/PreviousComment";
 import type { BudgetItem } from "../view-reviewed-document";
-import { Clock } from "lucide-react";
 import { formatDate } from "@/utils/dateFormat";
-import { CommentHeader } from "./ui/comment-header";
 import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList, EditableSiteList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableActivity } from "@/hooks/useProposalEdit";
 import { SectionReviews, validReviews } from "./ui/SectionReviews";
@@ -112,8 +109,7 @@ export const ActivityForm: React.FC<{
      planOfActivityReviews, budgetReviews].some((r) => r.length > 0);
 
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
-    
-  console.log("Activity Data", activityData)
+
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
       <div className="text-center mb-8 space-y-1">
@@ -157,9 +153,7 @@ export const ActivityForm: React.FC<{
           </p>
         </div>
       </div>
-      <CommentHeader sectionName="Profile">
         <SectionReviews reviews={profileReviews} sectionName="Profile" {...sectionProps} />
-      </CommentHeader>
 
       {/* IMPLEMENTING / COOPERATING AGENCY */}
       <div className="overflow-x-auto">
@@ -189,9 +183,7 @@ export const ActivityForm: React.FC<{
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="Implementing & Cooperating Agency">
         <SectionReviews reviews={agencyReviews} sectionName="Implementing & Cooperating Agency" {...sectionProps} />
-      </CommentHeader>
 
       {/* EXTENSION SITES */}
       <div className="font-bold text-base p-3 mb-2 flex items-center"><VerticalLine />EXTENSION SITE/S OR VENUE/S</div>
@@ -235,9 +227,7 @@ export const ActivityForm: React.FC<{
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="Extension Sites">
         <SectionReviews reviews={extensionSiteReviews} sectionName="Extension Site/s" {...sectionProps} />
-      </CommentHeader>
 
       {/* TAGGING / CLUSTER / AGENDA / SDG */}
       <div className="overflow-x-auto">
@@ -266,9 +256,7 @@ export const ActivityForm: React.FC<{
             </tr>
             <tr>
               <td colSpan={2} className="p-0">
-                <CommentHeader sectionName="Tagging, Cluster & Extension Agenda">
                   <SectionReviews reviews={taggingReviews} sectionName="Tagging, Cluster & Extension Agenda" {...sectionProps} />
-                </CommentHeader>
               </td>
             </tr>
             <tr className="border border-black">
@@ -290,9 +278,7 @@ export const ActivityForm: React.FC<{
           </tbody>
         </table>
       </div>
-      <CommentHeader sectionName="SDG & Academic Program">
         <SectionReviews reviews={sdgReviews} sectionName="SDG & Academic Program" {...sectionProps} />
-      </CommentHeader>
 
       <div className="text-gray-700 leading-relaxed">
         {/* II. RATIONALE */}
@@ -304,9 +290,8 @@ export const ActivityForm: React.FC<{
               : <p className="text-base whitespace-pre-line">{val(activityData.rationale)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Activity Rationale">
+
           <SectionReviews reviews={rationaleReviews} sectionName="Activity Rationale" {...sectionProps} />
-        </CommentHeader>
 
         {/* III. OBJECTIVES */}
         <div className="p-4 border-b border-black">
@@ -317,9 +302,8 @@ export const ActivityForm: React.FC<{
               : <p className="text-base whitespace-pre-line">{val(activityData.objectives)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Activity Objectives">
+
           <SectionReviews reviews={objectivesReviews} sectionName="Activity Objectives" {...sectionProps} />
-        </CommentHeader>
 
         {/* IV. METHODOLOGY */}
         <div className="p-4 border-b border-black">
@@ -330,9 +314,8 @@ export const ActivityForm: React.FC<{
               : <p className="text-base whitespace-pre-line">{val(activityData.methodology)}</p>}
           </div>
         </div>
-        <CommentHeader sectionName="Activity Methodology">
+
           <SectionReviews reviews={methodologyReviews} sectionName="Activity Methodology" {...sectionProps} />
-        </CommentHeader>
 
         {/* V. EXPECTED OUTPUT */}
         <div>
@@ -364,9 +347,8 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Expected Output">
+
           <SectionReviews reviews={expectedOutputReviews} sectionName="Expected Output" {...sectionProps} />
-        </CommentHeader>
 
         {/* VI. PLAN OF ACTIVITY */}
         <div>
@@ -438,9 +420,8 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Plan of Activity">
+
           <SectionReviews reviews={planOfActivityReviews} sectionName="Plan of Activities" {...sectionProps} />
-        </CommentHeader>
 
         {/* VII. BUDGET */}
         <div>
@@ -487,9 +468,9 @@ export const ActivityForm: React.FC<{
             </tbody>
           </table>
         </div>
-        <CommentHeader sectionName="Budget Requirement">
+
           <SectionReviews reviews={budgetReviews} sectionName="Activity Budget" {...sectionProps} />
-        </CommentHeader>
+
       </div>
     </section>
   );

@@ -73,6 +73,11 @@ type ProjectListFields = {
   is_reviewed: boolean;
   assigned_at: string | null;
   activities?: ApiActivity[];
+  start_date: string;
+  end_date: string;
+  assignment: number;
+  proposal: number;
+  activity_date: string;
 };
 
 type ProjectItem  = ProjectListFields;

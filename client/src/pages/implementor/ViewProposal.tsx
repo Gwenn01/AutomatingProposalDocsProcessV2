@@ -183,13 +183,13 @@ const ViewProposal: React.FC = () => {
                       </span>
                       <button
                         onClick={() => { setSelectedDoc(doc); setShowReviewerStatus(true); }}
-                        className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg hover:bg-green-100 transition"
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-green-100 transition  ${doc.review_progress === "0 out of 0" ? "bg-gray-100" : "bg-green-50"}`}
                       >
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-green-700 font-semibold text-xs">
+                        <div className={`w-2 h-2  rounded-full ${doc.review_progress === "0 out of 0" ? "bg-gray-400" : "bg-green-500 animate-pulse"}`}></div>
+                          <span className={` font-semibold text-xs ${doc.review_progress === "0 out of 0" ? "text-gray-400" : "text-green-700"}`}>
                             {doc.review_progress === "0 out of 0"
                               ? "No Assigned Reviewer"
-                              : doc.review_progress}
+                              : `No. of Reviewer (${doc.reviewer_count})`}
                           </span>
                       </button>
                     </div>
