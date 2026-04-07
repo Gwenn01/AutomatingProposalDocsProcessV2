@@ -1,5 +1,5 @@
 import React from "react";
-import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
+import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
 import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
 import type { ApiProposalDetail } from "@/types/reviewer-comment-types";
@@ -14,7 +14,7 @@ const workplanMap: Record<string, string> = {};
   });
 });
 
-
+console.log("Proposal Data of View Document Program", proposalData)
 
   return (
     <section className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
@@ -69,8 +69,8 @@ const workplanMap: Record<string, string> = {};
           </div>
 
           <p className="font-bold p-3 text-base">EXTENSION SITE/S OR VENUE/S</p>
-          <div className="overflow-x-auto">
-            <table className="w-full border-t border-black text-sm">
+          <div className="overflow-x-auto px-3">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
                   <td className="border-r border-black px-4 py-3 font-bold text-center w-12">Sites No.</td>
@@ -97,7 +97,7 @@ const workplanMap: Record<string, string> = {};
           </div>
 
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto mt-4 border-t border-black">
           <table className="w-full border-b border-black text-sm">
             <tbody>
               <tr className="border-b border-black">
@@ -123,7 +123,7 @@ const workplanMap: Record<string, string> = {};
               </tr>
               <tr className="border-b border-black">
                 <td className="border-r border-black px-4 py-3 font-bold">Sustainable Development Goal (SDG) Addressed</td>
-                <td className="border-r border-black px-4 py-3 font-bold">College/Campus/Mandated Academic Program:</td>
+                <td className=" px-4 py-3 font-bold">College/Campus/Mandated Academic Program:</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 border-r border-black">{val(proposalData.sdg_addressed)}</td> 
@@ -153,9 +153,9 @@ const workplanMap: Record<string, string> = {};
             <h3 className="font-bold text-gray-900 text-base">V. METHODOLOGY</h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(proposalData.methodology)}</p>
           </div>
-          <div className="">
             <h3 className="font-bold text-gray-900 text-base p-3">VI. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full border-t border-black text-sm">
+          <div className="px-3">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
                   <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
@@ -173,12 +173,12 @@ const workplanMap: Record<string, string> = {};
 
           <div className="p-3 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base mb-3">VII. SUSTAINABILITY PLAN</h3>
-            <p className="text-base whitespace-pre-line">{val(proposalData.sustainability_plan)}</p>
+            <p className="text-base whitespace-pre-line border border-black/50 p-3">{val(proposalData.sustainability_plan)}</p>
           </div>
 
-          <div>
             <h3 className="font-bold text-gray-900 p-3 text-base">VIII. ORGANIZATION AND STAFFING <span className="text-base italic font-normal">(Persons involved and responsibility)</span></h3>
-            <table className="w-full border-t border-black text-sm">
+          <div className="px-3 border-b border-black pb-4">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
                   <td className="w-1/2 border-r border-black px-4 py-3 text-center font-bold">Name</td>
@@ -201,10 +201,10 @@ const workplanMap: Record<string, string> = {};
             </table>
           </div>
           
-          <div>
-            <h3 className="font-bold text-gray-900 p-3 text-base">IX. WORKPLAN</h3>
+          <h3 className="font-bold text-gray-900 p-3 text-base">IX. WORKPLAN</h3>
+          <div className="px-3 border-b border-black pb-4">
             <div className="overflow-x-auto">
-              <table className="border-t border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
+              <table className="border border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
                 <thead>
                   <tr className="border-b border-black">
                     <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
@@ -249,9 +249,9 @@ const workplanMap: Record<string, string> = {};
               </table>
             </div>
           </div>
-          <div>
             <h3 className="font-bold text-gray-900 text-base p-3">X. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full border-t border-black text-sm">
+          <div className="px-3 pb-3">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black bg-gray-100">
                   <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>

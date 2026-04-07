@@ -39,7 +39,7 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             </div>
         </div>
 
-            <div className="overflow-x-auto mt-6">
+            <div className="overflow-x-auto mt-4">
               <table className="w-full text-sm">
                 <tbody>
                   <tr className="border-b border-t border-black p-5">
@@ -59,8 +59,8 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             </div>
 
           <p className="font-bold mt-2 mb-2 px-3">Extension Site/s or Venue/s</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto px-3">
+            <table className="w-full text-sm border border-black">
               <tbody>
                 <tr className="border-b border-t border-black">
                   <td className="border-r border-black px-4 py-3 font-bold text-center w-12">Sites No.</td>
@@ -86,7 +86,7 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             </table>
           </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto mt-4 border-t border-black">
           <table className="w-full  text-sm">
             <tbody>
               <tr className="border-b border-black">
@@ -147,9 +147,9 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             <p className="text-base mt-3 whitespace-pre-line text-wrap">{val(projectData.methodology)}</p>
           </div>
 
-          <div className="">
-            <h3 className="font-bold text-gray-900 p-3 text-base my-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full text-sm">
+          <h3 className="font-bold text-gray-900 p-3 text-base my-2">VI. EXPECTED OUTPUT/OUTCOME</h3>
+          <div className="px-3">
+            <table className="w-full text-sm border border-black">
               <tbody>
                 <tr className="border-b border-t border-black">
                   <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
@@ -165,13 +165,14 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             </table>
           </div>
 
-          <div className="p-3 border-b border-black">
+          <div className="p-3 mt-4 border-t border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">VII. SUSTAINABILITY PLAN</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(projectData.sustainability_plan)}</p>
+            <p className="text-base mt-3 whitespace-pre-line border border-black/50 p-3">{val(projectData.sustainability_plan)}</p>
           </div>
-          <div className="">
-            <h3 className="font-bold text-gray-900 text-base p-3">VIII. ORGANIZATION AND STAFFING</h3>
-            <table className="w-full text-sm">
+          
+          <h3 className="font-bold text-gray-900 text-base p-3">VIII. ORGANIZATION AND STAFFING</h3>
+          <div className="px-3">
+            <table className="w-full text-sm border border-black">
               <tbody>
                 <tr className="border-b border-t border-black">
                   <td className="w-1/2 border-r border-black px-4 py-3 text-center font-bold">Name</td>
@@ -194,10 +195,10 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             </table>
           </div>
           
-          <div>
+          <div className="mt-4 pb-4 border-y border-black">
             <h3 className="font-bold text-gray-900 text-base p-2">IX. WORKPLAN</h3>
-            <div className="overflow-x-auto">
-              <table className="border-t border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
+            <div className="overflow-x-auto px-3">
+              <table className="border border-black text-sm" style={{ minWidth: "900px", width: "100%" }}>
                 <thead>
                   <tr className="border-b border-black">
                     <th rowSpan={2} className="border-r border-black px-3 py-2 text-left font-bold min-w-[100px]">Objective</th>
@@ -242,9 +243,9 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
             </div>
           </div>
 
-          <div>
-            <h3 className="font-bold text-gray-900 text-base p-3">X. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full text-sm">
+          <h3 className="font-bold text-gray-900 text-base p-3">X. BUDGETARY REQUIREMENT</h3>
+          <div className="px-3 pb-3">
+            <table className="w-full text-sm border border-black">
               <tbody>
                 <tr className="border-b border-t border-black bg-gray-100">
                   <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>

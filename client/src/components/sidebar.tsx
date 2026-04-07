@@ -8,6 +8,7 @@ import {
   Files,
   UserCheck,
   LogOut,
+  Book,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { extensionLogo } from "../assets";
@@ -17,10 +18,10 @@ import { useToast } from "@/context/toast";
 import type { ActiveMenu } from "@/pages/Home";
 
 // Type definitions
-type Role = "implementor" | "reviewer" | "admin";
+type Role = string;
 
 interface MenuItem {
-  label: string;
+  label: ActiveMenu;
   icon: LucideIcon;
 }
 
@@ -55,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     implementor: [
       { label: "View Proposal", icon: Eye },
       { label: "Create Proposal", icon: Upload },
-      { label: "Drafts", icon: Eye },
+      { label: "Drafts", icon: Book },
       { label: "Profile Overview", icon: Eye },
     ],
     reviewer: [

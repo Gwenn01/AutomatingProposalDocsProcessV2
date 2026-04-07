@@ -9,6 +9,8 @@ import type { BudgetItem } from "@/types/reviewer-comment-types";
 export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: string; projectTitle: string }> = ({ activityData, programTitle, projectTitle }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
+  console.log("Activity Data", activityData)
+
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
@@ -59,9 +61,9 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
           </table>
         </div>
 
-      <p className="font-bold text-base p-3 mb-2">EXTENSION SITE/S OR VENUE/S</p>
-      <div className="overflow-x-auto">
-        <table className="w-full border-t border-black text-sm">
+      <p className="font-bold text-base p-3">EXTENSION SITE/S OR VENUE/S</p>
+      <div className="overflow-x-auto px-3">
+        <table className="w-full border border-black text-sm">
           <tbody>
             <tr className="border-b border-black">
               <td className="border-r border-black px-4 py-3 font-bold text-center w-12">Sites No.</td>
@@ -87,7 +89,7 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
         </table>
       </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto border-t border-black mt-4">
           <table className="w-full border-b border-black text-sm">
             <tbody>
               <tr className="border-b border-black">
@@ -135,15 +137,15 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
           </div>
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">IV. OBJECTIVES OF THE ACTIVITY</h3>
-            <p className="text-base mt-3 whitespace-pre-line">{val(activityData.objectives)}</p>
+            <p className="text-base mt-3 whitespace-pre-line">{val(activityData.objectives_of_activity)}</p>
           </div>
           <div className="p-4 border-b border-black">
             <h3 className="font-bold text-gray-900 text-base">V. METHODOLOGY <span className="text-base italic font-normal">(short narrative)</span></h3>
             <p className="text-base mt-3 whitespace-pre-line">{val(activityData.methodology)}</p>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">VI. EXPECTED OUTPUT/OUTCOME</h3>
-            <table className="w-full border-t border-black text-sm">
+            <h3 className="font-bold text-gray-900 py-3 px-4 text-base">VI. EXPECTED OUTPUT/OUTCOME</h3>
+          <div className="px-3 border-b border-black pb-3">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
                   <td className="w-1/4 border-r border-black px-4 py-3 font-bold text-center">6P's and 2 I's</td>
@@ -158,9 +160,9 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
               </tbody>
             </table>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">VII. ORGANIZATION AND STAFFING</h3>
-            <table className="w-full border-t border-black text-sm">
+        <h3 className="font-bold text-gray-900 py-3 px-4 text-base">VII. ORGANIZATION AND STAFFING</h3>
+          <div className="px-3 border-b border-black pb-3">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black">
                   <td className="w-1/2 border-r border-black px-4 py-3 text-center font-bold">Name</td>
@@ -182,9 +184,15 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
               </tbody>
             </table>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base mb-5">VIII. PLAN OF ACTIVITY</h3>
-            <table className="w-full border-t border-black text-sm">
+
+          <div className="px-4 py-3">
+            <h3 className="font-bold text-gray-900 text-base ">VIII. PLAN OF ACTIVITY</h3>
+            <h3 className="text-base font-bold mt-2">Title of Activity: <span>{activityData.activity_title}</span></h3>
+            <h3 className="text-base font-bold">Date: <span>{formatDate(activityData.activity_date)}</span></h3>
+          </div>
+
+          <div className="px-3 pb-3 border-b border-black">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black bg-gray-100">
                   <td className="border-r border-black px-4 py-3 font-bold text-center w-1/4">Time</td>
@@ -207,9 +215,10 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
               </tbody>
             </table>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 pt-4 px-4 text-base">IX. BUDGETARY REQUIREMENT</h3>
-            <table className="w-full border-t border-black text-sm mt-6">
+
+          <h3 className="font-bold text-gray-900 pt-2 px-4 text-base">IX. BUDGETARY REQUIREMENT</h3>
+          <div className="px-3 py-3">
+            <table className="w-full border border-black text-sm">
               <tbody>
                 <tr className="border-b border-black bg-gray-100">
                   <td className="border-r border-black px-4 py-3 font-bold text-center">Item</td>
