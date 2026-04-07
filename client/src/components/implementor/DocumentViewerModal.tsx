@@ -365,8 +365,6 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   const showProjectSidebar =
     activeTab === "project" || activeTab === "activity";
 
-    console.log("PRoject Detail", projectDetail)
-
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-overlay-enter">
       <div className="bg-white w-full h-[100vh] flex flex-col overflow-hidden animate-modal-enter">
@@ -511,9 +509,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
             <div className="p-10" ref={contentAreaRef}>
               {activeTab === "program" && (
                 <ProgramFormDocument 
-                    proposalData={proposalData} 
-                    projectData={projectDetail}
-                    />
+                    proposalData={proposalData} />
               )}
 
               {activeTab === "project" &&

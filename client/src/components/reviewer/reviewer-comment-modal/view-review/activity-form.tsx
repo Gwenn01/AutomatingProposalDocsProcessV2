@@ -8,6 +8,9 @@ import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
 import { HistoryReviewBadge } from "./HistoryReviewBadge";
 import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
+import { useState } from "react";
+import SubmittingOverlay from "../SubmittingOverlay";
+import { div } from "framer-motion/client";
 
 const NA = "N/A";
 
@@ -170,8 +173,18 @@ export const ActivityForm: React.FC<{
     />
   );
 
+  const [isSubmitting, setIsSubmitting] = useState(true);
+
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">
+      {/* {isSubmitting && 
+        (
+          <div className="fixed w-full h-full flex items-center justify-center bg-black/30 z-10">
+            <SubmittingOverlay message="Submitting Review..." />
+          </div>
+        )  
+      } */}
+
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>

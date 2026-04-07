@@ -33,6 +33,7 @@ import { ProjectTreeNode } from "./reviewer-comment-modal/view-review/project-tr
 import { ProgramForm } from "./reviewer-comment-modal/view-review/program-form";
 import { ProjectForm } from "./reviewer-comment-modal/view-review/project-form";
 import { ActivityForm } from "./reviewer-comment-modal/view-review/activity-form";
+import SubmittingOverlay from "./reviewer-comment-modal/SubmittingOverlay";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ReviewerCommentModal
@@ -158,7 +159,6 @@ const activeReviewLoading = history.isViewingHistory
 
   const showProjectSidebar = activeTab === "project" || activeTab === "activity";
 
-  // ── Active form data (snapshot overrides live data when browsing history) ─
   const activeProgramData = history.historySnapshotData
     ? mapSnapshotToProgram(history.historySnapshotData)
     : proposalDetail;
@@ -200,7 +200,6 @@ const switchToActivityTab = () => {
   sidebar.setActivityDetail?.(null);
 };
 
-  // ── Review submission ───────────────────────────────────────────────────
   const buildPayload = (overrideDecision?: "needs_revision" | "approved") =>
     buildReviewPayload(
       {
@@ -274,12 +273,8 @@ const switchToActivityTab = () => {
     }
   };
 
-  // ── Early exit ──────────────────────────────────────────────────────────
   if (!isOpen || !proposalData) return null;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-overlay-enter">
@@ -295,6 +290,7 @@ const switchToActivityTab = () => {
             onTabProject={switchToProjectTab}
             onTabActivity={switchToActivityTab}
             onClose={onClose}
+            isDisabled={reviewState.isSubmitting}
           />
 
           {/* ── Body ───────────────────────────────────────────────────── */}
@@ -321,25 +317,25 @@ const switchToActivityTab = () => {
               {history.historySnapshotLoading && <SnapshotLoadingOverlay />}
 
               {/* In the <div className="p-10"> block, before <FormArea /> */}
-{/* {history.isViewingHistory && (
-  <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
-    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    {history.historyReviewLoading
-      ? "Loading reviews for this version…"
-      : history.historyReview
-      ? "Showing reviewer feedback from this historical version"
-      : "No reviewer feedback recorded for this version"}
-  </div>
-)} */}
+                {/* {history.isViewingHistory && (
+                  <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {history.historyReviewLoading
+                      ? "Loading reviews for this version…"
+                      : history.historyReview
+                      ? "Showing reviewer feedback from this historical version"
+                      : "No reviewer feedback recorded for this version"}
+                  </div>
+                )} */}
 
-{/* {showExistingFeedback && !history.isViewingHistory && (
-  <ReviewedBanner
-    loading={existingReviewLoading}
-    review={existingReview}
-  />
-)} */}
+                {/* {showExistingFeedback && !history.isViewingHistory && (
+                  <ReviewedBanner
+                    loading={existingReviewLoading}
+                    review={existingReview}
+                  />
+                )} */}
 
               <div className="p-10">
                 {/* {showExistingFeedback && (
@@ -385,6 +381,14 @@ const switchToActivityTab = () => {
                 />
               )}
             </div>
+
+            {reviewState.isSubmitting && 
+              (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/20 z-50">
+                  <SubmittingOverlay message="Submitting Review." />
+                </div>
+              )  
+            }
 
             {/* Version history panel */}
             <HistoryPanel
@@ -442,6 +446,7 @@ const ModalHeader: React.FC<{
   onTabProject: () => void;
   onTabActivity: () => void;
   onClose: () => void;
+  isDisabled: boolean;
 }> = ({
   title,
   statusStyle,
@@ -451,6 +456,7 @@ const ModalHeader: React.FC<{
   onTabProject,
   onTabActivity,
   onClose,
+  isDisabled
 }) => {
   const tabClass = (tab: TabType) =>
     [
@@ -507,7 +513,8 @@ const ModalHeader: React.FC<{
       {/* Close button */}
       <button
         onClick={onClose}
-        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/90 text-gray-600 shadow-sm border border-white/40 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 hover:scale-105 active:scale-95"
+        className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white/90 text-gray-600 shadow-sm border border-white/40 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 hover:scale-105 active:scale-95 ${isDisabled === true ? "cursor-not-allowed" : ""}`}
+        disabled={isDisabled}
       >
         <X size={17} />
       </button>

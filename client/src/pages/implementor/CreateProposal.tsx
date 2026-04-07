@@ -1,12 +1,5 @@
-// CreateProposal.tsx  — with Save Draft + Load/Resume Draft support
-// Changes vs original:
-//   1. Accepts optional `draftId` prop — when set, loads the draft on mount
-//   2. "Save Draft" button in every step's action bar (saves to localStorage via draftDb)
-//   3. On successful final submit the draft is deleted from storage
-//   4. API calls only happen on final submit (handleProgramNext, handleSaveProject, etc.)
-//      — i.e. drafts are 100% local; no endpoints are touched until the user submits
-
-import { useState, useCallback, useEffect, useRef } from 'react';
+// CreateProposal.tsx  — with Save Draft + Load/Resume Draft support + sidebar layout for Steps 2 & 3
+import { useState, useCallback, useEffect } from 'react';
 import {
   submitProgramProposal,
   fetchProjectList,
@@ -27,11 +20,8 @@ import type { ProgramFormData, ProjectFormData, ActivityFormData } from '@/types
 
 interface CreateProposalProps {
   onDirtyChange?: (isDirty: boolean) => void;
-  /** If set, the component will load and resume the draft with this id on mount */
   draftId?: string | null;
-  /** Called after final submission so the parent can navigate away */
   onSubmitSuccess?: () => void;
-  /** Called so the parent can navigate to the Drafts list */
   onGoToDrafts?: () => void;
 }
 
@@ -54,7 +44,6 @@ export default function CreateProposal({
   const [isDirty, setIsDirty] = useState(false);
   const [step, setStep] = useState(1);
 
-  // Draft tracking
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(initialDraftId ?? null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
@@ -78,7 +67,7 @@ export default function CreateProposal({
   const [activitySaving, setActivitySaving] = useState<Record<string, boolean>>({});
   const [loadingActivities, setLoadingActivities] = useState<Record<number, boolean>>({});
 
-  // ── Load draft on mount (if draftId provided) ─────────────────────────────
+  // ── Load draft on mount ───────────────────────────────────────────────────
   useEffect(() => {
     if (!initialDraftId) return;
     const record = draftDb.get(initialDraftId);
@@ -115,7 +104,7 @@ export default function CreateProposal({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
-  // ── Derived budget values ──────────────────────────────────────────────────
+  // ── Derived budget values ─────────────────────────────────────────────────
   const programBudgetTotal = parseFloat((programData as any).program_budget_total) || 0;
 
   const getUsedByOtherProjects = (excludeIndex: number): number =>
@@ -137,7 +126,7 @@ export default function CreateProposal({
     }, 0);
   };
 
-  // ── Save Draft helpers ─────────────────────────────────────────────────────
+  // ── Save Draft helpers ────────────────────────────────────────────────────
   const buildPayload = useCallback(() => ({
     programData,
     programChildId,
@@ -147,7 +136,6 @@ export default function CreateProposal({
     step,
   }), [programData, programChildId, projectForms, activityFormsByProject, activeProjectTab, step]);
 
-  /** Update the current draft (or create one if none exists yet) */
   const handleSaveDraft = useCallback(() => {
     setIsSavingDraft(true);
     try {
@@ -163,11 +151,9 @@ export default function CreateProposal({
     }
   }, [buildPayload, currentDraftId, markClean, showToast]);
 
-  /** Always create a brand-new draft entry, even if one already exists */
   const handleSaveAsNewDraft = useCallback(() => {
     setIsSavingDraft(true);
     try {
-      // Pass no existingId → draftDb.upsert generates a fresh UUID
       const id = draftDb.upsert(buildPayload());
       setCurrentDraftId(id);
       setDraftSavedAt(new Date());
@@ -180,7 +166,7 @@ export default function CreateProposal({
     }
   }, [buildPayload, markClean, showToast]);
 
-  // ── STEP 1: Save Program → GET project list ────────────────────────────────
+  // ── STEP 1 ────────────────────────────────────────────────────────────────
   const handleProgramNext = async () => {
     if (!programData.program_title.trim()) { showToast('Please enter a Program Title.', 'error'); return; }
     if (programData.projects.some((p) => !p.project_title.trim())) { showToast('Please fill in all Project Titles.', 'error'); return; }
@@ -209,7 +195,7 @@ export default function CreateProposal({
     }
   };
 
-  // ── STEP 2: Save individual project ───────────────────────────────────────
+  // ── STEP 2: Save project ──────────────────────────────────────────────────
   const handleSaveProject = async (projectIndex: number) => {
     const form = projectForms[projectIndex];
     if (!form) return;
@@ -236,7 +222,7 @@ export default function CreateProposal({
     }
   };
 
-  // ── STEP 2 → STEP 3 ────────────────────────────────────────────────────────
+  // ── STEP 2 → STEP 3 ───────────────────────────────────────────────────────
   const handleGoToActivities = async () => {
     const unsaved = projectForms.filter((p) => !p.saved);
     if (unsaved.length > 0) {
@@ -268,7 +254,7 @@ export default function CreateProposal({
     scrollToTop();
   };
 
-  // ── STEP 3: Save activity ──────────────────────────────────────────────────
+  // ── STEP 3: Save activity ─────────────────────────────────────────────────
   const handleSaveActivity = async (projectId: number, activityIdx: number) => {
     const forms = activityFormsByProject[projectId];
     const form = forms?.[activityIdx];
@@ -299,20 +285,17 @@ export default function CreateProposal({
     }
   };
 
-  // ── Submit all → delete draft → reset ─────────────────────────────────────
+  // ── Submit all ────────────────────────────────────────────────────────────
   const handleSubmitAll = () => {
     const allActivities = Object.values(activityFormsByProject).flat();
     const unsaved = allActivities.filter((a) => !a.saved);
     if (unsaved.length > 0) {
       showToast(`Please save all activities first. (${unsaved.length} unsaved)`, 'error'); return;
     }
-
-    // Delete the draft from local storage — it's been submitted to the API
     if (currentDraftId) {
       draftDb.delete(currentDraftId);
       setCurrentDraftId(null);
     }
-
     showToast('All proposals submitted successfully! 🎉');
     markClean();
     setProgramData(defaultProgramFormData());
@@ -344,10 +327,9 @@ export default function CreateProposal({
     Object.values(activityFormsByProject).flat().length > 0 &&
     Object.values(activityFormsByProject).flat().every((a) => a.saved);
 
-  // ── Shared Draft Action Bar ────────────────────────────────────────────────
+  // ── Draft Bar ─────────────────────────────────────────────────────────────
   const DraftBar = () => (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 bg-amber-50 border border-amber-200 rounded-2xl mb-2">
-      {/* Left — status */}
       <div className="flex items-center gap-2 text-sm text-amber-700 min-w-0">
         <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -363,18 +345,12 @@ export default function CreateProposal({
           <span className="text-xs text-amber-500 font-semibold shrink-0">(unsaved changes)</span>
         )}
       </div>
-
-      {/* Right — actions */}
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
         {onGoToDrafts && (
-          <button
-            onClick={onGoToDrafts}
-            className="text-xs font-semibold text-amber-700 hover:text-amber-900 hover:underline transition-colors px-1">
+          <button onClick={onGoToDrafts} className="text-xs font-semibold text-amber-700 hover:text-amber-900 hover:underline transition-colors px-1">
             View all drafts
           </button>
         )}
-
-        {/* Save as New Draft — always creates a fresh entry */}
         <button
           onClick={handleSaveAsNewDraft}
           disabled={isSavingDraft}
@@ -385,8 +361,6 @@ export default function CreateProposal({
           </svg>
           Save as New Draft
         </button>
-
-        {/* Update Draft — overwrites the current draft (or creates one if none) */}
         <button
           onClick={handleSaveDraft}
           disabled={isSavingDraft}
@@ -405,9 +379,241 @@ export default function CreateProposal({
     </div>
   );
 
+  // ── Step 2 Sidebar ────────────────────────────────────────────────────────
+  const ProjectSidebar = () => {
+    const totalBudgetUsed = projectForms.reduce((sum, pf) => sum + sumBudgetRows(pf.budget), 0);
+    const budgetRemaining = programBudgetTotal > 0 ? programBudgetTotal - totalBudgetUsed : null;
+    const savedCount = projectForms.filter((p) => p.saved).length;
+
+    return (
+      <aside className="w-64 shrink-0 sticky top-[6.5rem] self-start overflow-y-auto max-h-[calc(100vh-7.5rem)] pb-4 space-y-3">
+        {/* Project list */}
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Projects</p>
+              <span className="text-xs bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+                {savedCount}/{projectForms.length} saved
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              {projectForms.map((pf, i) => {
+                const isActive = activeProjectTab === i;
+                const pct = getProjectCompletion(pf);
+                const usedByOthers = getUsedByOtherProjects(i);
+                const isOver = programBudgetTotal > 0 && (usedByOthers + sumBudgetRows(pf.budget)) > programBudgetTotal;
+
+                return (
+                  <button
+                    key={pf.apiProjectId}
+                    onClick={() => setActiveProjectTab(i)}
+                    className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-150
+                      ${isActive
+                        ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+                        : 'bg-white border border-gray-100 text-gray-700 hover:border-emerald-200 hover:text-emerald-700'}`}>
+                    <span className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-black shrink-0
+                      ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 min-w-0 text-xs font-semibold break-words leading-tight">
+                      {pf.project_title || `Project ${i + 1}`}
+                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0
+                      ${isOver && !isActive ? 'text-red-600 bg-red-50' :
+                        pf.saved ? (isActive ? 'bg-white/20 text-white' : 'text-emerald-600 bg-emerald-50') :
+                        (isActive ? 'bg-white/20 text-white' : 'text-amber-600 bg-amber-50')}`}>
+                      {isOver ? '⚠' : pf.saved ? '✓' : `${pct}%`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-3 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                style={{ width: `${projectForms.length > 0 ? (savedCount / projectForms.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Budget summary */}
+          {programBudgetTotal > 0 && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Budget Overview</p>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Program total</span>
+                  <span className="font-semibold text-gray-800">
+                    {programBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Used so far</span>
+                  <span className="font-medium text-gray-700">
+                    {totalBudgetUsed.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                  </span>
+                </div>
+                <div className="h-px bg-gray-100 my-1" />
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Remaining</span>
+                  <span className={`font-bold ${(budgetRemaining ?? 0) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {(budgetRemaining ?? 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                  </span>
+                </div>
+              </div>
+              {/* Budget bar */}
+              <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${totalBudgetUsed > programBudgetTotal ? 'bg-red-500' : 'bg-emerald-500'}`}
+                  style={{ width: `${Math.min((totalBudgetUsed / programBudgetTotal) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+      </aside>
+    );
+  };
+
+  // ── Step 3 Sidebar ────────────────────────────────────────────────────────
+  const ActivitySidebar = () => {
+    const allActs = Object.values(activityFormsByProject).flat();
+    const savedCount = allActs.filter((a) => a.saved).length;
+
+    return (
+      <aside className="w-64 shrink-0 sticky top-[6.5rem] self-start overflow-y-auto max-h-[calc(100vh-7.5rem)] pb-4 space-y-3">
+        {/* Activity list grouped by project */}
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Activities</p>
+              <span className="text-xs bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+                {savedCount}/{allActs.length} saved
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {projectForms.map((pf) => {
+                const activities = activityFormsByProject[pf.apiProjectId] || [];
+                return (
+                  <div key={pf.apiProjectId}>
+                    {/* Project group label */}
+                    <div className="flex items-center gap-2 mb-1.5 px-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                      <p className="text-xs font-semibold text-gray-500 break-words leading-tight">
+                        {pf.project_title || `Project`}
+                      </p>
+                      {loadingActivities[pf.apiProjectId] && <Spinner />}
+                    </div>
+
+                    <div className="space-y-1">
+                      {activities.map((act, ai) => {
+                        const isActive = activeActivityKey?.projectId === pf.apiProjectId && activeActivityKey?.activityIdx === ai;
+                        const pct = getActivityCompletion(act);
+
+                        return (
+                          <button
+                            key={act.apiActivityId}
+                            onClick={() => setActiveActivityKey({ projectId: pf.apiProjectId, activityIdx: ai })}
+                            className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left transition-all duration-150
+                              ${isActive
+                                ? 'bg-orange-500 text-white shadow-sm shadow-orange-200'
+                                : 'bg-white border border-gray-100 text-gray-700 hover:border-orange-200 hover:text-orange-600'}`}>
+                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-black shrink-0
+                              ${isActive ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-500'}`}>
+                              {String.fromCharCode(65 + ai)}
+                            </span>
+                            <span className="flex-1 min-w-0 text-xs font-semibold break-words leading-tight">
+                              {act.activity_title || `Activity ${ai + 1}`}
+                            </span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0
+                              ${act.saved
+                                ? (isActive ? 'bg-white/20 text-white' : 'text-emerald-600 bg-emerald-50')
+                                : (isActive ? 'bg-white/20 text-white' : pct > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 bg-gray-100')}`}>
+                              {act.saved ? '✓' : pct > 0 ? `${pct}%` : '—'}
+                            </span>
+                          </button>
+                        );
+                      })}
+
+                      {activities.length === 0 && !loadingActivities[pf.apiProjectId] && (
+                        <p className="text-xs text-gray-400 italic px-3 py-1.5">No activities found.</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-3 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-orange-400 rounded-full transition-all duration-500"
+                style={{ width: `${allActs.length > 0 ? (savedCount / allActs.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Budget summary for selected activity's project */}
+          {activeActivityKey && (() => {
+            const { projectId, activityIdx } = activeActivityKey;
+            const projectBudgetTotal = getProjectBudgetTotal(projectId);
+            if (projectBudgetTotal <= 0) return null;
+            const usedByOthers = getUsedByOtherActivities(projectId, activityIdx);
+            const acts = activityFormsByProject[projectId] || [];
+            const currentAct = acts[activityIdx];
+            const currentAmount = currentAct ? sumBudgetRows(currentAct.budget) : 0;
+            const totalUsed = usedByOthers + currentAmount;
+            const remaining = projectBudgetTotal - totalUsed;
+            const projName = projectForms.find((p) => p.apiProjectId === projectId)?.project_title || '';
+
+            return (
+              <div className="bg-white border border-gray-200 rounded-2xl p-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Budget</p>
+                <p className="text-xs text-gray-400 mb-3 break-words leading-tight">{projName}</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Project total</span>
+                    <span className="font-semibold text-gray-800">
+                      {projectBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Other activities</span>
+                    <span className="text-gray-700">
+                      {usedByOthers.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">This activity</span>
+                    <span className="font-medium text-orange-600">
+                      {currentAmount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                    </span>
+                  </div>
+                  <div className="h-px bg-gray-100 my-1" />
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Remaining</span>
+                    <span className={`font-bold ${remaining < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {remaining.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${totalUsed > projectBudgetTotal ? 'bg-red-500' : 'bg-orange-400'}`}
+                    style={{ width: `${Math.min((totalUsed / projectBudgetTotal) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+      </aside>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-3">
@@ -438,12 +644,12 @@ export default function CreateProposal({
 
         <StepIndicator currentStep={step} />
 
-        {/* ── Draft action bar (shown on every step) ── */}
+        {/* Draft Bar */}
         <div className="mb-4">
           <DraftBar />
         </div>
 
-        {/* ══ STEP 1 ══════════════════════════════════════════════════════════ */}
+        {/* ══ STEP 1 — no sidebar ══════════════════════════════════════════════ */}
         {step === 1 && (
           <ProgramProposalForm
             data={programData}
@@ -453,70 +659,48 @@ export default function CreateProposal({
           />
         )}
 
-        {/* ══ STEP 2 ══════════════════════════════════════════════════════════ */}
+        {/* ══ STEP 2 — form + right sidebar ════════════════════════════════════ */}
         {step === 2 && (
-          <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Project Proposals</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Configure each project under{' '}
-                  <span className="font-semibold text-emerald-700">"{programData.program_title}"</span>
-                  {programBudgetTotal > 0 && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
-                      Program budget: {programBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {allProjectsSaved && <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">✓ All projects saved</span>}
-                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full font-medium">{projectForms.length} project{projectForms.length !== 1 ? 's' : ''}</span>
-              </div>
-            </div>
-
-            {loadingProjects ? (
-              <div className="flex items-center justify-center py-16 gap-3 text-emerald-600 font-semibold">
-                <Spinner />Loading projects from server...
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col gap-2.5 bg-gray-200/50 p-5 rounded-2xl">
-                  <h1 className="font-semibold text-base my-1 text-gray-700">Project list</h1>
-                  {projectForms.map((pf, i) => {
-                    const pct = getProjectCompletion(pf);
-                    const isActive = activeProjectTab === i;
-                    const usedByOthers = getUsedByOtherProjects(i);
-                    const isOver = programBudgetTotal > 0 && (usedByOthers + sumBudgetRows(pf.budget)) > programBudgetTotal;
-                    return (
-                      <button key={pf.apiProjectId} onClick={() => setActiveProjectTab(i)}
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-left
-                          ${isActive ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-300 hover:text-emerald-700'}`}>
-                        <div className="flex items-center gap-3">
-                          <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>{i + 1}</span>
-                          <span>{pf.project_title || `Project ${i + 1}`}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {isOver && !isActive && <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-medium">⚠ Over budget</span>}
-                          {pf.saved
-                            ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'}`}>✓ Saved</span>
-                            : !isActive && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">{pct}% filled</span>}
-                          <svg className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90 text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                        </div>
-                      </button>
-                    );
-                  })}
+          <div className="flex gap-5">
+            {/* Main content */}
+            <div className="flex-1 min-w-0 space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Project Proposals</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Configure each project under{' '}
+                    <span className="font-semibold text-emerald-700">"{programData.program_title}"</span>
+                  </p>
                 </div>
+                {allProjectsSaved && (
+                  <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">
+                    ✓ All projects saved
+                  </span>
+                )}
+              </div>
 
-                {projectForms[activeProjectTab] && (
-                  <div>
-                    <div className="flex items-center gap-4 mb-5 px-5 py-3 rounded-2xl border border-emerald-100 bg-emerald-100/60 backdrop-blur-sm">
-                      <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-semibold text-sm shadow-sm">{activeProjectTab + 1}</div>
+              {loadingProjects ? (
+                <div className="flex items-center justify-center py-16 gap-3 text-emerald-600 font-semibold">
+                  <Spinner />Loading projects from server...
+                </div>
+              ) : (
+                <>
+                  {/* Active project banner */}
+                  {projectForms[activeProjectTab] && (
+                    <div className="flex items-center gap-4 px-5 py-3 rounded-2xl border border-emerald-100 bg-emerald-100/60 backdrop-blur-sm">
+                      <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-semibold text-sm shadow-sm">
+                        {activeProjectTab + 1}
+                      </div>
                       <div className="flex flex-col leading-tight">
                         <span className="text-xs font-medium text-emerald-700 tracking-wide uppercase">Selected Project</span>
-                        <h3 className="text-base font-semibold text-gray-900">{projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}</h3>
+                        <h3 className="text-base font-semibold text-gray-900">
+                          {projectForms[activeProjectTab].project_title || `Project ${activeProjectTab + 1}`}
+                        </h3>
                       </div>
                     </div>
+                  )}
+
+                  {projectForms[activeProjectTab] && (
                     <ProjectProposalForm
                       data={projectForms[activeProjectTab]}
                       onChange={(newData) => { updateProjectForm(activeProjectTab, newData); markDirty(); }}
@@ -527,134 +711,118 @@ export default function CreateProposal({
                       programBudgetTotal={programBudgetTotal}
                       usedByOtherProjects={getUsedByOtherProjects(activeProjectTab)}
                     />
-                  </div>
-                )}
-              </>
-            )}
+                  )}
+                </>
+              )}
 
-            <div className="flex items-center justify-end pb-10">
-              <button onClick={handleGoToActivities} disabled={!allProjectsSaved}
-                title={!allProjectsSaved ? 'Save all projects before continuing' : ''}
-                className={`flex items-center gap-3 px-10 py-4 rounded-xl font-bold shadow-lg transition-all duration-200
-                  ${allProjectsSaved ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 hover:scale-[1.02]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                {loadingActivities && Object.values(loadingActivities).some(Boolean)
-                  ? <><Spinner />Loading Activities...</>
-                  : <>Continue to Activities <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>}
-              </button>
+              <div className="flex items-center justify-end pb-10">
+                <button
+                  onClick={handleGoToActivities}
+                  disabled={!allProjectsSaved}
+                  title={!allProjectsSaved ? 'Save all projects before continuing' : ''}
+                  className={`flex items-center gap-3 px-10 py-4 rounded-xl font-bold shadow-lg transition-all duration-200
+                    ${allProjectsSaved
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 hover:scale-[1.02]'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                  {loadingActivities && Object.values(loadingActivities).some(Boolean)
+                    ? <><Spinner />Loading Activities...</>
+                    : <>Continue to Activities <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>}
+                </button>
+              </div>
             </div>
+
+            {/* Right sidebar */}
+            <ProjectSidebar />
           </div>
         )}
 
-        {/* ══ STEP 3 ══════════════════════════════════════════════════════════ */}
+        {/* ══ STEP 3 — form + right sidebar ════════════════════════════════════ */}
         {step === 3 && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Activity Proposals</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Fill and save each activity individually
-                  {programBudgetTotal > 0 && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
-                      Program budget: {programBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
-                    </span>
-                  )}
-                </p>
+          <div className="flex gap-5">
+            {/* Main content */}
+            <div className="flex-1 min-w-0 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Activity Proposals</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Fill and save each activity individually
+                    {programBudgetTotal > 0 && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">
+                        Program budget: {programBudgetTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                {allActivitiesSaved && (
+                  <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">
+                    ✓ All activities saved
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                {allActivitiesSaved && <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full font-semibold">✓ All activities saved</span>}
-                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full font-medium">
-                  {Object.values(activityFormsByProject).flat().filter((a) => a.saved).length} / {Object.values(activityFormsByProject).flat().length} saved
-                </span>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-3">
-              {projectForms.map((pf) => {
-                const activities = activityFormsByProject[pf.apiProjectId] || [];
+              {/* Active activity form */}
+              {activeActivityKey && (() => {
+                const { projectId, activityIdx } = activeActivityKey;
+                const form = activityFormsByProject[projectId]?.[activityIdx];
+                const projName = projectForms.find((p) => p.apiProjectId === projectId)?.project_title || '';
+                const key = `${projectId}-${activityIdx}`;
+                if (!form) return null;
                 return (
-                  <div key={pf.apiProjectId} className="space-y-1.5 px-2 py-4 bg-gray-100 rounded-2xl border-2">
-                    <div className="flex items-center gap-2 px-1">
-                      <p className="text-lg font-medium">Project Title: </p>
-                      <h4 className="font-bold text-gray-800 text-lg">{pf.project_title}</h4>
-                      <div className="flex-1 h-px bg-gray-100" />
-                      {loadingActivities[pf.apiProjectId] && <span className="text-xs text-gray-400 flex items-center gap-1"><Spinner />Loading...</span>}
+                  <div>
+                    <div className="flex items-center gap-3 mb-5 px-1">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-md">
+                        {String.fromCharCode(65 + activityIdx)}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{form.activity_title || `Activity ${activityIdx + 1}`}</h3>
+                        <p className="text-xs text-gray-500">Under: {projName}</p>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1 pl-7">
-                      {activities.map((act, ai) => {
-                        const isActive = activeActivityKey?.projectId === pf.apiProjectId && activeActivityKey?.activityIdx === ai;
-                        const pct = getActivityCompletion(act);
-                        const usedByOthers = getUsedByOtherActivities(pf.apiProjectId, ai);
-                        const isOver = programBudgetTotal > 0 && (usedByOthers + sumBudgetRows(act.budget)) > programBudgetTotal;
-                        return (
-                          <button key={act.apiActivityId} onClick={() => setActiveActivityKey({ projectId: pf.apiProjectId, activityIdx: ai })}
-                            className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-left
-                              ${isActive ? 'bg-orange-500 text-white shadow-md shadow-orange-200' : 'bg-white border border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600'}`}>
-                            <div className="flex items-center gap-3">
-                              <span className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-black ${isActive ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-600'}`}>{String.fromCharCode(65 + ai)}</span>
-                              <span>{act.activity_title || `Activity ${ai + 1}`}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'text-gray-400 bg-gray-100'}`}>#{act.apiActivityId}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {isOver && !isActive && <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-medium">⚠ Over budget</span>}
-                              {act.saved
-                                ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'}`}>✓ Saved</span>
-                                : !isActive && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">{pct > 0 ? `${pct}%` : 'Not started'}</span>}
-                              <svg className={`w-4 h-4 transition-transform ${isActive ? 'rotate-90 text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                            </div>
-                          </button>
-                        );
-                      })}
-                      {activities.length === 0 && !loadingActivities[pf.apiProjectId] && (
-                        <p className="text-xs text-gray-400 italic px-4 py-2">No activities found for this project.</p>
-                      )}
-                    </div>
+                    <ActivityProposalForm
+                      data={form}
+                      onChange={(newData) => { updateActivityForm(projectId, activityIdx, newData); markDirty(); }}
+                      onSave={() => handleSaveActivity(projectId, activityIdx)}
+                      isSaving={!!activitySaving[key]}
+                      isSaved={form.saved}
+                      programBudgetTotal={getProjectBudgetTotal(projectId)}
+                      usedByOtherActivities={getUsedByOtherActivities(projectId, activityIdx)}
+                    />
                   </div>
                 );
-              })}
-            </div>
+              })()}
 
-            {activeActivityKey && (() => {
-              const { projectId, activityIdx } = activeActivityKey;
-              const form = activityFormsByProject[projectId]?.[activityIdx];
-              const projName = projectForms.find((p) => p.apiProjectId === projectId)?.project_title || '';
-              const key = `${projectId}-${activityIdx}`;
-              if (!form) return null;
-              return (
-                <div>
-                  <div className="flex items-center gap-3 mb-5 px-1">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-md">{String.fromCharCode(65 + activityIdx)}</div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">{form.activity_title || `Activity ${activityIdx + 1}`}</h3>
-                      <p className="text-xs text-gray-500">Under: {projName}</p>
-                    </div>
-                  </div>
-                  <ActivityProposalForm
-                    data={form}
-                    onChange={(newData) => { updateActivityForm(projectId, activityIdx, newData); markDirty(); }}
-                    onSave={() => handleSaveActivity(projectId, activityIdx)}
-                    isSaving={!!activitySaving[key]}
-                    isSaved={form.saved}
-                    programBudgetTotal={getProjectBudgetTotal(projectId)}
-                    usedByOtherActivities={getUsedByOtherActivities(projectId, activityIdx)}
-                  />
+              {!activeActivityKey && (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
+                  <svg className="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="text-sm font-medium">Select an activity from the sidebar to begin</p>
                 </div>
-              );
-            })()}
+              )}
 
-            <div className="flex items-center justify-between py-4">
-              <button onClick={() => { setStep(2); scrollToTop(); }}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold bg-white border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl transition-all">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
-                Back to Projects
-              </button>
-              <button onClick={handleSubmitAll} disabled={!allActivitiesSaved}
-                title={!allActivitiesSaved ? 'Save all activities before submitting' : ''}
-                className={`flex items-center gap-3 px-10 py-4 rounded-xl font-bold shadow-lg transition-all duration-200
-                  ${allActivitiesSaved ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 hover:scale-[1.02]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Submit Proposal
-              </button>
+              <div className="flex items-center justify-between py-4">
+                <button
+                  onClick={() => { setStep(2); scrollToTop(); }}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold bg-white border border-gray-200 hover:border-gray-300 px-6 py-3 rounded-xl transition-all">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
+                  Back to Projects
+                </button>
+                <button
+                  onClick={handleSubmitAll}
+                  disabled={!allActivitiesSaved}
+                  title={!allActivitiesSaved ? 'Save all activities before submitting' : ''}
+                  className={`flex items-center gap-3 px-10 py-4 rounded-xl font-bold shadow-lg transition-all duration-200
+                    ${allActivitiesSaved
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-500/30 hover:scale-[1.02]'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Submit Proposal
+                </button>
+              </div>
             </div>
+
+            {/* Right sidebar */}
+            <ActivitySidebar />
           </div>
         )}
       </div>
