@@ -3,6 +3,7 @@ import { Search, Grid, Table, FileText } from "lucide-react";
 import {
   getProposals,
   getAllCoverPage,
+  deleteCoverPage,
   type ProgramProposal,
   type ProposalCoverPage,
 } from "@/api/admin-api";
@@ -14,6 +15,7 @@ import EditCoverPageModal from "@/components/admin/EditCoverPageModal";
 
 import CoverPageTableView from "@/components/admin/CreateCoverPage/CreateCoverTableView";
 import CoverPageCardView from "@/components/admin/CreateCoverPage/CreateCoverCardView";
+import DeleteCoverPageConfirmationModal from "@/components/admin/CreateCoverPage/DeleteCoverPageModalConfirmation";
 import EmptyState from "@/components/admin/EmptyState";
 import AdminPagination from "@/components/admin/Pagination";
 
@@ -36,6 +38,10 @@ const CreateCoverPage = () => {
   const [editCoverId, setEditCoverId] = useState<number | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  const [deleteCoverId, setDeleteCoverId] = useState<number | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const itemsPerPage = viewMode === "table" ? 5 : 6;
 
   // ✅ Fetch function (SINGLE SOURCE OF TRUTH)
@@ -53,6 +59,25 @@ const CreateCoverPage = () => {
     } finally {
       setLoading(false);
       setProgress(100);
+    }
+  };
+
+  const handleDeleteCoverPage = async () => {
+    if (!deleteCoverId) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteCoverPage(deleteCoverId);
+
+      // Close modal
+      setIsDeleteOpen(false);
+
+      // Refresh data (important)
+      await fetchDocs();
+    } catch (error) {
+      console.error("Delete failed:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -168,6 +193,10 @@ const CreateCoverPage = () => {
                     setSelectedProposal(doc);
                     setIsEditOpen(true);
                   }}
+                  onOpenDelete={(coverId) => {
+                    setDeleteCoverId(coverId);
+                    setIsDeleteOpen(true);
+                  }}
                 />
               </div>
             ) : (
@@ -192,6 +221,10 @@ const CreateCoverPage = () => {
                     setEditCoverId(coverId);
                     setSelectedProposal(doc);
                     setIsEditOpen(true);
+                  }}
+                  onOpenDelete={(coverId) => {
+                    setDeleteCoverId(coverId);
+                    setIsDeleteOpen(true);
                   }}
                 />
               </div>
@@ -239,6 +272,13 @@ const CreateCoverPage = () => {
         coverPageId={editCoverId}
         proposalId={selectedProposal?.id || null}
         proposalTitle={selectedProposal?.title}
+      />
+
+      <DeleteCoverPageConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDeleteCoverPage}
+        isLoading={isDeleting}
       />
     </>
   );
