@@ -40,7 +40,7 @@ class ProposalReviewList(APIView):
 
             Notification.objects.create(
                 user=proposal.user,
-                message=f"Mr/Mrs. {reviewer.reviewer.profile.name} has submitted a review for your proposal titled '{proposal.title}'."
+                message=f"{reviewer.reviewer.profile.name} has submitted a review for your proposal titled '{proposal.title}'."
             )
             return Response(
                 ProposalReviewSerializer(review).data,
@@ -126,7 +126,7 @@ class ProposalReviewUpdate(APIView):
             
             Notification.objects.create(
                 user=proposal.user,
-                message=f"Mr/Mrs. {reviewer.reviewer.profile.name} has submitted a review for your proposal titled '{proposal.title}'."
+                message=f"{reviewer.reviewer.profile.name} has submitted a review for your proposal titled '{proposal.title}'."
             )
 
             return Response(serializer.data, status=status.HTTP_200_OK)
