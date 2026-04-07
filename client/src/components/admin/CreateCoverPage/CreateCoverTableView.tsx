@@ -1,4 +1,4 @@
-import { FileText, Eye, FilePlus, CheckCircle2, FileX, Pencil } from "lucide-react"; // Nag-import ng Pencil icon
+import { FileText, Eye, FilePlus, CheckCircle2, FileX, Pencil, Trash2 } from "lucide-react";
 import { type ProgramProposal, type ProposalCoverPage } from "@/api/admin-api";
 import { getStatusStyle, type ProposalStatus } from "@/utils/statusStyles";
 
@@ -7,7 +7,8 @@ interface CoverPageTableViewProps {
     coverPages: ProposalCoverPage[];
     onOpenCreate: (doc: ProgramProposal) => void;
     onOpenView: (coverId: number) => void;
-    onOpenEdit: (coverId: number, doc: ProgramProposal) => void; // Idinagdag ito
+    onOpenEdit: (coverId: number, doc: ProgramProposal) => void;
+    onOpenDelete: (coverId: number) => void;
 }
 
 const CoverPageTableView = ({
@@ -15,7 +16,8 @@ const CoverPageTableView = ({
     coverPages,
     onOpenCreate,
     onOpenView,
-    onOpenEdit, // Idinagdag ito
+    onOpenEdit,
+    onOpenDelete
 }: CoverPageTableViewProps) => {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -100,31 +102,40 @@ const CoverPageTableView = ({
                                     <div className="flex items-center justify-center gap-2 flex-nowrap">
                                         {hasCover ? (
                                             <>
-                                                {/* View Button */}
+                                                {/* View */}
                                                 <button
+                                                    title="View"
                                                     onClick={() => onOpenView(coverRecord.id)}
-                                                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-600 px-3 py-2 rounded-lg text-xs font-semibold hover:from-blue-100 hover:to-indigo-100 transition-all shadow-sm transform hover:-translate-y-0.5"
+                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all shadow-sm hover:scale-105 active:scale-95"
                                                 >
-                                                    <Eye className="w-3.5 h-3.5" />
-                                                    View
+                                                    <Eye className="w-4 h-4" />
                                                 </button>
 
-                                                {/* Edit Button — Idinagdag para sa Edit functionality */}
+                                                {/* Edit */}
                                                 <button
+                                                    title="Edit"
                                                     onClick={() => onOpenEdit(coverRecord.id, doc)}
-                                                    className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 px-3 py-2 rounded-lg text-xs font-semibold hover:from-amber-100 hover:to-orange-100 transition-all shadow-sm transform hover:-translate-y-0.5 border border-amber-100"
+                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-all shadow-sm hover:scale-105 active:scale-95"
                                                 >
-                                                    <Pencil className="w-3.5 h-3.5" />
-                                                    Edit
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+
+                                                {/* Delete */}
+                                                <button
+                                                    title="Delete"
+                                                    onClick={() => onOpenDelete(coverRecord.id)}
+                                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all shadow-sm hover:scale-105 active:scale-95"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </>
                                         ) : (
                                             /* Create Button */
                                             <button
                                                 onClick={() => onOpenCreate(doc)}
-                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 hover:from-emerald-500 hover:to-green-500 hover:text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all shadow-sm transform hover:-translate-y-0.5"
+                                                className="inline-flex items-center gap-2 bg-emerald-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
                                             >
-                                                <FilePlus className="w-3.5 h-3.5" />
+                                                <FilePlus className="w-4 h-4" />
                                                 Create Cover
                                             </button>
                                         )}
