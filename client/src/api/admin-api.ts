@@ -346,7 +346,7 @@ export const unassignReviewer = async (proposalId: number): Promise<void> => {
 
 // Create Cover Page
 export const createCoverPage = async (
-  payload: CreateCoverPagePayload,
+payload: CreateCoverPagePayload
 ): Promise<CreateCoverPageResponse> => {
   const response = await fetch(`${API_URL}/proposal-cover/`, {
     method: "POST",
@@ -412,6 +412,20 @@ export const updateCoverPage = async (
   }
 
   return resJson;
+};
+
+
+// Delete Cover Page
+export const deleteCoverPage = async (coverPageId: number): Promise<void> => {
+  const response = await fetch(`${API_URL}/proposal-cover/${coverPageId}/`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to delete cover page");
+  }
 };
 
 // Get All Accounts (Manage Account)
