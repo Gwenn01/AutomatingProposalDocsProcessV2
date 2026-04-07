@@ -64,7 +64,7 @@ class ActivityProposalDetail(APIView):
         if serializer.is_valid():
             serializer.save()
             NotificationService.admin_notifications(
-                f"New Activity proposal submitted by Mr/Mrs.{request.user.profile.name} with title '{serializer.data.get('activity_title')}'."
+                f"New Activity proposal submitted by{request.user.profile.name} with title '{serializer.data.get('activity_title')}'."
             )
             return Response({"message": "Activity proposal updated successfully",  
                              "data": serializer.data}, status=status.HTTP_200_OK
@@ -104,7 +104,7 @@ class UpdateActivitySaveHistoryView(APIView):
             activity_data = serializer.save()
             # admin notification
             NotificationService.admin_notifications(
-                f"Activity proposal created by {request.user.username}"
+                f"The activity proposal titled '{serializer.data.get('activity_title')}' has been updated by {request.user.profile.name} and saved to history."
             )
             # notification for reviwer
             # save notification for every reviewer that this proposal is already revised

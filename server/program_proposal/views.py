@@ -51,7 +51,7 @@ class ProgramProposalList(APIView):
             serializer.save()
             # add notification to admin
             NotificationService.admin_notifications(
-                f"New program proposal submitted by Mr/Mrs.{request.user.profile.name} with title '{serializer.data.get('program_title')}'."
+                f"New program proposal submitted by{request.user.profile.name} with title '{serializer.data.get('program_title')}'."
             )
             return Response(
                 {
@@ -93,7 +93,10 @@ class ProgramProposalDetail(APIView):
         
         if serializer.is_valid():
             program_data = serializer.save()
-            
+             # notification for admin
+            NotificationService.admin_notifications(
+                f"The program proposal titled '{serializer.data.get('program_title')}' has been updated by {request.user.profile.name} and saved to history."
+            )
             # save notification for every reviewer that this proposal is already revised
             for r in proposal_reviewer:
                 Notification.objects.create(
