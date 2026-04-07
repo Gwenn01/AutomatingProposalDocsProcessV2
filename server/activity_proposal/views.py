@@ -104,7 +104,7 @@ class UpdateActivitySaveHistoryView(APIView):
             activity_data = serializer.save()
             # admin notification
             NotificationService.admin_notifications(
-                f"Activity proposal created by {request.user.username}"
+                f"The activity proposal titled '{serializer.data.get('activity_title')}' has been updated by Mr/Mrs. {request.user.profile.name} and saved to history."
             )
             # notification for reviwer
             # save notification for every reviewer that this proposal is already revised

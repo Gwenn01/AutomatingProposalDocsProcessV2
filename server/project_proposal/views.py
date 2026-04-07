@@ -118,7 +118,7 @@ class UpdateProjectSaveHistoryView(APIView):
             project_data = serializer.save()
             # notification for admin
             NotificationService.admin_notifications(
-                f"Project proposal created by {request.user.username}"
+                f"The project proposal titled '{serializer.data.get('project_title')}' has been updated by Mr/Mrs. {request.user.profile.name} and saved to history."
             )
             
             # notification for reviewer
