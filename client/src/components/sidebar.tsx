@@ -9,6 +9,7 @@ import {
   UserCheck,
   LogOut,
   Book,
+  ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { extensionLogo } from "../assets";
@@ -17,12 +18,12 @@ import { logout } from "../utils/auth";
 import { useToast } from "@/context/toast";
 import type { ActiveMenu } from "@/pages/Home";
 
-// Type definitions
 type Role = string;
 
 interface MenuItem {
   label: ActiveMenu;
   icon: LucideIcon;
+  badge?: number;
 }
 
 interface User {
@@ -83,88 +84,161 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
       {/* Sidebar */}
       <div
-        className={`fixed md:static top-0 left-0 h-full z-40 w-72
-        bg-gradient-to-b from-[#0a8f3c] to-[#056b2b]
-        shadow-2xl transform transition-transform duration-300
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-        md:translate-x-0 flex flex-col`}
+        className={`
+          fixed md:static top-0 left-0 h-full z-40 w-[268px]
+          flex flex-col
+          transform transition-transform duration-300
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+        style={{
+          background: "linear-gradient(160deg, #0a8f3c 0%, #056b2b 60%, #044d1f 100%)",
+        }}
       >
+        {/* Decorative circles */}
+        <div
+          className="pointer-events-none absolute -top-14 -right-14 w-52 h-52 rounded-full"
+          style={{ background: "rgba(255,255,255,0.05)" }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-16 -left-20 w-56 h-56 rounded-full"
+          style={{ background: "rgba(255,255,255,0.04)" }}
+        />
+
         {/* Brand */}
-        <div className="relative p-6 flex items-center gap-4 overflow-hidden border-b-[1px] border-gray-300">
-          {/* Wavy Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-800 via-green-700 to-green-900 opacity-90 " />
-
-          {/* Wave Overlay */}
-          <svg
-            className="absolute bottom-0 left-0 w-full h-16"
-            viewBox="0 0 1440 320"
-            preserveAspectRatio="none"
+        <div
+          className="relative z-10 flex items-center gap-3 px-5 py-5"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white"
+            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
           >
-            <path
-              fill="rgba(255,255,255,0.15)"
-              d="M0,192L60,170.7C120,149,240,107,360,112C480,117,600,171,720,186.7C840,203,960,181,1080,160C1200,139,1320,117,1380,106.7L1440,96L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z"
+            <img
+              src={extensionLogo}
+              alt="logo"
+              className="w-full h-full object-contain"
             />
-          </svg>
-
-          {/* Content */}
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="bg-white p-1 rounded-full w-20 h-16 shadow-lg ring-2 ring-white/40">
-              <img
-                src={extensionLogo}
-                alt="logo"
-                className="w-full h-full object-contain rounded-full"
-              />
-            </div>
-
-            <div>
-              <h1 className="text-white font-bold text-base texce tracking-wide">
-                Extension Services Office
-              </h1>
-              <p className="text-white/80 text-xs capitalize">{role} Panel</p>
-            </div>
+          </div>
+          <div>
+            <h1 className="text-white font-medium text-[13px] leading-snug">
+              Extension Services Office
+            </h1>
+            <p
+              className="text-[11px] mt-0.5 uppercase tracking-wider capitalize"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
+              {role} Panel
+            </p>
           </div>
         </div>
 
-        {/* Menu */}
-        <ul className="flex-1 px-4 mt-8 space-y-3">
-          {menuItems.map(({ label, icon: Icon }) => (
-            <li
-              key={label}
-              onClick={() => {
-                setActive(label);
-                toggleSidebar?.();
-              }}
-              className={`group relative flex items-center gap-4 px-6 py-3 rounded-xl cursor-pointer
-                transition-all duration-300 overflow-hidden
-                ${active === label
-                  ? "bg-white text-green-700 shadow-lg"
-                  : "text-white/80 hover:bg-white/10"
-                }`}
-            >
-              {/* Active Indicator */}
-              {active === label && (
-                <span className="absolute left-0 top-0 h-full w-1 bg-green-500 rounded-r" />
-              )}
+        {/* Section Label */}
+        <p
+          className="relative z-10 px-5 pt-5 pb-2 text-[10px] font-medium uppercase tracking-widest"
+          style={{ color: "rgba(255,255,255,0.4)" }}
+        >
+          Main Menu
+        </p>
 
-              <Icon
-                className={`w-5 h-5 transition-transform duration-300 
-                group-hover:scale-110`}
-              />
-              <span className="text-sm font-semibold tracking-wide">
-                {label}
-              </span>
-            </li>
-          ))}
+        {/* Menu Items */}
+        <ul className="relative z-10 flex-1 px-3 space-y-0.5 overflow-y-auto">
+          {menuItems.map(({ label, icon: Icon, badge }) => {
+            const isActive = active === label;
+            return (
+              <li
+                key={label}
+                onClick={() => {
+                  setActive(label);
+                  toggleSidebar?.();
+                }}
+                className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 group"
+                style={{
+                  color: isActive ? "white" : "rgba(255,255,255,0.65)",
+                  background: isActive ? "rgba(255,255,255,0.15)" : "transparent",
+                  backdropFilter: isActive ? "blur(4px)" : undefined,
+                  fontWeight: isActive ? 500 : 400,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive)
+                    (e.currentTarget as HTMLElement).style.background =
+                      "rgba(255,255,255,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive)
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                }}
+              >
+                {/* Active bar */}
+                {isActive && (
+                  <span
+                    className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-r-full"
+                    style={{ background: "#5effa0" }}
+                  />
+                )}
+
+                {/* Icon container */}
+                <span
+                  className="w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                  style={{
+                    background: isActive
+                      ? "rgba(94,255,160,0.18)"
+                      : "rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <Icon className="w-[15px] h-[15px]" />
+                </span>
+
+                <span className="text-[13px] flex-1">{label}</span>
+
+                {/* Optional badge */}
+                {badge && (
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: "#5effa0", color: "#044d1f" }}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
 
-        {/* User Info + Logout */}
-        <div className="px-4 pb-6 space-y-4">
-          {/* User Profile Card */}
+        {/* Divider */}
+        <div
+          className="relative z-10 mx-5 my-2"
+          style={{ height: "1px", background: "rgba(255,255,255,0.08)" }}
+        />
+
+        {/* Bottom: User + Logout */}
+        <div className="relative z-10 px-3 pb-4 space-y-2">
+          {/* User Card */}
           {user && (
-            <div className="flex items-center space-x-3 bg-white p-2 rounded-full shadow-sm border border-gray-200">
-              <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] cursor-pointer transition-all duration-200"
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <div
+                className="w-[34px] h-[34px] rounded-full flex items-center justify-center flex-shrink-0 text-[13px] font-semibold overflow-hidden"
+                style={{
+                  background: "rgba(94,255,160,0.2)",
+                  color: "#5effa0",
+                }}
+              >
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -172,107 +246,107 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="text-blue-600 font-bold">
-                    {user.fullname?.charAt(0) || "U"}
-                  </div>
+                  user.fullname?.charAt(0)?.toUpperCase() || "U"
                 )}
               </div>
-
-              <div className="pr-2 min-w-0">
-                <div className="font-semibold text-gray-700 text-sm truncate">
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-[13px] font-medium truncate leading-none mb-0.5">
                   {user.fullname}
-                </div>
-                <div className="text-xs text-gray-500 capitalize">
+                </p>
+                <p
+                  className="text-[11px] capitalize"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                >
                   {user.role}
-                </div>
+                </p>
               </div>
+              <ChevronRight
+                className="w-3.5 h-3.5 flex-shrink-0"
+                style={{ color: "rgba(255,255,255,0.35)" }}
+              />
             </div>
           )}
 
           {/* Logout Button */}
           <button
             onClick={() => setShowLogoutModal(true)}
-            className="w-full flex items-center justify-center gap-4 px-6 py-3 rounded-xl
-            text-white/90 hover:bg-white hover:text-primaryGreen transition-all duration-300
-            hover:translate-x-1"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200"
+            style={{
+              background: "rgba(239,68,68,0.12)",
+              border: "1px solid rgba(239,68,68,0.2)",
+              color: "rgba(255,120,120,0.9)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                "rgba(239,68,68,0.22)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background =
+                "rgba(239,68,68,0.12)";
+            }}
           >
-            <LogOut className="w-5 h-5" />
-            <span className="text-xs font-semibold">Logout</span>
+            <LogOut className="w-[15px] h-[15px]" />
+            <span>Sign out</span>
           </button>
         </div>
       </div>
 
-      {/* ================= LOGOUT MODAL ================= */}
+      {/* ===== LOGOUT MODAL ===== */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-md">
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
+        >
           <div
-            className="
-        relative w-[380px] rounded-2xl bg-white p-8
-        shadow-[0_20px_50px_rgba(0,0,0,0.25)]
-        ring-1 ring-black/5
-        animate-[scaleIn_0.35s_ease-out]
-      "
+            className="relative w-[360px] rounded-2xl bg-white p-8"
+            style={{
+              boxShadow: "0 24px 60px rgba(0,0,0,0.2)",
+              animation: "sidebarScaleIn 0.25s ease-out",
+            }}
           >
             {/* Icon */}
-            <div className="mb-5 flex justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
-                <LogOut className="h-7 w-7 text-red-500" />
+            <div className="flex justify-center mb-5">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ background: "#fef2f2" }}
+              >
+                <LogOut className="w-6 h-6 text-red-500" />
               </div>
             </div>
 
-            {/* Title */}
-            <h2 className="text-center text-xl font-semibold text-gray-900">
-              Confirm Logout
+            <h2 className="text-center text-[18px] font-medium text-gray-900">
+              Sign out?
             </h2>
-
-            {/* Description */}
-            <p className="mt-2 text-center text-sm text-gray-500">
-              You will be signed out of your account. This action cannot be
-              undone.
+            <p className="mt-2 text-center text-sm text-gray-500 leading-relaxed">
+              You'll be signed out of your account and returned to the login screen.
             </p>
 
-            {/* Actions */}
-            <div className="mt-8 flex gap-3">
+            <div className="mt-7 flex gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="
-            flex-1 rounded-xl border border-gray-200
-            px-4 py-2.5 text-sm font-medium text-gray-700
-            hover:bg-gray-100 transition
-          "
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
-
               <button
                 onClick={handleLogout}
-                className="
-            flex-1 rounded-xl
-            bg-gradient-to-r from-red-500 to-red-600
-            px-4 py-2.5 text-sm font-medium text-white
-            hover:from-red-600 hover:to-red-700
-            shadow-lg shadow-red-500/30
-            transition
-          "
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white transition"
+                style={{
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  boxShadow: "0 4px 14px rgba(239,68,68,0.35)",
+                }}
               >
-                Logout
+                Sign out
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Animation */}
       <style>{`
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+        @keyframes sidebarScaleIn {
+          from { opacity: 0; transform: scale(0.93) translateY(8px); }
+          to   { opacity: 1; transform: scale(1)   translateY(0);    }
         }
       `}</style>
     </>
