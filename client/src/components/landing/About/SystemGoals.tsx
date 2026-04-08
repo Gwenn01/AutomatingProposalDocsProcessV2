@@ -18,7 +18,7 @@ const SystemGoals: React.FC = () => {
   ];
 
   return (
-    <section className="relative py-24 bg-gradient-to-b from-white to-emerald-50 overflow-hidden">
+    <section className="relative py-24 bg-[#fafafa] overflow-hidden">
       {/* subtle glass background */}
       <div className="absolute inset-0 backdrop-blur-3xl opacity-30 pointer-events-none" />
 
