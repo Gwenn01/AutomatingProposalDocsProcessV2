@@ -66,27 +66,6 @@ const ProcessSection: React.FC = () => {
       className="relative py-20 lg:py-28 bg-[#fafafa] overflow-hidden"
       onMouseMove={handleMouseMove}
     >
-      {/* Subtle Apple Ambient Light */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute w-[600px] h-[600px] bg-emerald-200/20 blur-[160px] rounded-full"
-          style={{
-            transform: `translate(${mousePos.x}px, ${mousePos.y}px)`,
-            transition: "transform 0.2s ease-out",
-            top: -200,
-            left: -200,
-          }}
-        />
-        <div
-          className="absolute w-[500px] h-[500px] bg-blue-200/20 blur-[160px] rounded-full"
-          style={{
-            transform: `translate(${mousePos.x * -1}px, ${mousePos.y * -1}px)`,
-            transition: "transform 0.2s ease-out",
-            bottom: -200,
-            right: -200,
-          }}
-        />
-      </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Header */}
