@@ -9,8 +9,10 @@ import {
   RefreshCw,
   XCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ProcessSection: React.FC = () => {
+  const navigate = useNavigate();
   const steps = [
     {
       id: "01",
@@ -148,7 +150,9 @@ const ProcessSection: React.FC = () => {
 
         {/* CTA */}
         <div className="mt-32 flex flex-col items-center gap-6">
-          <button className="group relative px-10 py-4 rounded-3xl 
+          <button
+            onClick={() => navigate("/guidelines")}
+            className="group relative px-10 py-4 rounded-3xl 
         bg-white/70 backdrop-blur-xl 
         border border-white/50 
         shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)]
