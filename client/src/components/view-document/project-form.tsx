@@ -1,10 +1,17 @@
-import { arrVal, NA, QUARTERS, SIX_PS_LABELS, val } from "@/constants";
+import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
 import { formatDate } from "@/utils/dateFormat";
 import type { BudgetItem, WorkplanItem } from "@/types/reviewer-comment-types";
 import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
+import { useEffect, useRef } from "react";
 
 export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: string }> = ({ projectData, programTitle }) => {
+
+  const topRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [projectData]); // fires whenever proposalData changes
   
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
 
@@ -12,7 +19,9 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
   (projectData.workplan || []).forEach(({ month, activity }: WorkplanItem) => { workplanMap[month] = activity; });
 
   return (
-    <section className="max-w-5xl mx-auto py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
+    <section 
+      ref={topRef}
+      className="max-w-5xl mx-auto py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>

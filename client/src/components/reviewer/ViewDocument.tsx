@@ -7,7 +7,7 @@ import {
   fetchProjectProposalDetail,
   fetchActivityProposalDetail,
 } from "@/api/reviewer-api";
-import FormSkeleton from "../skeletons/FormSkeleton";
+import FormSkeleton from "../ui/FormSkeleton";
 import type { ApiActivity, ApiActivityListResponse, ApiProject, ApiProjectListResponse } from "@/types/reviewer-types";
 
 // ================= TYPE DEFINITIONS =================

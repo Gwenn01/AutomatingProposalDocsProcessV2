@@ -15,7 +15,7 @@ import {
   fetchProjectProposalDetail,
   fetchActivityProposalDetail,
 } from "@/api/implementor-api";
-import FormSkeleton from "@/components/skeletons/FormSkeleton";
+import FormSkeleton from "@/components/ui/FormSkeleton";
 import { exportElementToPdf } from "@/utils/exportToPdf";
 
 import { ProgramFormDocument } from "../view-document/program-form";

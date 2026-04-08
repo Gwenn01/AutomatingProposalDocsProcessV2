@@ -7,6 +7,7 @@ import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
 import { HistoryReviewBadge } from "./HistoryReviewBadge";
 import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
+import { useEffect } from "react";
 
 /**
  * Lock ALL inputs only when at least one feedback field is an empty string "".
@@ -132,8 +133,15 @@ export const ProjectForm: React.FC<{
   showCommentInputs: boolean;
   existingReview?: any | null;
   reviewLoading?: boolean;
-}> = ({ projectData, programTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs, existingReview, reviewLoading = false }) => {
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+}> = ({ projectData, programTitle, comments, onCommentChange, alreadyReviewed, showCommentInputs, existingReview, reviewLoading = false, scrollContainerRef }) => {
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
+
+    useEffect(() => {
+      if (scrollContainerRef?.current) {
+        scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+      }
+    }, [projectData]);
 
   // Lock all inputs only when any field is exactly ""
   const allLocked = !showCommentInputs ? false : shouldLockAll(existingReview);

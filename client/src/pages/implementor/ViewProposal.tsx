@@ -5,7 +5,7 @@ import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import NotificationBell from "@/components/NotificationBell";
 import ViewReviewedDocuments from "@/components/implementor/view-proposal/view-reviewed-document";
 import { useProposals, type Document, type ViewMode } from "@/hooks/useViewProposal";
-import GridSkeleton from "@/components/skeletons/GridSkeleton";
+import GridSkeleton from "@/components/ui/GridSkeleton";
 
 const ViewProposal: React.FC = () => {
   const [viewMode, setViewMode]                   = useState<ViewMode>("grid");

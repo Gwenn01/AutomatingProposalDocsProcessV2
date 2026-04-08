@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, ChevronRight, FileText, FolderOpen, Activity } from "lucide-react";
 import { getStatusStyle } from "@/utils/statusStyles";
-import FormSkeleton from "@/components/skeletons/FormSkeleton";
+import FormSkeleton from "@/components/ui/FormSkeleton";
 
 import {
   fetchActivityList,

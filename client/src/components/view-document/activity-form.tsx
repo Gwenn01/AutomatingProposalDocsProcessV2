@@ -5,14 +5,21 @@ import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
 import { formatDate } from "@/utils/dateFormat";
 import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
 import type { BudgetItem } from "@/types/reviewer-comment-types";
+import { useEffect, useRef } from "react";
 
 export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: string; projectTitle: string }> = ({ activityData, programTitle, projectTitle }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
-  console.log("Activity Data", activityData)
+  const topRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [activityData]); // fires whenever proposalData changes
 
   return (
-    <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed">
+    <section 
+      ref={topRef}
+      className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>

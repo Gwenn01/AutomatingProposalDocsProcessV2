@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
 import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
@@ -14,10 +14,16 @@ const workplanMap: Record<string, string> = {};
   });
 });
 
-console.log("Proposal Data of View Document Program", proposalData)
+  const topRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [proposalData]); // fires whenever proposalData changes
 
   return (
-    <section className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
+    <section 
+      ref={topRef}
+      className="max-w-5xl mx-auto px-5 py-5 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>

@@ -16,10 +16,10 @@ import ReviewerCommentModal from "@/components/reviewer/ReviewerCommentModal";
 import NotificationBell from "../../components/NotificationBell";
 import { useToast } from "@/context/toast";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
-import FormSkeleton from "@/components/skeletons/FormSkeleton";
+import FormSkeleton from "@/components/ui/FormSkeleton";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
 import { useReviewerProposals, type Proposal } from "@/hooks/useReviewerProposal";
-import GridSkeleton from "@/components/skeletons/GridSkeleton";
+import GridSkeleton from "@/components/ui/GridSkeleton";
 
 // ── Persistence keys ───────────────────────────────────────────────────────
 const SK = {

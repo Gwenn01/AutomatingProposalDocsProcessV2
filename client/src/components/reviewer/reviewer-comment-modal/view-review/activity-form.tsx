@@ -8,7 +8,7 @@ import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
 import { HistoryReviewBadge } from "./HistoryReviewBadge";
 import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SubmittingOverlay from "../SubmittingOverlay";
 import { div } from "framer-motion/client";
 
@@ -135,6 +135,7 @@ export const ActivityForm: React.FC<{
   showCommentInputs: boolean;
   existingReview?: any | null;
   reviewLoading?: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({
   activityData,
   programTitle,
@@ -145,12 +146,18 @@ export const ActivityForm: React.FC<{
   showCommentInputs,
   existingReview,
   reviewLoading = false,
+  scrollContainerRef
 }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
+  useEffect(() => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+    }
+  }, [activityData]);
+
   const allLocked = !showCommentInputs ? false : shouldLockAll(existingReview);
 
-  console.log("Existing Review Activity", existingReview)
 
   const sf = (
     label: string,

@@ -157,3 +157,8 @@ export async function fetchExistingReview(
     return null;
   }
 }
+
+export async function approveProposal( proposalNode: number ): Promise<any> {
+    const res = await authFetch(`${BASE_URL}/reviewer-approve/${proposalNode}/`, { method: 'PUT'});
+    return handleResponse<any>(res);
+}

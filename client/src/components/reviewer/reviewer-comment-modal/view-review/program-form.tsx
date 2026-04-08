@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { CheckboxList } from "./checkbox-list";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
@@ -127,6 +127,7 @@ export const ProgramForm: React.FC<{
   showCommentInputs: boolean;
   existingReview?: any | null;
   reviewLoading?: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({
   proposalData,
   comments,
@@ -135,7 +136,16 @@ export const ProgramForm: React.FC<{
   showCommentInputs,
   existingReview,
   reviewLoading = false,
+  scrollContainerRef 
 }) => {
+
+  const topRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+    }
+  }, [proposalData]);
   // Lock all inputs only when any field is exactly ""
   const allLocked = !showCommentInputs ? false : shouldLockAll(existingReview);
 
@@ -161,7 +171,7 @@ export const ProgramForm: React.FC<{
   );
 
   return (
-    <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
+    <section  className="relative max-w-5xl mx-auto px-5 border border-gray-300 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>
