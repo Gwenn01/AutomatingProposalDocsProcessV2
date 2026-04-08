@@ -7,7 +7,7 @@ import Overview from "./pages/admin/Overview";
 import NotFound from "./pages/not-found";
 import Home from "./pages/Home";
 import HomePage from "./pages/Landing/Home";
-import AboutPage from "./pages/Landing/Abou";
+import AboutPage from "./pages/Landing/About";
 import FeaturePage from "./pages/Landing/Features";
 import GuidelinesPage from "./pages/Landing/Guidelines";
 

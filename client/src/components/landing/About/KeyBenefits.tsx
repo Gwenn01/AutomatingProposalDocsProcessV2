@@ -5,9 +5,6 @@ import {
   Eye,
   MessageSquare,
   History,
-  Activity,
-  ShieldCheck,
-  ChevronRight,
 } from "lucide-react";
 
 const KeyBenefits: React.FC = () => {
@@ -18,7 +15,6 @@ const KeyBenefits: React.FC = () => {
       icon: <Zap size={24} />,
       metric: "70% Velocity Increase",
       tag: "PERFORMANCE",
-      accent: "from-emerald-500 to-teal-500",
     },
     {
       title: "Sustainability",
@@ -26,7 +22,6 @@ const KeyBenefits: React.FC = () => {
       icon: <Leaf size={24} />,
       metric: "Zero Paper Waste",
       tag: "ENVIRONMENTAL",
-      accent: "from-blue-500 to-cyan-500",
     },
     {
       title: "Transparency",
@@ -34,7 +29,6 @@ const KeyBenefits: React.FC = () => {
       icon: <Eye size={24} />,
       metric: "Real-Time Tracking",
       tag: "VISIBILITY",
-      accent: "from-purple-500 to-indigo-500",
     },
     {
       title: "Collaboration",
@@ -42,7 +36,6 @@ const KeyBenefits: React.FC = () => {
       icon: <MessageSquare size={24} />,
       metric: "Integrated Feedback",
       tag: "SYNERGY",
-      accent: "from-orange-500 to-red-500",
     },
     {
       title: "Version Control",
@@ -50,28 +43,16 @@ const KeyBenefits: React.FC = () => {
       icon: <History size={24} />,
       metric: "Immutable History",
       tag: "INTEGRITY",
-      accent: "from-slate-700 to-slate-900",
     },
   ];
 
   return (
-    <section className="relative py-20 bg-slate-50 overflow-hidden border-y border-slate-200">
-      {/* Structural Watermark */}
-      <div className="absolute top-10 left-10 font-black text-[15rem] text-slate-100/50 leading-none pointer-events-none select-none">
-        02
-      </div>
-
+    <section className="relative py-20 bg-[#fafafa] overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-20 gap-8">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <ShieldCheck size={16} className="text-emerald-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
-                System Advantages
-              </span>
-            </div>
-            <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter uppercase leading-none">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-none">
               Strategic <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400 italic font-serif lowercase tracking-normal">
                 outcomes.
@@ -79,9 +60,8 @@ const KeyBenefits: React.FC = () => {
             </h2>
           </div>
           <div className="lg:text-right">
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-              Propelling the Graduate School <br /> into a high-precision
-              future.
+            <p className="text-sm font-bold text-slate-700 uppercase tracking-widest leading-relaxed">
+              Propelling PRMSU Extension Services <br /> into a high-precision future.
             </p>
           </div>
         </div>
@@ -91,20 +71,18 @@ const KeyBenefits: React.FC = () => {
           {benefits.map((item, idx) => (
             <div
               key={idx}
-              className="group relative bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-slate-200/50 hover:-translate-y-1"
+              className="group relative rounded-[2rem] bg-white/40 backdrop-blur-2xl border border-white/30 p-8 md:p-12 overflow-hidden transition-all duration-500 hover:shadow-xl hover:shadow-emerald-200/40 hover:-translate-y-1"
             >
               {/* Animated Accent Bar */}
-              <div
-                className={`absolute top-0 left-0 w-2 h-full bg-gradient-to-b ${item.accent} transition-all duration-500 group-hover:w-3`}
-              />
+              <div className="absolute top-0 left-0 w-2 h-full bg-emerald-400 transition-all duration-500 group-hover:w-3 rounded-tr-lg rounded-br-lg" />
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 {/* Meta Data */}
                 <div className="lg:col-span-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-300 mb-2 block tracking-widest">
+                  <span className="text-[10px] font-mono font-bold text-emerald-300 mb-2 block tracking-widest">
                     GEN-0{idx + 1}
                   </span>
-                  <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-900 group-hover:scale-110 transition-transform duration-500">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50/60 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-500 shadow-md">
                     {item.icon}
                   </div>
                 </div>
@@ -124,7 +102,7 @@ const KeyBenefits: React.FC = () => {
 
                 {/* Description */}
                 <div className="lg:col-span-4">
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                  <p className="text-slate-600 text-sm font-medium leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
@@ -132,33 +110,14 @@ const KeyBenefits: React.FC = () => {
                 {/* Metric Action */}
                 <div className="lg:col-span-2 lg:text-right">
                   <div className="inline-flex flex-col items-end">
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1 group-hover:text-slate-900 transition-colors">
+                    <span className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1 group-hover:text-slate-900 transition-colors">
                       {item.metric}
                     </span>
-                    <div className="flex items-center gap-2 text-emerald-500 group-hover:translate-x-2 transition-transform duration-500">
-                      <span className="text-[10px] font-bold uppercase tracking-widest">
-                        Live
-                      </span>
-                      <ChevronRight size={14} />
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Technical Footer Label */}
-        <div className="mt-8 pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-6">
-            <Activity size={16} className="text-slate-300 animate-pulse" />
-            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-[0.3em]">
-              System Status: Optimized // All Modules Active
-            </p>
-          </div>
-          <div className="px-4 py-1 rounded-full bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest">
-            v1.2.0 Stable
-          </div>
         </div>
       </div>
     </section>
