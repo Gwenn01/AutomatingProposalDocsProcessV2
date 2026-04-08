@@ -15,13 +15,10 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect((): (() => void) => {
-    const handleScroll = (): void => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
+  useEffect(() => {
+    const handleScroll = (): void => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
-    return (): void => window.removeEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navLinks: NavLinkItem[] = [
@@ -31,24 +28,18 @@ const Navbar: React.FC = () => {
     { name: "Guidelines", href: "/guidelines" },
   ];
 
-  const isActive = (path: string): boolean => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string): boolean => location.pathname === path;
 
   return (
     <nav
-      className={`fixed w-full z-[100] transition-all duration-700 ease-in-out ${
-        isScrolled
-          ? "bg-white/80 backdrop-blur-2xl py-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-b border-slate-100"
-          : "bg-transparent py-8"
-      }`}
+      className={`fixed w-full z-[100] transition-all duration-700 ease-in-out ${isScrolled
+        ? "bg-white/50 backdrop-blur-xl py-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-b border-emerald-200/30"
+        : "bg-transparent py-8"
+        }`}
     >
       <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
         {/* Branding */}
-        <Link
-          to="/"
-          className="flex items-center gap-5 group cursor-pointer relative"
-        >
+        <Link to="/" className="flex items-center gap-5 group cursor-pointer relative">
           <div className="relative overflow-hidden rounded-xl">
             <img
               src={extensionLogo}
@@ -58,62 +49,50 @@ const Navbar: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
           </div>
 
-          <div className="flex flex-col border-l border-slate-200/60 pl-5">
+          <div className="flex flex-col border-l border-white/20 pl-5">
             <h1 className="text-2xl font-black tracking-tight leading-none uppercase">
               <span className="text-slate-900">PRMSU</span>
               <span className="text-emerald-500 font-light ml-1 lowercase italic font-serif tracking-normal">
-                research
+                Extension Services
               </span>
             </h1>
             <span className="text-[9px] uppercase tracking-[0.4em] text-slate-400 font-black mt-1.5 transition-colors group-hover:text-emerald-600">
-              Extension & Innovation
+              Innovation & Outreach
             </span>
           </div>
         </Link>
 
-        {/* Navigation: Real Routes */}
-        <div className="hidden lg:flex items-center gap-1 p-1.5 bg-slate-900/5 backdrop-blur-md rounded-2xl border border-white/40 shadow-inner">
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center gap-1 p-1.5 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/30 shadow-inner">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               to={link.href}
-              className={`relative px-6 py-2.5 rounded-xl text-[11px] font-black transition-all duration-500 group ${
-                isActive(link.href)
-                  ? "text-emerald-600"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <span className="relative z-10 tracking-[0.2em] uppercase">
-                {link.name}
-              </span>
-
-              {/* Active / Hover Indicator */}
-              <div
-                className={`absolute inset-0 bg-white rounded-xl shadow-sm transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-                  isActive(link.href)
-                    ? "scale-100 opacity-100"
-                    : "scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100"
+              className={`relative px-6 py-2.5 rounded-xl text-[11px] font-black transition-all duration-500 group ${isActive(link.href)
+                ? "text-emerald-500"
+                : "text-slate-500 hover:text-slate-900"
                 }`}
+            >
+              <span className="relative z-10 tracking-[0.2em] uppercase">{link.name}</span>
+              <div
+                className={`absolute inset-0 bg-emerald-500/10 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActive(link.href)
+                  ? "scale-100 opacity-100"
+                  : "scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100"
+                  }`}
               />
             </Link>
           ))}
         </div>
 
-        {/* Actions */}
+        {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-8">
-          <Link
-            to="/support"
-            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
-          >
-            Support
-          </Link>
           <button
             onClick={() => navigate("/auth")}
-            className="group relative overflow-hidden bg-slate-950 text-white px-8 py-4 rounded-2xl font-black text-[11px] tracking-[0.15em] uppercase flex items-center gap-3 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/20 active:scale-95"
+            className="group relative overflow-hidden bg-emerald-500/90 text-white px-8 py-4 rounded-2xl font-black text-[11px] tracking-[0.15em] uppercase flex items-center gap-3 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/30 active:scale-95"
           >
-            <div className="absolute inset-0 bg-emerald-500 translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+            <div className="absolute inset-0 bg-emerald-600/20 translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-out" />
             <span className="relative z-10 flex items-center gap-2">
-              Portal Login
+              Login
               <ArrowRight
                 size={14}
                 className="transition-transform duration-500 group-hover:translate-x-1"
@@ -126,7 +105,7 @@ const Navbar: React.FC = () => {
         <div className="lg:hidden">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-3 text-slate-900 bg-slate-50 rounded-2xl transition-all"
+            className="p-3 text-slate-900 bg-white/40 backdrop-blur-xl rounded-2xl transition-all hover:scale-105"
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -135,19 +114,21 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-0 bg-slate-900/60 backdrop-blur-xl transition-all duration-700 lg:hidden ${isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 bg-slate-900/50 backdrop-blur-xl transition-all duration-700 lg:hidden ${isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
       >
         <div
-          className={`absolute right-0 top-0 h-screen w-full sm:w-[450px] bg-white p-12 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+          className={`absolute right-0 top-0 h-screen w-full sm:w-[400px] bg-white/80 backdrop-blur-xl p-12 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex flex-col h-full">
             <div className="flex justify-between items-center mb-20">
-              <div className="w-14 h-14 bg-slate-950 rounded-2xl flex items-center justify-center text-emerald-400">
+              <div className="w-14 h-14 bg-emerald-500/20 backdrop-blur-xl rounded-2xl flex items-center justify-center text-emerald-500 shadow-md">
                 <User size={28} />
               </div>
               <button
                 onClick={() => setIsMenuOpen(false)}
-                className="p-4 hover:bg-slate-50 rounded-full transition-colors"
+                className="p-4 hover:bg-white/20 rounded-full transition-colors"
               >
                 <X size={28} />
               </button>
@@ -159,11 +140,10 @@ const Navbar: React.FC = () => {
                   key={item.name}
                   to={item.href}
                   style={{ transitionDelay: `${idx * 100}ms` }}
-                  className={`text-5xl font-black tracking-tighter uppercase transition-all duration-700 ${
-                    isActive(item.href)
-                      ? "text-emerald-500"
-                      : "text-slate-900 hover:text-emerald-500"
-                  } ${isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0"}`}
+                  className={`text-4xl font-black tracking-tighter uppercase transition-all duration-700 ${isActive(item.href)
+                    ? "text-emerald-500"
+                    : "text-slate-900 hover:text-emerald-500"
+                    } ${isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0"}`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
@@ -171,8 +151,8 @@ const Navbar: React.FC = () => {
               ))}
             </nav>
 
-            <div className="pt-10 border-t border-slate-100">
-              <button className="w-full bg-slate-950 text-white py-6 rounded-[2rem] font-black text-xs tracking-[0.3em] uppercase shadow-2xl shadow-emerald-900/20 active:scale-95 transition-all">
+            <div className="pt-10 border-t border-emerald-200/30">
+              <button className="w-full bg-emerald-500/80 backdrop-blur-xl text-white py-6 rounded-[2rem] font-black text-xs tracking-[0.3em] uppercase shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">
                 Access Portal
               </button>
             </div>
