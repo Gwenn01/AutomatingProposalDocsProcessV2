@@ -1,9 +1,8 @@
 // view-reviewed-document.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { X, ChevronRight, FileText, FolderOpen, Activity } from "lucide-react";
 import { getStatusStyle } from "@/utils/statusStyles";
 import FormSkeleton from "@/components/ui/FormSkeleton";
-
 import {
   fetchActivityList,
   fetchActivityProposalDetail,
@@ -22,80 +21,16 @@ import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
 import { useProposalEdit } from "@/hooks/useProposalEdit";
 import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/api/get-history-data-api";
-import type { ApiActivity, ApiActivityListResponse } from "@/types/reviewer-types";
 import type { ApiProjectListResponse } from "@/types/implementor-types";
-
-// ================= TYPES =================
-
-export interface MethodologyPhase { phase: string; activities: string[]; }
-export interface WorkplanItem     { month: string; activity: string; }
-export interface BudgetItem       { item: string; amount: number | string; }
-
-export interface ApiProposalDetail {
-  id: number;
-  proposal: number;
-  program_title: string;
-  program_leader: string;
-  project_list: any[];
-  implementing_agency: string[];
-  cooperating_agencies: string[];
-  extension_sites: { country: string; region: string; province: string; district: string; municipality: string; barangay: string }[];
-  tags: string[];
-  clusters: string[];
-  agendas: string[];
-  sdg_addressed: string;
-  mandated_academic_program: string;
-  rationale: string;
-  significance: string;
-  general_objectives: string;
-  specific_objectives: string;
-  methodology: string;
-  expected_output_6ps: string[];
-  sustainability_plan: string;
-  org_and_staffing: { name: string; role: string }[];
-  workplan: WorkplanItem[];
-  budget_requirements: BudgetItem[];
-  created_at: string;
-}
-
-export interface Comments { [key: string]: string; }
-
-type ProjectListFields = {
-  proposal_id: number;
-  child_id: number;
-  implementor: number;
-  project_title: string;
-  project_leader: string;
-  type: string;
-  status: string;
-  reviewer_count: number;
-  version_no: number;
-  is_reviewed: boolean;
-  assigned_at: string | null;
-  activities?: ApiActivity[];
-  start_date: string;
-  end_date: string;
-  assignment: number;
-  proposal: number;
-  activity_date: string;
-};
+import { SnapshotLoadingOverlay } from "@/components/ui/SnapshotLoadingOverlay";
+import type { Comments, ProjectListFields } from "@/types/form-fields";
+import type { History } from "@/types/history-types";
+import { mapReviewedToActivity, mapReviewedToProgram, mapReviewedToProject } from "@/constants/reviewer/mappers";
+import type { ApiActivityListResponse } from "@/types/shared-types";
 
 type ProjectItem  = ProjectListFields;
 type ActivityItem = ProjectListFields;
 type TabType      = "program" | "project" | "activity";
-
-interface History {
-  history_id: number;
-  proposal_id: number;
-  status: string;
-  version: number;
-  program_title: string;
-  program_leader: string;
-  project_title: string;
-  project_leader: string;
-  activity_title: string;
-  created_at: any;
-}
 
 export interface ViewReviewedDocumentsProps {
   isOpen: boolean;
@@ -114,112 +49,36 @@ export interface ViewReviewedDocumentsProps {
 
 // ================= DATA MAPPERS =================
 
-function mapReviewedToProgram(data: any): ApiProposalDetail | null {
-  if (!data) return null;
-  return {
-    id:                        data.id        ?? data.program_id  ?? data.proposal_id ?? 0,
-    proposal:                  data.proposal  ?? data.proposal_id ?? data.id          ?? 0,
-    program_title:             data.profile?.program_title        ?? data.program_title ?? "",
-    program_leader:            data.profile?.program_leader       ?? "",
-    project_list:              data.profile?.project_list         ?? [],
-    implementing_agency:       data.agencies?.implementing_agency ?? [],
-    cooperating_agencies:      data.agencies?.cooperating_agency  ?? [],
-    extension_sites:           data.extension_sites?.extension_site
-                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
-    tags:                      data.tagging_clustering_extension?.tags     ?? [],
-    clusters:                  data.tagging_clustering_extension?.clusters ?? [],
-    agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
-    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed
-                               ?? data.sdg_addressed ?? "",
-    mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
-    rationale:                 data.rationale?.content             ?? "",
-    significance:              data.significance?.content          ?? "",
-    general_objectives:        data.objectives?.general            ?? "",
-    specific_objectives:       data.objectives?.specific           ?? "",
-    methodology:               data.methodology?.content           ?? "",
-    expected_output_6ps:       data.expected_output_6ps?.content   ?? [],
-    sustainability_plan:       data.sustainability_plan?.content   ?? "",
-    org_and_staffing:          data.organization_and_staffing?.content ?? [],
-    workplan:                  data.work_plan?.content             ?? [],
-    budget_requirements:       data.budget_requirements?.content   ?? [],
-    created_at:                data.created_at                     ?? "",
-  };
-}
 
-function mapReviewedToProject(data: any): any | null {
-  if (!data) return null;
-  return {
-    id:                        data.id ?? 0,
-    project_title:             data.profile?.project_title   ?? data.project_title ?? "",
-    project_leader:            data.profile?.project_leader  ?? "",
-    members:                   data.profile?.members         ?? [],
-    duration_months:           data.profile?.duration_months ?? "",
-    start_date:                data.profile?.start_date      ?? null,
-    end_date:                  data.profile?.end_date        ?? null,
-    implementing_agency:       data.agencies?.implementing_agency  ?? [],
-    cooperating_agencies:      data.agencies?.cooperating_agencies ?? [],
-    extension_sites:           data.extension_sites?.content
-                               ?? data.extension_sites?.extension_site
-                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
-    tags:                      data.tagging_clustering_extension?.tags     ?? [],
-    clusters:                  data.tagging_clustering_extension?.clusters ?? [],
-    agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
-    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed             ?? "",
-    mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
-    rationale:                 data.rationale?.content    ?? "",
-    significance:              data.significance?.content ?? "",
-    general_objectives:        data.objectives?.general   ?? "",
-    specific_objectives:       data.objectives?.specific  ?? "",
-    methodology:               data.methodology?.content  ?? [],
-    expected_output_6ps:       data.expected_output_6ps?.content ?? [],
-    sustainability_plan:       data.sustainability_plan?.content  ?? "",
-    org_and_staffing:          data.organization_and_staffing?.content ?? [],
-    workplan:                  data.work_plan?.content     ?? [],
-    budget_requirements:       data.budget_requirements?.content  ?? [],
-  };
-}
-
-function mapReviewedToActivity(data: any): any | null {
-  if (!data) return null;
-  return {
-    id:                        data.id ?? 0,
-    activity_title:            data.profile?.activity_title          ?? data.activity_title ?? "",
-    project_leader:            data.profile?.project_leader          ?? "",
-    members:                   data.profile?.members                 ?? [],
-    activity_duration_hours:   data.profile?.activity_duration_hours ?? "",
-    activity_date:             data.profile?.activity_date           ?? null,
-    implementing_agency:       data.agencies?.implementing_agency    ?? [],
-    cooperating_agencies:      data.agencies?.cooperating_agencies   ?? [],
-    extension_sites:           data.extension_sites?.content
-                               ?? data.extension_sites?.extension_site
-                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
-    tags:                      data.tagging_clustering_extension?.tags     ?? [],
-    clusters:                  data.tagging_clustering_extension?.clusters ?? [],
-    agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
-    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed             ?? "",
-    mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
-    rationale:                 data.rationale?.content    ?? "",
-    objectives:                data.objectives?.content   ?? "",
-    methodology:               data.methodology?.content  ?? "",
-    expected_output_6ps:       data.expected_output_6ps?.content ?? [],
-    sustainability_plan:       data.sustainability_plan?.content  ?? "",
-    org_and_staffing:          data.organization_and_staffing?.content ?? [],
-    plan_of_activity:          data.plan_of_activity?.content ?? [],
-    budget_requirements:       data.budget_requirements?.content  ?? [],
-  };
-}
 
 // ================= HISTORY NORMALIZER =================
 
 function normalizeHistoryList(raw: any): History[] {
   if (!raw) return [];
-  const items: any[] = Array.isArray(raw) ? raw : raw.history ?? raw.results ?? [];
+
+  const items: any[] = Array.isArray(raw)
+    ? raw
+    : raw.history ?? raw.results ?? [];
+
   return items.map((item) => ({
-    history_id:  String(item.history_id ?? item.id ?? ""),
-    proposal_id: String(item.proposal_id ?? item.proposal ?? ""),
-    status:      item.status ?? "unknown",
-    version:     item.version ?? item.version_no ?? 0,
-    program_title:  String(item.program_title ?? item.project_title ?? item.activity_title ?? ""),
+    history_id: Number(item.history_id ?? item.id ?? 0),
+    proposal_id: Number(item.proposal_id ?? item.proposal ?? 0),
+    status: item.status ?? "unknown",
+    version: Number(item.version ?? item.version_no ?? 0),
+
+    program_title: String(
+      item.program_title ??
+      item.project_title ??
+      item.activity_title ??
+      ""
+    ),
+
+    program_leader: String(item.program_leader ?? ""),
+    project_title: String(item.project_title ?? ""),
+    project_leader: String(item.project_leader ?? ""),
+    activity_title: String(item.activity_title ?? ""),
+
+    created_at: item.created_at ?? null,
   }));
 }
 
@@ -268,6 +127,7 @@ const ViewReviewedDocuments: React.FC<ViewReviewedDocumentsProps> = ({
 const [programAllReviewed,  setProgramAllReviewed]  = useState<boolean>(false);
 const [projectAllReviewed,  setProjectAllReviewed]  = useState<boolean>(false);
 const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
+const formScrollRef = useRef<HTMLDivElement>(null);
 
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [comments, setComments] = useState<Comments>({});
@@ -511,7 +371,7 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
     if (activitiesCache[project.child_id] !== undefined) return;
     setActivitiesLoadingCache((prev) => ({ ...prev, [project.child_id]: true }));
     try {
-      const data: ApiActivityListResponse = await fetchActivityList(project.child_id);
+      const data: any = await fetchActivityList(project.child_id);
       setActivitiesCache((prev) => ({ ...prev, [project.child_id]: data.activities || [] }));
     } catch (err) {
       console.error("[ActivityList] Failed:", err);
@@ -717,14 +577,11 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
           )}
 
           {/* Document content */}
-          <div className="flex-1 overflow-y-auto relative bg-white">
+          <div 
+            ref={formScrollRef}
+            className={`flex-1 relative bg-white ${historySnapshotLoading === true ? "" : "overflow-y-auto"}`}>
             {/* History snapshot loading overlay */}
-            {historySnapshotLoading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm gap-3">
-                <div className="w-7 h-7 border-[3px] border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
-                <p className="text-sm text-gray-500 font-medium">Loading version…</p>
-              </div>
-            )}
+            {historySnapshotLoading && (<SnapshotLoadingOverlay /> )}
             <div className="p-5">
 
               {/* ── Save error banner ── */}
@@ -751,6 +608,7 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
                       onDraftChange={setProgramDraft}
                       isEditing={isEditing && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
                       reviewedData={activeProgramReviewedData}
+                      scrollContainerRef={formScrollRef}
                       {...commentProps}
                       {...reviewProps}
                     />
@@ -792,6 +650,7 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
                       onDraftChange={setProjectDraft}
                       isEditing={isEditing && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
                       reviewedData={activeProjectReviewedData}
+                      scrollContainerRef={formScrollRef}
                       {...commentProps}
                       {...reviewProps}
                     />
@@ -840,6 +699,7 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
                       onDraftChange={setActivityDraft}
                       isEditing={isEditing && (!selectedHistoryVersion || selectedHistoryVersion.status === "current")}
                       reviewedData={activeActivityReviewedData}
+                      scrollContainerRef={formScrollRef}
                       {...commentProps}
                       {...reviewProps}
                     />
@@ -968,21 +828,6 @@ const [activityAllReviewed, setActivityAllReviewed] = useState<boolean>(false);
                 })
               )}
             </div>
-
-            {/* Footer — shown when a version is selected */}
-            {/* {selectedHistoryVersion && (
-              <div className="px-4 py-3 border-t border-gray-100">
-                <button
-                  onClick={() => {
-                    const current = activeHistory.find((h) => h.status === "current") ?? null;
-                    setSelectedHistoryVersion(current);
-                  }}
-                  className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors text-center"
-                >
-                  Clear selection
-                </button>
-              </div>
-            )} */}
           </div>
 
         </div>

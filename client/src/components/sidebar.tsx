@@ -105,15 +105,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           background: "linear-gradient(160deg, #0a8f3c 0%, #056b2b 60%, #044d1f 100%)",
         }}
       >
-        {/* Decorative circles */}
-        <div
-          className="pointer-events-none absolute -top-14 -right-14 w-52 h-52 rounded-full"
-          style={{ background: "rgba(255,255,255,0.05)" }}
-        />
-        <div
-          className="pointer-events-none absolute bottom-16 -left-20 w-56 h-56 rounded-full"
-          style={{ background: "rgba(255,255,255,0.04)" }}
-        />
 
         {/* Brand */}
         <div

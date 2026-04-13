@@ -18,7 +18,7 @@ const workplanMap: Record<string, string> = {};
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [proposalData]); // fires whenever proposalData changes
+  }, [proposalData]);
 
   return (
     <section 

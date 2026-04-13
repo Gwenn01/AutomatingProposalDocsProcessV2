@@ -159,6 +159,7 @@ const activeReviewLoading = history.isViewingHistory
   }, [isOpen]);
 
 const switchToProjectTab = () => {
+  setActiveTab("project");
   reviewState.setDecision("needs_revision");
   if (!sidebar.selectedProject && sidebar.projectList.length > 0) {
     sidebar.handleSelectProject(sidebar.projectList[0]);

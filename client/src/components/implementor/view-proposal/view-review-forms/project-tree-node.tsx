@@ -1,26 +1,6 @@
-import type { ApiActivity } from "@/types/reviewer-types";
+import type { ProjectListFields, SidebarFields } from "@/types/form-fields";
 import { formatDate } from "@/utils/dateFormat";
 import { Activity, ChevronRight, FolderOpen, CheckCircle2, Clock } from "lucide-react";
-
-type ProjectListFields = {
-  assignment: number;
-  proposal: number;
-  child_id: number;
-  implementor: number;
-  project_title: string;
-  project_leader: string;
-  activity_title?: string;
-  activity_date: string;
-  type: string;
-  status: string;
-  reviewer_count: number;
-  version_no: number;
-  is_reviewed: boolean;
-  assigned_at: string | null;
-  activities?: ApiActivity[];
-  start_date: string;
-  end_date: string;
-};
 
 type ProjectItem = ProjectListFields;
 type ActivityItem = ProjectListFields;
@@ -139,7 +119,7 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
 /* ── Sub-components ────────────────────────────────────────── */
 
 interface ActivityRowProps {
-  act: ProjectListFields;
+  act: SidebarFields;
   isSelected: boolean;
   onSelect: () => void;
 }

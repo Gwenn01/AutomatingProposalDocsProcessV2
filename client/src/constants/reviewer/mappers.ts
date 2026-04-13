@@ -4,6 +4,8 @@
 // by the corresponding form component.  All fields fall back to sensible
 // defaults so the forms never receive `undefined`.
 
+import type { ApiProposalDetail } from "@/types/form-fields";
+
 export function mapSnapshotToProgram(data: any): any | null {
   if (!data) return null;
 
@@ -225,5 +227,100 @@ export function normalizeHistoryReview(
     expected_output_feedback:           pick(raw.expected_output_6ps),
     work_plan_feedback:                 pick(raw.plan_of_activity),
     budget_requirements_feedback:       pick(raw.budget_requirements),
+  };
+}
+
+export function mapReviewedToProgram(data: any): ApiProposalDetail | null {
+  if (!data) return null;
+  return {
+    id:                        data.id        ?? data.program_id  ?? data.proposal_id ?? 0,
+    proposal:                  data.proposal  ?? data.proposal_id ?? data.id          ?? 0,
+    program_title:             data.profile?.program_title        ?? data.program_title ?? "",
+    program_leader:            data.profile?.program_leader       ?? "",
+    project_list:              data.profile?.project_list         ?? [],
+    implementing_agency:       data.agencies?.implementing_agency ?? [],
+    cooperating_agencies:      data.agencies?.cooperating_agency  ?? [],
+    extension_sites:           data.extension_sites?.extension_site
+                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
+    tags:                      data.tagging_clustering_extension?.tags     ?? [],
+    clusters:                  data.tagging_clustering_extension?.clusters ?? [],
+    agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
+    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed
+                               ?? data.sdg_addressed ?? "",
+    mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
+    rationale:                 data.rationale?.content             ?? "",
+    significance:              data.significance?.content          ?? "",
+    general_objectives:        data.objectives?.general            ?? "",
+    specific_objectives:       data.objectives?.specific           ?? "",
+    methodology:               data.methodology?.content           ?? "",
+    expected_output_6ps:       data.expected_output_6ps?.content   ?? [],
+    sustainability_plan:       data.sustainability_plan?.content   ?? "",
+    org_and_staffing:          data.organization_and_staffing?.content ?? [],
+    workplan:                  data.work_plan?.content             ?? [],
+    budget_requirements:       data.budget_requirements?.content   ?? [],
+    created_at:                data.created_at                     ?? "",
+  };
+}
+
+export function mapReviewedToProject(data: any): any | null {
+  if (!data) return null;
+  return {
+    id:                        data.id ?? 0,
+    project_title:             data.profile?.project_title   ?? data.project_title ?? "",
+    project_leader:            data.profile?.project_leader  ?? "",
+    members:                   data.profile?.members         ?? [],
+    duration_months:           data.profile?.duration_months ?? "",
+    start_date:                data.profile?.start_date      ?? null,
+    end_date:                  data.profile?.end_date        ?? null,
+    implementing_agency:       data.agencies?.implementing_agency  ?? [],
+    cooperating_agencies:      data.agencies?.cooperating_agencies ?? [],
+    extension_sites:           data.extension_sites?.content
+                               ?? data.extension_sites?.extension_site
+                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
+    tags:                      data.tagging_clustering_extension?.tags     ?? [],
+    clusters:                  data.tagging_clustering_extension?.clusters ?? [],
+    agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
+    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed             ?? "",
+    mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
+    rationale:                 data.rationale?.content    ?? "",
+    significance:              data.significance?.content ?? "",
+    general_objectives:        data.objectives?.general   ?? "",
+    specific_objectives:       data.objectives?.specific  ?? "",
+    methodology:               data.methodology?.content  ?? [],
+    expected_output_6ps:       data.expected_output_6ps?.content ?? [],
+    sustainability_plan:       data.sustainability_plan?.content  ?? "",
+    org_and_staffing:          data.organization_and_staffing?.content ?? [],
+    workplan:                  data.work_plan?.content     ?? [],
+    budget_requirements:       data.budget_requirements?.content  ?? [],
+  };
+}
+
+export function mapReviewedToActivity(data: any): any | null {
+  if (!data) return null;
+  return {
+    id:                        data.id ?? 0,
+    activity_title:            data.profile?.activity_title          ?? data.activity_title ?? "",
+    project_leader:            data.profile?.project_leader          ?? "",
+    members:                   data.profile?.members                 ?? [],
+    activity_duration_hours:   data.profile?.activity_duration_hours ?? "",
+    activity_date:             data.profile?.activity_date           ?? null,
+    implementing_agency:       data.agencies?.implementing_agency    ?? [],
+    cooperating_agencies:      data.agencies?.cooperating_agencies   ?? [],
+    extension_sites:           data.extension_sites?.content
+                               ?? data.extension_sites?.extension_site
+                               ?? (Array.isArray(data.extension_sites) ? data.extension_sites : []),
+    tags:                      data.tagging_clustering_extension?.tags     ?? [],
+    clusters:                  data.tagging_clustering_extension?.clusters ?? [],
+    agendas:                   data.tagging_clustering_extension?.agendas  ?? [],
+    sdg_addressed:             data.sdg_and_academic_program?.sdg_addressed             ?? "",
+    mandated_academic_program: data.sdg_and_academic_program?.mandated_academic_program ?? "",
+    rationale:                 data.rationale?.content    ?? "",
+    objectives:                data.objectives?.content   ?? "",
+    methodology:               data.methodology?.content  ?? "",
+    expected_output_6ps:       data.expected_output_6ps?.content ?? [],
+    sustainability_plan:       data.sustainability_plan?.content  ?? "",
+    org_and_staffing:          data.organization_and_staffing?.content ?? [],
+    plan_of_activity:          data.plan_of_activity?.content ?? [],
+    budget_requirements:       data.budget_requirements?.content  ?? [],
   };
 }

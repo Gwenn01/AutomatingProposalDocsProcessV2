@@ -1,3 +1,5 @@
+import type { ApiActivity } from "./shared-types";
+
 export type ApiProjectListResponse = {
   id: number;
   program_title: string;
@@ -5,11 +7,6 @@ export type ApiProjectListResponse = {
   projects: ReviewerProjectList[];
 };
 
-export type ApiActivityListResponse = {
-  id: number;
-  project_title: string;
-  activities: ApiActivity[];
-};
 
 export type ApiProject = {
   id: number;
@@ -37,14 +34,6 @@ export type ReviewerProjectList = {
   activities?: ApiActivity[];
 }
 
-export type ApiActivity = {
-  id: number;
-  activity_title: string;
-  project_leader: string;
-  members: string[];
-  activity_duration_hours: number;
-  activity_date: string | null;
-};
 
 
 // ─────────────────────────────────────────────

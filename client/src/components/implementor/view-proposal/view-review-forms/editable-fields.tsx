@@ -1,7 +1,3 @@
-// components/reviewer/editable-fields.tsx
-// Reusable primitives that render plain text in view mode
-// and an input/textarea/list-editor in edit mode.
-
 import React from "react";
 
 // ─────────────────────────────────────────────────────────────

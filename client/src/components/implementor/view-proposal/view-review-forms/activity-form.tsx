@@ -2,11 +2,12 @@
 import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
 import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
-import type { BudgetItem } from "../view-reviewed-document";
 import { formatDate } from "@/utils/dateFormat";
 import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList, EditableSiteList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableActivity } from "@/hooks/useProposalEdit";
 import { SectionReviews, validReviews } from "./ui/SectionReviews";
+import { useEffect } from "react";
+import type { BudgetItem } from "@/types/form-fields";
 
 interface Comments { [key: string]: string; }
 
@@ -80,10 +81,11 @@ export const ActivityForm: React.FC<{
   showCommentInputs: boolean;
   reviewedData?: any;
   isEditing: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({
   activityData, programTitle, projectTitle, draft, onDraftChange,
   comments, onCommentChange, alreadyReviewed, showCommentInputs, reviewedData,
-  isEditing,
+  isEditing, scrollContainerRef
 }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
 
@@ -109,6 +111,12 @@ export const ActivityForm: React.FC<{
      planOfActivityReviews, budgetReviews].some((r) => r.length > 0);
 
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
+
+    useEffect(() => {
+      if (scrollContainerRef?.current) {
+        scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+      }
+    }, [activityData]);
 
   return (
     <section className="max-w-5xl mx-auto px-5 rounded-sm shadow-sm font-serif text-gray-900 leading-relaxed p-5 border border-gray-200">

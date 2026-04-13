@@ -1,8 +1,7 @@
 // view-review-forms/program-form.tsx
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { CheckboxList } from "./checkbox-list";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
-import type { ApiProposalDetail, Comments } from "../view-reviewed-document";
 import { formatDate } from "@/utils/dateFormat";
 import {
   EditableText,
@@ -10,9 +9,11 @@ import {
   EditableKeyValueList,
   EditableSiteList,
   EditableWorkplanList,
+  EditableArray,
 } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableProgram } from "@/hooks/useProposalEdit";
 import { SectionReviews, validReviews } from "./ui/SectionReviews";
+import type { ApiProposalDetail, Comments } from "@/types/form-fields";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 
@@ -31,10 +32,11 @@ export const ProgramForm: React.FC<{
   showCommentInputs: boolean;
   reviewedData?: any;
   isEditing: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({
   proposalData, draft, onDraftChange,
   comments, onCommentChange, alreadyReviewed, showCommentInputs, reviewedData,
-  isEditing,
+  isEditing, scrollContainerRef
 }) => {
   // convenience setter
   const set = <K extends keyof EditableProgram>(k: K, v: EditableProgram[K]) =>
@@ -80,9 +82,16 @@ export const ProgramForm: React.FC<{
       <div className={isEditing ? "mt-1" : "inline"}>{children}</div>
     </div>
   );
+  
+  useEffect(() => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+    }
+  }, [proposalData]);
 
   return (
-    <section className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
+    <section 
+      className="max-w-5xl mx-auto px-5 py-5 border border-gray-200 shadow-sm font-serif text-gray-900 leading-relaxed">
       <div className="text-center mb-8 space-y-1">
         <p className="font-bold text-base uppercase">President Ramon Magsaysay State University</p>
         <p className="font-bold">Iba, Zambales</p>
@@ -131,7 +140,7 @@ export const ProgramForm: React.FC<{
                 <span className="flex items-center"><VerticalLine />IMPLEMENTING AGENCY <span className="font-normal ml-1">/ College / Mandated Program:</span></span>
                 <div className="mt-1">
                   {isEditing
-                    ? <EditableText value={draft.implementing_agency} onChange={(v) => set("implementing_agency", v)} isEditing={isEditing} placeholder="Add agency…" />
+                    ? <EditableArray value={draft.implementing_agency} onChange={(v) => set("implementing_agency", v)} isEditing={isEditing} placeholder="Add agency…" />
                     : <p className="text-base font-normal">{arrVal(proposalData.implementing_agency)}</p>}
                 </div>
               </td>
@@ -141,7 +150,7 @@ export const ProgramForm: React.FC<{
                 <span className="flex items-center"><VerticalLine />COOPERATING AGENCY/IES <span className="font-normal ml-1">(Name/s and Address/es)</span></span>
                 <div className="mt-1">
                   {isEditing
-                    ? <EditableText value={draft.cooperating_agencies} onChange={(v) => set("cooperating_agencies", v)} isEditing={isEditing} placeholder="Add agency…" />
+                    ? <EditableArray value={draft.cooperating_agencies} onChange={(v) => set("cooperating_agencies", v)} isEditing={isEditing} placeholder="Add agency…" />
                     : <p className="font-normal">{arrVal(proposalData.cooperating_agencies)}</p>}
                 </div>
               </td>

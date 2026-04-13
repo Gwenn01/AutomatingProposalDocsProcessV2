@@ -7,6 +7,7 @@ import { formatDate } from "@/utils/dateFormat";
 import { EditableText, EditableTextarea, EditableArray, EditableKeyValueList, EditableSiteList } from "@/components/implementor/view-proposal/view-review-forms/editable-fields";
 import type { EditableProject } from "@/hooks/useProposalEdit";
 import { SectionReviews, validReviews } from "./ui/SectionReviews";
+import { useEffect } from "react";
 
 // ─── ProjectForm ─────────────────────────────────────────────────────────────
 
@@ -21,10 +22,11 @@ export const ProjectForm: React.FC<{
   showCommentInputs: boolean;
   reviewedData?: any;
   isEditing: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({
   projectData, programTitle, draft, onDraftChange,
   comments, onCommentChange, alreadyReviewed, showCommentInputs, reviewedData,
-  isEditing,
+  isEditing, scrollContainerRef
 }) => {
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
 
@@ -51,6 +53,12 @@ const hasAnyReviewAcrossSections =
    rationaleReviews, significanceReviews, generalObjReviews, specificObjReviews,
    methodologyReviews, expectedOutputReviews, budgetReviews, workplanReviews].some((r) => r.length > 0);
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
+
+    useEffect(() => {
+      if (scrollContainerRef?.current) {
+        scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+      }
+    }, [projectData]);
 
   return (
     <section className="max-w-5xl mx-auto border border-gray-200 py-5 shadow-sm font-serif text-gray-900 leading-relaxed p-5">
