@@ -28,6 +28,17 @@ interface FeatureCardProps {
   text: string;
 }
 
+const FeatureItem: React.FC<{ icon: React.ReactElement; label: string }> = ({ icon, label }) => (
+  <div className="flex items-center space-x-3 group cursor-default">
+    <div className="text-emerald-500/70 group-hover:text-emerald-400 transition-colors">
+      {icon}
+    </div>
+    <span className="text-sm font-medium text-white/50 group-hover:text-white/80 transition-colors tracking-wide">
+      {label}
+    </span>
+  </div>
+);
+
 type AuthMode = "login" | "register";
 
 const Auth: React.FC = () => {
@@ -194,7 +205,7 @@ const Auth: React.FC = () => {
               </div>
             </div>
           </Motion.div>
-{/* 
+          {/* 
           {mode === "login" && (
             <Motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -387,97 +398,59 @@ const Auth: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="hidden lg:flex lg:w-[55%] h-screen sticky top-0 bg-gradient-to-br from-emerald-600 via-emerald-500 to-green-600 overflow-hidden items-center justify-center p-12">
-        <div className="absolute top-[-10%] left-[-10%] w-[700px] h-[700px] bg-emerald-400/30 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-green-400/40 rounded-full blur-[100px]"></div>
-        <div className="absolute top-[20%] right-[5%] w-[400px] h-[400px] bg-lime-300/20 rounded-full blur-[80px]"></div>
+      {/* RIGHT SIDE - Ultra-Minimalist Bold Green */}
+      <div className="hidden lg:flex lg:w-[55%] h-screen sticky top-0 bg-green-500 overflow-hidden items-center justify-center p-12">
 
-        <div className="relative z-10 w-full max-w-lg">
+        {/* Ambient Depth: Subtle tonal shifts to keep the green from looking flat */}
+        <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-green-600/40 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-lime-400/30 rounded-full blur-[100px]" />
+
+        {/* Modern Grid Overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
+
+        <div className="relative z-10 w-full max-w-2xl">
           <Motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative backdrop-blur-3xl bg-white/[0.15] border border-white/30 p-10 pt-24 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.2)] overflow-visible"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-8"
           >
-            <Motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -top-12 left-1/2 -translate-x-1/2 w-72 bg-white/80 backdrop-blur-2xl p-6 rounded-[2.5rem] border border-white/40 shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-20 overflow-hidden"
-            >
-              <div className="absolute inset-0 border border-white/50 rounded-[2.5rem] pointer-events-none" />
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  </div>
-                  <div className="h-3 w-16 bg-slate-200/50 rounded-full animate-pulse" />
-                </div>
-                <div className="text-[10px] font-semibold text-slate-400 tabular-nums tracking-tight">99%</div>
-              </div>
-              <div className="space-y-4">
-                <div className="relative h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <Motion.div
-                    initial={{ width: "10%" }}
-                    animate={{ width: "85%" }}
-                    transition={{ duration: 3, repeat: Infinity, ease: [0.65, 0, 0.35, 1] }}
-                    className="h-full bg-emerald-500 rounded-full"
-                  />
-                </div>
-                <div className="flex justify-between items-end">
-                  <div className="space-y-1.5">
-                    <div className="h-1 w-20 bg-slate-200/60 rounded-full" />
-                    <div className="h-1 w-12 bg-slate-100/80 rounded-full" />
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[9px] font-bold text-emerald-600 tracking-wide uppercase font-sans">Active Sync</span>
-                    <span className="text-[8px] text-slate-400 font-medium">prmsu-server-01</span>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent" />
-            </Motion.div>
+            {/* Hero Content - Updated to Extension Services Office */}
+            <div className="space-y-6">
+              <h2 className="text-7xl xl:text-8xl font-black text-white tracking-tighter leading-[0.85] drop-shadow-2xl">
+                Extension <br />
+                Services <br />
+                <span className="text-green-200 font-light italic">Office.</span>
+              </h2>
 
-            <div className="relative z-10 text-center lg:text-left px-4">
-              <Motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="inline-flex items-center space-x-3 px-4 py-1.5 mb-8 rounded-full bg-white/10 border border-white/20 backdrop-blur-md shadow-sm"
-              >
-                <span className="flex h-2 w-2 rounded-full bg-white animate-pulse shadow-[0_0_10px_#fff]" />
-                <span className="text-[11px] font-bold text-white/90 tracking-[0.3em] uppercase">Institutional System</span>
-              </Motion.div>
+              <div className="h-2 w-24 bg-white rounded-full shadow-lg" />
 
-              <div className="mb-10 space-y-2">
-                <h2 className="text-6xl font-black text-white tracking-tighter leading-[0.9] drop-shadow-2xl">
-                  Extension <br />
-                  <span className="text-emerald-200/90 font-light italic">Office.</span>
-                </h2>
-                <div className="h-1 w-20 bg-gradient-to-r from-emerald-300 to-transparent rounded-full mt-4" />
-              </div>
-
-              <p className="text-white/80 text-base leading-relaxed mb-12 max-w-md font-normal tracking-tight">
+              <p className="text-white/90 text-2xl leading-relaxed max-w-lg font-medium tracking-tight">
                 {mode === "login"
-                  ? "Direct access to the unified infrastructure for community engagement and institutional outreach metrics."
-                  : "Empowering faculty through streamlined data management for sustainable community development."}
+                  ? "Access the unified infrastructure for community engagement and institutional metrics."
+                  : "Empowering faculty through streamlined data management for sustainable development."}
               </p>
-
-              <div className="grid grid-cols-2 gap-4 max-w-lg">
-                <FeatureCard icon={<BarChart3 size={20} strokeWidth={1.5} />} text="Analytics" />
-                <FeatureCard icon={<Globe size={20} strokeWidth={1.5} />} text="Network" />
-                <FeatureCard icon={<ShieldCheck size={20} strokeWidth={1.5} />} text="Security" />
-                <FeatureCard icon={<Zap size={20} strokeWidth={1.5} />} text="Export" />
-              </div>
             </div>
+
+            {/* Footer branding */}
+            <Motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="pt-12"
+            >
+              <p className="text-[10px] font-black text-green-200/50 tracking-[0.4em] uppercase">
+                President Ramon Magsaysay State University
+              </p>
+            </Motion.div>
           </Motion.div>
         </div>
-
-        <div
-          className="absolute inset-0 opacity-[0.15] pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
       </div>
     </div>
   );
