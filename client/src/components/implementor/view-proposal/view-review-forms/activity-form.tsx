@@ -195,23 +195,24 @@ export const ActivityForm: React.FC<{
 
       {/* EXTENSION SITES */}
       <div className="font-bold text-base p-3 mb-2 flex items-center"><VerticalLine />EXTENSION SITE/S OR VENUE/S</div>
-      <div className="overflow-x-auto">
-        <table className="w-full border border-black text-sm">
+      <div className="px-3">
+        <table className="w-full border border-black text-sm table-fixed">
           <thead>
             <tr className="border-b border-black">
-              <td className="border-r border-black px-4 py-3 font-bold text-center w-12">#</td>
-              <td className="border-r border-black px-4 py-3 font-bold text-center">Country</td>
-              <td className="border-r border-black px-4 py-3 font-bold text-center">Region</td>
-              <td className="border-r border-black px-4 py-3 font-bold text-center">Province</td>
-              <td className="border-r border-black px-4 py-3 font-bold text-center">District</td>
-              <td className="border-r border-black px-4 py-3 font-bold text-center">Municipality</td>
-              <td className="px-4 py-3 font-bold text-center">Barangay</td>
+              <th className="border-r border-black px-2 py-3 font-bold text-center w-[50px]">#</th>
+              <th className="border-r border-black px-2 py-3 font-bold text-center w-[90px]">Country</th>
+              <th className="border-r border-black px-2 py-3 font-bold text-center w-[110px]">Region</th>
+              <th className="border-r border-black px-2 py-3 font-bold text-center w-[110px]">Province</th>
+              <th className="border-r border-black px-2 py-3 font-bold text-center w-[110px]">District</th>
+              <th className="border-r border-black px-2 py-3 font-bold text-center w-[120px]">Municipality</th>
+              <th className="px-2 py-3 font-bold text-center w-[120px]">Barangay</th>
             </tr>
           </thead>
+
           <tbody>
             {isEditing ? (
               <tr className="border-b border-black">
-                <td colSpan={7} className="px-4 py-3">
+                <td colSpan={7} className="px-2 py-3">
                   <EditableSiteList
                     value={draft.extension_sites as any}
                     onChange={(v) => set("extension_sites", v as any)}
@@ -222,13 +223,33 @@ export const ActivityForm: React.FC<{
             ) : (
               (activityData.extension_sites?.length ? activityData.extension_sites : [{}, {}]).map((site: any, i: number) => (
                 <tr key={i} className="border-b border-black">
-                  <td className="border-r border-black px-4 py-3 text-center">{i + 1}</td>
-                  <td className="border-r border-black px-4 py-3">{site.country || "—"}</td>
-                  <td className="border-r border-black px-4 py-3">{site.region || "—"}</td>
-                  <td className="border-r border-black px-4 py-3">{site.province || "—"}</td>
-                  <td className="border-r border-black px-4 py-3">{site.district || "—"}</td>
-                  <td className="border-r border-black px-4 py-3">{site.municipality || "—"}</td>
-                  <td className="px-4 py-3">{site.barangay || "—"}</td>
+                  <td className="border-r border-black px-2 py-3 text-center">
+                    {i + 1}
+                  </td>
+
+                  <td className="border-r border-black px-2 py-3 whitespace-normal break-words">
+                    {site.country || "—"}
+                  </td>
+
+                  <td className="border-r border-black px-2 py-3 whitespace-normal break-words">
+                    {site.region || "—"}
+                  </td>
+
+                  <td className="border-r border-black px-2 py-3 whitespace-normal break-words">
+                    {site.province || "—"}
+                  </td>
+
+                  <td className="border-r border-black px-2 py-3 whitespace-normal break-words">
+                    {site.district || "—"}
+                  </td>
+
+                  <td className="border-r border-black px-2 py-3 whitespace-normal break-words">
+                    {site.municipality || "—"}
+                  </td>
+
+                  <td className="px-2 py-3 whitespace-normal break-words">
+                    {site.barangay || "—"}
+                  </td>
                 </tr>
               ))
             )}
