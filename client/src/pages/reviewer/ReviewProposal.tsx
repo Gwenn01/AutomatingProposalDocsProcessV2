@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
+  ChevronDown,
 } from "lucide-react";
 import { getStatusStyle } from "@/utils/statusStyles";
 import ReviewerCommentModal from "@/components/reviewer/ReviewerCommentModal";
@@ -18,7 +19,7 @@ import { useToast } from "@/context/toast";
 import DocumentViewerModal from "@/components/implementor/DocumentViewerModal";
 import FormSkeleton from "@/components/ui/FormSkeleton";
 import ReviewerListStatus from "@/components/implementor/ReviewerListStatus";
-import { useReviewerProposals, type Proposal } from "@/hooks/useReviewerProposal";
+import { useReviewerProposals, type Proposal, type ReviewFilter } from "@/hooks/useReviewerProposal";
 import GridSkeleton from "@/components/ui/GridSkeleton";
 
 // ── Persistence keys ───────────────────────────────────────────────────────
@@ -37,6 +38,54 @@ function persist(key: string, value: string | null) {
   else localStorage.setItem(key, value);
 }
 
+// ── Pagination component ───────────────────────────────────────────────────
+interface PaginationProps {
+  current: number;
+  total: number;
+  onChange: (page: number) => void;
+}
+
+const Pagination: React.FC<PaginationProps> = ({ current, total, onChange }) => {
+  if (total <= 1) return null;
+
+  const pages = Array.from({ length: total }, (_, i) => i + 1);
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-8">
+      <button
+        onClick={() => onChange(current - 1)}
+        disabled={current === 1}
+        className="px-3 py-2 rounded-lg text-sm font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        ← Prev
+      </button>
+
+      {pages.map((page) => (
+        <button
+          key={page}
+          onClick={() => onChange(page)}
+          className={`w-9 h-9 rounded-lg text-sm font-bold transition-colors ${
+            page === current
+              ? "bg-green-600 text-white shadow-sm"
+              : "text-gray-500 border border-gray-200 hover:bg-gray-50"
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      <button
+        onClick={() => onChange(current + 1)}
+        disabled={current === total}
+        className="px-3 py-2 rounded-lg text-sm font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        Next →
+      </button>
+    </div>
+  );
+};
+
+// ── Main component ─────────────────────────────────────────────────────────
 const ReviewProposal: React.FC = () => {
   const { showToast } = useToast();
 
@@ -77,18 +126,32 @@ const ReviewProposal: React.FC = () => {
   const [selectedProposalId,  setSelectedProposalId]  = useState<string | null>(
     () => localStorage.getItem(SK.SELECTED_PROP_ID)
   );
+  const [currentPage,         setCurrentPage]         = useState(1);
 
   // The proposal_id of the doc whose modal should be restored after proposals load
   const [pendingDocId, setPendingDocId] = useState<string | null>(
     () => localStorage.getItem(SK.SELECTED_DOC_ID)
   );
 
+  // ── Pagination config ──────────────────────────────────────────────────────
+  const GRID_PER_PAGE  = 6;
+  const TABLE_PER_PAGE = 10;
+  const perPage        = viewMode === "grid" ? GRID_PER_PAGE : TABLE_PER_PAGE;
+  const totalPages     = Math.max(1, Math.ceil(filteredProposals.length / perPage));
+  const paginatedProposals = filteredProposals.slice(
+    (currentPage - 1) * perPage,
+    currentPage * perPage
+  );
+
+  // ── Reset to page 1 on filter / search / view mode change ─────────────────
+  useEffect(() => { setCurrentPage(1); }, [activeFilter, searchQuery, viewMode]);
+
   // ── Persist simple flags whenever they change ─────────────────────────────
-  useEffect(() => { persist(SK.VIEW_MODE,          viewMode);                          }, [viewMode]);
+  useEffect(() => { persist(SK.VIEW_MODE,          viewMode);                           }, [viewMode]);
   useEffect(() => { persist(SK.SHOW_VIEWER,        showViewerModal    ? "true" : null); }, [showViewerModal]);
   useEffect(() => { persist(SK.SHOW_REVIEWER,      showReviewerModal  ? "true" : null); }, [showReviewerModal]);
   useEffect(() => { persist(SK.SHOW_REVIEWER_LIST, showReviewerList   ? "true" : null); }, [showReviewerList]);
-  useEffect(() => { persist(SK.SELECTED_PROP_ID,   selectedProposalId);                }, [selectedProposalId]);
+  useEffect(() => { persist(SK.SELECTED_PROP_ID,   selectedProposalId);                 }, [selectedProposalId]);
 
   // ── Restore modal + selectedDoc once proposals are loaded ─────────────────
   useEffect(() => {
@@ -99,15 +162,13 @@ const ReviewProposal: React.FC = () => {
     );
     if (!match) return;
 
-    // Restore the doc and silently fetch its detail so modals are fully populated
     (async () => {
       const detail = await fetchDetail(match);
       if (!detail) return;
       setSelectedDoc(match);
-      // showViewerModal / showReviewerModal are already true from localStorage init
     })();
 
-    setPendingDocId(null); // only restore once
+    setPendingDocId(null);
   }, [loading, filteredProposals, pendingDocId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -221,6 +282,7 @@ const ReviewProposal: React.FC = () => {
 
             {/* Controls */}
             <div className="flex flex-col xl:flex-row justify-between items-center mb-8 space-y-6 xl:space-y-0">
+              {/* Search */}
               <div className="relative w-full xl:w-96">
                 <input
                   type="text"
@@ -240,27 +302,27 @@ const ReviewProposal: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-6 w-full xl:w-auto justify-between xl:justify-end">
-                <div className="flex space-x-8 text-sm font-bold text-gray-500">
-                  {(["all", "completed", "pending"] as const).map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setActiveFilter(filter)}
-                      className={`pb-1 transition-colors capitalize ${
-                        activeFilter === filter
-                          ? "text-green-600 border-b-2 border-green-600"
-                          : "hover:text-gray-700"
-                      }`}
-                    >
-                      {filter === "pending"
-                        ? `Pending Evaluation (${counts.pending})`
-                        : filter === "completed"
-                          ? `Completed (${counts.completed})`
-                          : `All (${counts.all})`}
-                    </button>
-                  ))}
+              <div className="flex items-center gap-4 w-full xl:w-auto justify-end">
+                {/* Status dropdown filter */}
+                <div className="relative">
+                  <select
+                    value={activeFilter}
+                    onChange={(e) => setActiveFilter(e.target.value as ReviewFilter)}
+                    className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none cursor-pointer"
+                  >
+                    <option value="all">All ({counts.all})</option>
+                    <option value="for_review">For Review ({counts.for_review})</option>
+                    <option value="under_review">Under Review ({counts.under_review})</option>
+                    <option value="final_review">Final Review ({counts.final_review})</option>
+                    <option value="for_approval">For Approval ({counts.for_approval})</option>
+                    <option value="approved">Completed ({counts.approved})</option>
+                    <option value="for_revision">For Revision ({counts.for_revision})</option>
+                    <option value="rejected">Rejected ({counts.rejected})</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 </div>
 
+                {/* View mode toggle */}
                 <div className="flex items-center bg-gray-100 p-1 rounded-xl">
                   <button
                     onClick={() => setViewMode("grid")}
@@ -291,149 +353,155 @@ const ReviewProposal: React.FC = () => {
 
             {/* Grid View */}
             {viewMode === "grid" && filteredProposals.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredProposals.map((proposal) => {
-                  const statusStyle = getStatusStyle(proposal.status);
-                  return (
-                    <div
-                      key={proposal.proposal_id}
-                      className="bg-white rounded-[32px] p-7 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border flex flex-col justify-between h-full"
-                    >
-                      <div>
-                        <div className="flex justify-between items-start mb-5">
-                          <span className={`px-4 py-2.5 rounded-full text-xs font-extrabold tracking-wide ${statusStyle.className}`}>
-                            {statusStyle.label}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-bold text-gray-900 mb-3 leading-tight" title={proposal.title}>
-                          {proposal.title}
-                        </h3>
-                        <p className="text-gray-500 text-xs leading-relaxed mb-1 font-semibold">
-                          Implementor: <span className="font-normal">{proposal.implementor_name}</span>
-                        </p>
-                        {proposal.review_status && (
-                          <p className={`flex items-center gap-2 text-xs rounded-md px-3 py-2 mt-1 mb-3 border ${
-                            proposal.decision === "approved"
-                              ? "text-green-700 bg-green-50 border-green-200"
-                              : proposal.is_reviewed === 1
-                                ? "text-red-700 bg-red-50 border-red-200"
-                                : "text-orange-700 bg-orange-50 border-orange-200"
-                          }`}>
-                            {proposal.decision === "approved" ? (
-                              <CheckCircle className="w-4 h-4" />
-                            ) : proposal.is_reviewed === 1 ? (
-                              <AlertTriangle className="w-4 h-4" />
-                            ) : (
-                              <Clock className="w-4 h-4" />
-                            )}
-                            <span>{proposal.review_status}</span>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                  {paginatedProposals.map((proposal) => {
+                    const statusStyle = getStatusStyle(proposal.status);
+                    return (
+                      <div
+                        key={proposal.proposal_id}
+                        className="bg-white rounded-[32px] p-7 shadow-[0_2px_20px_rgba(0,0,0,0.04)] border flex flex-col justify-between h-full"
+                      >
+                        <div>
+                          <div className="flex justify-between items-start mb-5">
+                            <span className={`px-4 py-2.5 rounded-full text-xs font-extrabold tracking-wide ${statusStyle.className}`}>
+                              {statusStyle.label}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-bold text-gray-900 mb-3 leading-tight" title={proposal.title}>
+                            {proposal.title}
+                          </h3>
+                          <p className="text-gray-500 text-xs leading-relaxed mb-1 font-semibold">
+                            Implementor: <span className="font-normal">{proposal.implementor_name}</span>
                           </p>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-xs font-semibold mb-5">
-                          Assigned Date: <span className="font-normal">{proposal.date}</span>
-                        </p>
-                        <div className="flex space-x-3">
-                          <button
-                            onClick={() => handleViewProposal(proposal)}
-                            className="flex-1 flex items-center justify-center space-x-2 bg-[#16A34A] text-white py-2 rounded-md font-bold text-sm hover:bg-[#15803d] transition-colors"
-                          >
-                            <Eye className="w-[18px] h-[18px]" />
-                            <span>View</span>
-                          </button>
-                          <button
-                            onClick={() => handleViewReview(proposal)}
-                            className="flex-1 flex items-center justify-center space-x-2 bg-[#DC2626] text-white py-2 rounded-md font-bold text-sm hover:bg-[#b91c1c] transition-colors"
-                          >
-                            <FileText className="w-[18px] h-[18px]" />
-                            <span>Review</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedProposalId(proposal.proposal_id);
-                              setShowReviewerList(true);
-                            }}
-                            className="flex-none flex items-center justify-center bg-gray-900 text-white p-3 hover:bg-gray-700 transition-colors rounded-md"
-                            title="View Others"
-                          >
-                            <Users className="w-[18px] h-[18px]" />
-                          </button>
+                          {proposal.review_status && (
+                            <p className={`flex items-center gap-2 text-xs rounded-md px-3 py-2 mt-1 mb-3 border ${
+                              proposal.decision === "approved"
+                                ? "text-green-700 bg-green-50 border-green-200"
+                                : proposal.is_reviewed === 1
+                                  ? "text-red-700 bg-red-50 border-red-200"
+                                  : "text-orange-700 bg-orange-50 border-orange-200"
+                            }`}>
+                              {proposal.decision === "approved" ? (
+                                <CheckCircle className="w-4 h-4" />
+                              ) : proposal.is_reviewed === 1 ? (
+                                <AlertTriangle className="w-4 h-4" />
+                              ) : (
+                                <Clock className="w-4 h-4" />
+                              )}
+                              <span>{proposal.review_status}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs font-semibold mb-5">
+                            Assigned Date: <span className="font-normal">{proposal.date}</span>
+                          </p>
+                          <div className="flex space-x-3">
+                            <button
+                              onClick={() => handleViewProposal(proposal)}
+                              className="flex-1 flex items-center justify-center space-x-2 bg-[#16A34A] text-white py-2 rounded-md font-bold text-sm hover:bg-[#15803d] transition-colors"
+                            >
+                              <Eye className="w-[18px] h-[18px]" />
+                              <span>View</span>
+                            </button>
+                            <button
+                              onClick={() => handleViewReview(proposal)}
+                              className="flex-1 flex items-center justify-center space-x-2 bg-[#DC2626] text-white py-2 rounded-md font-bold text-sm hover:bg-[#b91c1c] transition-colors"
+                            >
+                              <FileText className="w-[18px] h-[18px]" />
+                              <span>Review</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedProposalId(proposal.proposal_id);
+                                setShowReviewerList(true);
+                              }}
+                              className="flex-none flex items-center justify-center bg-gray-900 text-white p-3 hover:bg-gray-700 transition-colors rounded-md"
+                              title="View Others"
+                            >
+                              <Users className="w-[18px] h-[18px]" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+                <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
+              </>
             )}
 
             {/* Table View */}
             {viewMode === "table" && filteredProposals.length > 0 && (
-              <div className="bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Status</th>
-                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Title</th>
-                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Type</th>
-                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Assigned Date</th>
-                      <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProposals.map((proposal) => {
-                      const statusStyle = getStatusStyle(proposal.status);
-                      return (
-                        <tr
-                          key={proposal.proposal_id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-8 py-5">
-                            <span className={`px-5 py-2.5 rounded-full text-xs font-extrabold tracking-wide ${statusStyle.className}`}>
-                              {statusStyle.label}
-                            </span>
-                          </td>
-                          <td className="px-8 py-5 text-sm font-semibold text-gray-900 max-w-xs">
-                            {proposal.title}
-                          </td>
-                          <td className="px-8 py-5 text-sm text-gray-500">{proposal.type}</td>
-                          <td className="px-8 py-5 text-xs font-bold text-gray-400 whitespace-nowrap">
-                            {proposal.date}
-                          </td>
-                          <td className="px-8 py-5">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleViewProposal(proposal)}
-                                className="p-2 bg-[#16A34A] text-white rounded-lg hover:bg-[#15803d] transition-colors"
-                                title="View"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleViewReview(proposal)}
-                                className="p-2 bg-[#DC2626] text-white rounded-lg hover:bg-[#b91c1c] transition-colors"
-                                title="Review"
-                              >
-                                <FileText className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedProposalId(proposal.proposal_id);
-                                  setShowReviewerList(true);
-                                }}
-                                className="p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                                title="View Others"
-                              >
-                                <Users className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-gray-100 to-gray-200 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Status</th>
+                        <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Title</th>
+                        <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Type</th>
+                        <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Assigned Date</th>
+                        <th className="text-left px-8 py-5 text-sm font-bold text-gray-600">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedProposals.map((proposal) => {
+                        const statusStyle = getStatusStyle(proposal.status);
+                        return (
+                          <tr
+                            key={proposal.proposal_id}
+                            className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-8 py-5">
+                              <span className={`px-5 py-2.5 rounded-full text-xs font-extrabold tracking-wide ${statusStyle.className}`}>
+                                {statusStyle.label}
+                              </span>
+                            </td>
+                            <td className="px-8 py-5 text-sm font-semibold text-gray-900 max-w-xs">
+                              {proposal.title}
+                            </td>
+                            <td className="px-8 py-5 text-sm text-gray-500">{proposal.type}</td>
+                            <td className="px-8 py-5 text-xs font-bold text-gray-400 whitespace-nowrap">
+                              {proposal.date}
+                            </td>
+                            <td className="px-8 py-5">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleViewProposal(proposal)}
+                                  className="p-2 bg-[#16A34A] text-white rounded-lg hover:bg-[#15803d] transition-colors"
+                                  title="View"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleViewReview(proposal)}
+                                  className="p-2 bg-[#DC2626] text-white rounded-lg hover:bg-[#b91c1c] transition-colors"
+                                  title="Review"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedProposalId(proposal.proposal_id);
+                                    setShowReviewerList(true);
+                                  }}
+                                  className="p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                                  title="View Others"
+                                >
+                                  <Users className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
+              </>
             )}
           </>
         )}

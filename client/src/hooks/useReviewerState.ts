@@ -460,7 +460,8 @@ export function useSidebarTree({ isOpen, childId }: UseSidebarTreeOptions) {
     } finally {
       setProjectDetailLoading(false);
     }
-  }, []);
+    loadActivitiesForProject(project);
+  }, [loadActivitiesForProject]);
 
   // ── Project expand (tree accordion) ────────────────────────────────────
 

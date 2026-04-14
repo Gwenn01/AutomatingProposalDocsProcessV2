@@ -23,10 +23,6 @@ import { ProjectFormDocument } from "../view-document/project-form";
 import { ActivityFormDocument } from "../view-document/activity-form";
 import { val } from "@/constants";
 import { ProjectTreeNode } from "../view-document/ptn-view-docs";
-import type {
-  ApiActivityListResponse,
-  ApiProjectListResponse,
-} from "@/types/implementor-types";
 
 // ================= TYPE DEFINITIONS =================
 
@@ -241,7 +237,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     const load = async () => {
       setProjectListLoading(true);
       try {
-        const data: ApiProjectListResponse = await fetchProjectList(childId);
+        const data: any = await fetchProjectList(childId);
         setProjectList(data.projects || []);
       } catch (err) {
         console.error("[ProjectList] Failed:", err);
@@ -274,7 +270,7 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
         [project.child_id]: true,
       }));
       try {
-        const data: ApiActivityListResponse = await fetchActivityList(
+        const data: any = await fetchActivityList(
           project.child_id,
         );
         setActivitiesCache((prev) => ({
@@ -310,7 +306,9 @@ const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     } finally {
       setProjectDetailLoading(false);
     }
-  }, []);
+
+    loadActivitiesForProject(project);
+  }, [loadActivitiesForProject]);
 
   // ── Project expand/collapse (activity tab) ──
   const handleExpandProject = useCallback(

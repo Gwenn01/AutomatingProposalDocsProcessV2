@@ -325,9 +325,10 @@ export function useProposalEdit({
   mappedActivity,
   isEditing,
   onEditingChange,
+  onSuccess
 }: {
   activeTab: "program" | "project" | "activity";
-  programChildId:    number | null;
+  programChildId:    any;
   programProposalId: number | null;
   projectChildId:    number | null;
   projectProposalId: number | null;
@@ -338,6 +339,8 @@ export function useProposalEdit({
   mappedActivity:  any | null;
   isEditing: boolean;
   onEditingChange: (v: boolean) => void;
+  onSuccess?: () => void;
+  
 }) {
   const [programDraft,  setProgramDraft]  = useState<EditableProgram>(defaultProgram());
   const [projectDraft,  setProjectDraft]  = useState<EditableProject>(defaultProject());
@@ -393,6 +396,7 @@ export function useProposalEdit({
       }
 
       onEditingChange(false);
+      onSuccess?.(); 
     } catch (err: any) {
       console.error("[useProposalEdit] save failed:", err);
       setSaveError(err?.message ?? "Save failed. Please try again.");

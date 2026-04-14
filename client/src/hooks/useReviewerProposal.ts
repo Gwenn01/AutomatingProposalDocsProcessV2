@@ -31,7 +31,15 @@ export interface Proposal {
   implementor_name: string;
 }
 
-export type ReviewFilter = "all" | "completed" | "pending";
+export type ReviewFilter =
+  | "all"
+  | "for_review"
+  | "under_review"
+  | "final_review"
+  | "for_approval"
+  | "approved"
+  | "for_revision"
+  | "rejected";
 
 // ================= MAPPER =================
 function mapApiProposal(p: ReviewerProposal): Proposal {
@@ -172,10 +180,8 @@ export const useReviewerProposals = () => {
   const filteredProposals = useMemo(() => {
     let filtered = proposals;
 
-    if (activeFilter === "completed") {
-      filtered = filtered.filter((p) => p.status === "approved");
-    } else if (activeFilter === "pending") {
-      filtered = filtered.filter((p) => p.status === "for_review");
+    if (activeFilter !== "all") {
+      filtered = filtered.filter((p) => p.status === activeFilter);
     }
 
     if (searchQuery.trim()) {
@@ -191,9 +197,14 @@ export const useReviewerProposals = () => {
   }, [proposals, searchQuery, activeFilter]);
 
   const counts = useMemo(() => ({
-    all:       proposals.length,
-    completed: proposals.filter((p) => p.status === "approved").length,
-    pending:   proposals.filter((p) => p.status === "for_review").length,
+    all:          proposals.length,
+    for_review:   proposals.filter((p) => p.status === "for_review").length,
+    under_review: proposals.filter((p) => p.status === "under_review").length,
+    final_review: proposals.filter((p) => p.status === "final_review").length,
+    for_approval: proposals.filter((p) => p.status === "for_approval").length,
+    approved:     proposals.filter((p) => p.status === "approved").length,
+    for_revision: proposals.filter((p) => p.status === "for_revision").length,
+    rejected:     proposals.filter((p) => p.status === "rejected").length,
   }), [proposals]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;

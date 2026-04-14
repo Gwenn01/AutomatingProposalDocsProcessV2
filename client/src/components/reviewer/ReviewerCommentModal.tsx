@@ -320,7 +320,7 @@ const switchToActivityTab = () => {
               </div>
 
               {/* Floating action bar */}
-              {(showCommentInputs && !proposalStatus) && (
+              {showCommentInputs  && (
                 <ActionBar
                   activeTab={activeTab}
                   isSubmitting={reviewState.isSubmitting}

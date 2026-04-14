@@ -27,8 +27,6 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
   const isLoadingActivities = loadingCache[project.child_id] ?? false;
   const isExpanded = activeTab === "activity" && isProjectSelected;
 
-  console.log("STATUS", project)
-
   return (
     <div className="group/node">
       {/* Project Row */}

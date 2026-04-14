@@ -21,12 +21,10 @@ import { ProjectTreeNode } from "./view-review-forms/project-tree-node";
 import EditSaveButton from "./EditSaveButton";
 import { useProposalEdit } from "@/hooks/useProposalEdit";
 import { fetchActivityHistoryData, fetchProgramHistoryData, fetchProjectHistoryData } from "@/api/get-history-data-api";
-import type { ApiProjectListResponse } from "@/types/implementor-types";
 import { SnapshotLoadingOverlay } from "@/components/ui/SnapshotLoadingOverlay";
 import type { Comments, ProjectListFields } from "@/types/form-fields";
 import type { History } from "@/types/history-types";
 import { mapReviewedToActivity, mapReviewedToProgram, mapReviewedToProject } from "@/constants/reviewer/mappers";
-import type { ApiActivityListResponse } from "@/types/shared-types";
 
 type ProjectItem  = ProjectListFields;
 type ActivityItem = ProjectListFields;
@@ -46,11 +44,6 @@ export interface ViewReviewedDocumentsProps {
   programNode_id?: number;
   review_id?: string;
 }
-
-// ================= DATA MAPPERS =================
-
-
-
 // ================= HISTORY NORMALIZER =================
 
 function normalizeHistoryList(raw: any): History[] {
@@ -188,6 +181,7 @@ const formScrollRef = useRef<HTMLDivElement>(null);
     mappedActivity,
     isEditing,
     onEditingChange: setIsEditing,
+    onSuccess: onClose
   });
 
   const programTitle = mappedProgram?.program_title ?? proposalData?.title ?? "";
@@ -224,7 +218,7 @@ const formScrollRef = useRef<HTMLDivElement>(null);
     if (!isOpen || !childId) return;
     setProjectListLoading(true);
     fetchProjectList(childId)
-      .then((data: ApiProjectListResponse) => setProjectList(data.projects || []))
+      .then((data: any) => setProjectList(data.projects || []))
       .catch((err) => console.error("[ProjectList] Failed:", err))
       .finally(() => setProjectListLoading(false));
   }, [isOpen, childId]);
@@ -294,11 +288,6 @@ const formScrollRef = useRef<HTMLDivElement>(null);
       .finally(() => setHistoryLoading(false));
   }, [selectedActivity?.proposal_id]);
 
-  // ── 5. Fetch history snapshot when a version is selected ─────────────────
-  // If the selected version is "current", skip the API call entirely —
-  // the existing programReviewedData / projectReviewedData / activityReviewedData
-  // already holds the current data, so historySnapshotData stays null and
-  // the active* derived values fall through to the base reviewed data.
   useEffect(() => {
     if (!selectedHistoryVersion || selectedHistoryVersion.status === "current") {
       setHistorySnapshotData(null);
@@ -396,7 +385,9 @@ const formScrollRef = useRef<HTMLDivElement>(null);
     } finally {
       setProjectDetailLoading(false);
     }
-  }, []);
+
+    loadActivitiesForProject(project);
+  }, [loadActivitiesForProject]);
 
   // ── Expand project in activity tab ────────────────────────────────────────
   const handleExpandProject = useCallback(async (project: ProjectItem) => {
