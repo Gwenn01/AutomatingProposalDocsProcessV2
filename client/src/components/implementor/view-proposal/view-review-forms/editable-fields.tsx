@@ -1,8 +1,4 @@
 import React from "react";
-
-// ─────────────────────────────────────────────────────────────
-// EditableText – single-line
-// ─────────────────────────────────────────────────────────────
 interface EditableTextProps {
   value: any;
   onChange: (v: string) => void;
@@ -34,10 +30,6 @@ export const EditableText: React.FC<EditableTextProps> = ({
     />
   );
 };
-
-// ─────────────────────────────────────────────────────────────
-// EditableTextarea – multi-line
-// ─────────────────────────────────────────────────────────────
 interface EditableTextareaProps {
   value: string;
   onChange: (v: string) => void;
@@ -69,10 +61,6 @@ export const EditableTextarea: React.FC<EditableTextareaProps> = ({
     />
   );
 };
-
-// ─────────────────────────────────────────────────────────────
-// EditableArray – comma-joined display; one item per row in edit
-// ─────────────────────────────────────────────────────────────
 interface EditableArrayProps {
   value: string[];
   onChange: (v: string[]) => void;
@@ -139,9 +127,6 @@ export const EditableArray: React.FC<EditableArrayProps> = ({
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// EditableKeyValueList – list of { [keyField]: string, [valField]: string }
-// ─────────────────────────────────────────────────────────────
 interface EditableKeyValueListProps<T extends Record<string, string>> {
   value: T[];
   onChange: (v: T[]) => void;
@@ -216,9 +201,6 @@ export function EditableKeyValueList<T extends Record<string, string>>({
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// EditableSiteList – array of { country, region, province, district, municipality, barangay }
-// ─────────────────────────────────────────────────────────────
 interface SiteRow {
   country: string; region: string; province: string;
   district: string; municipality: string; barangay: string;
@@ -288,9 +270,6 @@ export const EditableSiteList: React.FC<EditableSiteListProps> = ({ value, onCha
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// EditableWorkplanList – array of workplan rows with checkboxes
-// ─────────────────────────────────────────────────────────────
 interface WorkplanEditRow {
   objective: string;
   activity: string;
@@ -385,3 +364,4 @@ export const EditableWorkplanList: React.FC<EditableWorkplanListProps> = ({ valu
     </div>
   );
 };
+

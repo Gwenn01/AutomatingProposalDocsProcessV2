@@ -2,8 +2,8 @@ import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
 import { formatDate } from "@/utils/dateFormat";
 import type { BudgetItem, WorkplanItem } from "@/types/reviewer-comment-types";
-import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
 import { useEffect, useRef } from "react";
+import { CheckboxList } from "../implementor/view-proposal/view-review-forms/checkbox-list";
 
 export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: string }> = ({ projectData, programTitle }) => {
 
@@ -11,7 +11,7 @@ export const ProjectFormDocument: React.FC<{ projectData: any; programTitle: str
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [projectData]); // fires whenever proposalData changes
+  }, [projectData]);
   
   if (!projectData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading project data...</div>;
 

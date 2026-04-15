@@ -8,7 +8,8 @@ import {
   fetchActivityProposalDetail,
 } from "@/api/reviewer-api";
 import FormSkeleton from "../ui/FormSkeleton";
-import type { ApiActivity, ApiActivityListResponse, ApiProject, ApiProjectListResponse } from "@/types/reviewer-types";
+import type { ApiProject, ApiProjectListResponse } from "@/types/reviewer-types";
+import type { ApiActivity, ApiActivityListResponse } from "@/types/shared-types";
 
 // ================= TYPE DEFINITIONS =================
 
@@ -1086,7 +1087,7 @@ const ViewDocument: React.FC<DocumentViewerModalProps> = ({
     const load = async () => {
       setProjectListLoading(true);
       try {
-        const data: ApiProjectListResponse = await fetchProjectList(childId);
+        const data: any = await fetchProjectList(childId);
         setProjectList(data.projects || []);
       } catch (err) {
         console.error("[ProjectList] Failed:", err);

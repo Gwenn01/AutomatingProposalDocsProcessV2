@@ -1,5 +1,4 @@
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
-import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
 import { formatDate } from "@/utils/dateFormat";
 import type { BudgetItem, Comments } from "@/types/reviewer-comment-types";
@@ -8,14 +7,8 @@ import { FeedbackBadge } from "../FeedbackBadge";
 import { HistoryReviewBadge } from "./HistoryReviewBadge";
 import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
 import { useEffect } from "react";
+import { CheckboxList } from "@/components/implementor/view-proposal/view-review-forms/checkbox-list";
 
-/**
- * Lock ALL inputs only when at least one feedback field is an empty string "".
- *
- * null  = reviewer intentionally skipped → keep editable
- * ""    = field was submitted (even if blank) → lock everything
- * "abc" = has content → show as badge, others stay unlocked unless "" exists
- */
 function shouldLockAll(review: any): boolean {
   if (!review) return false;
 
@@ -84,26 +77,21 @@ const SectionFeedback: React.FC<{
   onCommentChange,
   disabled,
 }) => {
-  // ── History mode: feedbackValue is HistoryReviewEntry[] ───────────────
   if (!showInput && Array.isArray(feedbackValue)) {
     if (feedbackValue.length === 0) return null;
     return <HistoryReviewBadge label={label} entries={feedbackValue} />;
   }
 
-  // ── Current version mode: feedbackValue is string | null ─────────────
   const isFilled = typeof feedbackValue === "string" && feedbackValue.trim() !== "";
 
-  // Has review text → show existing FeedbackBadge
   if (!showInput && existingReview && isFilled) {
     return <FeedbackBadge label={label} value={feedbackValue as string} loading={reviewLoading} />;
   }
 
-  // Viewing history with no comment for this section → nothing
   if (!showInput && existingReview && !isFilled) {
     return null;
   }
 
-  // Editable / locked input for current version
   if (showInput || existingReview) {
     const reviewField = REVIEW_FIELD_MAP[inputKey];
     const lockedValue =
@@ -139,11 +127,10 @@ export const ProjectForm: React.FC<{
 
     useEffect(() => {
       if (scrollContainerRef?.current) {
-        scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+        scrollContainerRef.current.scrollTop = 0; 
       }
     }, [projectData]);
 
-  // Lock all inputs only when any field is exactly ""
   const allLocked = !showCommentInputs ? false : shouldLockAll(existingReview);
 
   const sf = (

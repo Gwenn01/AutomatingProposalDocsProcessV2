@@ -1,6 +1,4 @@
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
-
-import { CheckboxList } from "./checkbox-list";
 import { VerticalLine } from "./program-form";
 import { formatDate } from "@/utils/dateFormat";
 import type { BudgetItem, Comments } from "@/types/reviewer-comment-types";
@@ -8,19 +6,11 @@ import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
 import { HistoryReviewBadge } from "./HistoryReviewBadge";
 import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
-import { useEffect, useState } from "react";
-import SubmittingOverlay from "../SubmittingOverlay";
-import { div } from "framer-motion/client";
+import { useEffect } from "react";
+import { CheckboxList } from "@/components/implementor/view-proposal/view-review-forms/checkbox-list";
 
 const NA = "N/A";
 
-/**
- * Lock ALL inputs only when at least one feedback field is an empty string "".
- *
- * null  = reviewer intentionally skipped → keep editable
- * ""    = field was submitted (even if blank) → lock everything
- * "abc" = has content → show as badge, others stay unlocked unless "" exists
- */
 function shouldLockAll(review: any): boolean {
   if (!review) return false;
 
@@ -40,14 +30,10 @@ function shouldLockAll(review: any): boolean {
 
   const values = feedbackFields.map((k) => review[k]);
 
-  // If there are no null values → every field was submitted → lock
   const hasAnyNull = values.some((v) => v === null || v === undefined);
   return !hasAnyNull;
 }
-/**
- * Map from inputKey (comments state key) → existingReview field name.
- * Allows SF to read the persisted value from existingReview when locked.
- */
+
 const REVIEW_FIELD_MAP: Record<string, string> = {
   act_profile_feedback:                    "profile_feedback",
   act_implementing_agency_feedback:        "implementing_agency_feedback",

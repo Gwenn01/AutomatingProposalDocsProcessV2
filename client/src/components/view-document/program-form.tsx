@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
-import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
 import type { ApiProposalDetail } from "@/types/reviewer-comment-types";
+import { CheckboxList } from "../implementor/view-proposal/view-review-forms/checkbox-list";
 
 
 

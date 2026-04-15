@@ -1,12 +1,4 @@
-// ─────────────────────────────────────────────
-// implementor-api.ts
-// ─────────────────────────────────────────────
-
 export const BASE_URL = 'http://127.0.0.1:8000/api';
-
-// ─────────────────────────────────────────────
-// AUTH HELPERS
-// ─────────────────────────────────────────────
 
 function getAccessToken(): string | null {
   return localStorage.getItem('access_token');

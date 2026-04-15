@@ -1,11 +1,9 @@
 import { arrVal, NA, SIX_PS_LABELS, val } from "@/constants";
-
 import type { OrgStaffingItem } from "../implementor/DocumentViewerModal";
-
 import { formatDate } from "@/utils/dateFormat";
-import { CheckboxList } from "../reviewer/reviewer-comment-modal/view-review/checkbox-list";
 import type { BudgetItem } from "@/types/reviewer-comment-types";
 import { useEffect, useRef } from "react";
+import { CheckboxList } from "../implementor/view-proposal/view-review-forms/checkbox-list";
 
 export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: string; projectTitle: string }> = ({ activityData, programTitle, projectTitle }) => {
   if (!activityData) return <div className="flex items-center justify-center h-64 text-gray-400">Loading activity data...</div>;
@@ -14,7 +12,7 @@ export const ActivityFormDocument: React.FC<{ activityData: any; programTitle: s
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [activityData]); // fires whenever proposalData changes
+  }, [activityData]);
 
   return (
     <section 

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { CheckboxList } from "./checkbox-list";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
 import type { ApiProposalDetail, Comments } from "@/types/reviewer-comment-types";
@@ -7,6 +6,7 @@ import CommentInput from "../../CommentInput";
 import { FeedbackBadge } from "../FeedbackBadge";
 import { HistoryReviewBadge } from "./HistoryReviewBadge";
 import type { HistoryReviewEntry } from "@/constants/reviewer/mappers";
+import { CheckboxList } from "@/components/implementor/view-proposal/view-review-forms/checkbox-list";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
 

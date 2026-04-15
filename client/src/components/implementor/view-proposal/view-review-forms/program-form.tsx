@@ -1,5 +1,5 @@
 // view-review-forms/program-form.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { CheckboxList } from "./checkbox-list";
 import { arrVal, SIX_PS_LABELS, val } from "@/constants";
 import { formatDate } from "@/utils/dateFormat";
@@ -16,11 +16,6 @@ import { SectionReviews, validReviews } from "./ui/SectionReviews";
 import type { ApiProposalDetail, Comments } from "@/types/form-fields";
 
 export const VerticalLine: React.FC = () => <div className="w-1 h-6 bg-primaryGreen mr-4" />;
-
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-
-// ─── ProgramForm ─────────────────────────────────────────────────────────────
 
 export const ProgramForm: React.FC<{
   proposalData: ApiProposalDetail;
@@ -47,7 +42,6 @@ export const ProgramForm: React.FC<{
     ({ month, activity }) => { workplanMap[month] = activity; }
   );
 
-  // reviews
   const profileReviews        = validReviews(reviewedData?.profile?.reviews);
   const agencyReviews         = validReviews(reviewedData?.agencies?.reviews);
   const extensionSiteReviews  = validReviews(reviewedData?.extension_sites?.reviews);
@@ -73,19 +67,19 @@ export const ProgramForm: React.FC<{
   const sectionProps = { comments, onCommentChange, alreadyReviewed, showCommentInputs, hasAnyReviewAcrossSections };
 
   // editing highlight wrapper
-  const EditRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-    <div className={`mb-1 ${isEditing ? "rounded-lg p-1 transition" : ""}`}>
-      <p className="font-bold">
-        {label}:{" "}
-        {!isEditing && <span className="font-normal">{/* rendered by child */}</span>}
-      </p>
-      <div className={isEditing ? "mt-1" : "inline"}>{children}</div>
-    </div>
-  );
+  // const EditRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  //   <div className={`mb-1 ${isEditing ? "rounded-lg p-1 transition" : ""}`}>
+  //     <p className="font-bold">
+  //       {label}:{" "}
+  //       {!isEditing && <span className="font-normal">{/* rendered by child */}</span>}
+  //     </p>
+  //     <div className={isEditing ? "mt-1" : "inline"}>{children}</div>
+  //   </div>
+  // );
   
   useEffect(() => {
     if (scrollContainerRef?.current) {
-      scrollContainerRef.current.scrollTop = 0; // instant, no smooth needed
+      scrollContainerRef.current.scrollTop = 0;
     }
   }, [proposalData]);
 

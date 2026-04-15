@@ -1,5 +1,6 @@
-import type { ApiActivity, ProposalHistory, ProposalReviewPayload, ProposalReviewResponse, ReviewerNotification, ReviewerProjectList, ReviewerProposal } from "@/types/reviewer-types";
+import type { ProposalHistory, ProposalReviewPayload, ProposalReviewResponse, ReviewerNotification, ReviewerProjectList, ReviewerProposal } from "@/types/reviewer-types";
 import { authFetch, BASE_URL, handleResponse } from "./api-client";
+import type { ApiActivity } from "@/types/shared-types";
 
 export async function fetchReviewerProposals(): Promise<ReviewerProposal[]> {
   const res = await authFetch(`${BASE_URL}/reviewer-proposals/program`);

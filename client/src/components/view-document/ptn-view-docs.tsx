@@ -1,4 +1,4 @@
-import type { ApiActivity } from "@/types/reviewer-types";
+import type { ApiActivity } from "@/types/shared-types";
 import { Activity, ChevronRight, FolderOpen } from "lucide-react";
 
 type ProjectListFields = {
@@ -91,7 +91,6 @@ export const ProjectTreeNode: React.FC<ProjectTreeNodeProps> = ({
                       {act.activity_title}
                     </p>
                     {act.activity_date && <p className="text-[9px] text-gray-400 mt-0.5">{act.activity_date}</p>}
-                    {/* {act.activity_duration_hours > 0 && <p className="text-[9px] text-gray-400">{act.activity_duration_hours}h</p>} */}
                   </div>
                 </button>
               );

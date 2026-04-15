@@ -1,8 +1,6 @@
 import type { ActivityFormData, ApiActivityListResponse, ApiProjectListResponse, BudgetRows, ExpectedOutput6Ps, OrgStaffingItem, ProgramBudgetRow, ProgramFormData, ProjectFormData, WorkplanRow } from "@/types/implementor-types";
 import { authFetch, BASE_URL, handleResponse } from "./api-client";
 
-
-
 export function toStringArray(value: string): string[] {
   if (!value?.trim()) return [];
   return value.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
@@ -332,8 +330,6 @@ export async function checkReviews(proposal_id: number): Promise<any> {
   const res = await authFetch(`${BASE_URL}/proposal/${proposal_id}/check-reviews/`)
   return handleResponse<any>(res);
 }
-
-// implementor-api.ts — add this function
 
 export async function fetchHistoryReview(
   proposalNode: number,
