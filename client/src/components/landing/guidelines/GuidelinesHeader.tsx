@@ -5,16 +5,15 @@ import {
   FileSearch,
   HelpCircle,
   ArrowDown,
-  Hash,
 } from "lucide-react";
 
 const GuidelinesHeader: React.FC = () => {
   return (
-    <section className="relative pt-20 pb-12 bg-[#fafafa] overflow-hidden">
+    <section className="relative pt-24 pb-16 bg-white overflow-hidden">
       {/* Premium Background Architecture */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[50%] bg-emerald-100/30 rounded-full blur-[120px]" />
-        <div className="absolute top-1/4 left-[-5%] w-[30%] h-[40%] bg-slate-200/40 rounded-full blur-[100px]" />
+        <div className="absolute top-[-5%] right-[-5%] w-[45%] h-[45%] bg-emerald-50/60 rounded-full blur-[130px]" />
+        <div className="absolute bottom-0 left-[-5%] w-[35%] h-[40%] bg-emerald-50/40 rounded-full blur-[110px]" />
 
         {/* Technical Grid Overlay */}
         <div
@@ -26,32 +25,19 @@ const GuidelinesHeader: React.FC = () => {
         />
 
         {/* Subtle Horizontal Scanline */}
-        <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+        <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-100 to-transparent" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        {/* Breadcrumb / Metadata Bar */}
-        <div className="flex items-center gap-4 mb-12 opacity-60">
-          <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
-            <Hash size={10} className="text-emerald-500" />
-            <span>Root</span>
-            <ChevronRight size={10} />
-            <span className="text-slate-900">Guidelines_v2.0.4</span>
-          </div>
-          <div className="h-px w-12 bg-slate-200" />
-          <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">
-            Auth: PRMSU_CORE
-          </span>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-20 items-start">
           {/* Left Column: The Identity */}
-          <div className="lg:col-span-7 space-y-10">
+          <div className="lg:col-span-7 space-y-12">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50/50 border border-emerald-100/50 backdrop-blur-sm">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                  Official Protocol
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">
+                  Official Help Center
                 </span>
               </div>
 
@@ -68,12 +54,10 @@ const GuidelinesHeader: React.FC = () => {
               <div className="absolute -left-6 top-0 bottom-0 w-1 bg-emerald-500 rounded-full opacity-20 group-hover:opacity-100 transition-opacity duration-500" />
 
               <p className="text-xl lg:text-2xl font-medium text-slate-500 leading-tight tracking-tight">
-                This central repository provides{" "}
-                <span className="text-slate-950 font-bold">
-                  surgical instructions
-                </span>{" "}
-                for navigating the ecosystem—ensuring speed, organization, and a
-                strictly paperless workflow.
+                Learn how to use the system with these{" "}
+                <span className="text-slate-950 font-bold">simple guides</span>.
+                Everything you need to work fast and stay
+                organized in one place.
               </p>
             </div>
           </div>
@@ -81,12 +65,12 @@ const GuidelinesHeader: React.FC = () => {
           {/* Right Column: Interactive Navigation Card */}
           <div className="lg:col-span-5">
             <div className="bg-white/60 backdrop-blur-xl rounded-[3rem] p-2 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-white">
-              <div className="bg-slate-50/50 rounded-[2.5rem] p-8 space-y-6">
+              <div className="bg-emerald-50/30 rounded-[2.5rem] p-8 space-y-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                    Jump to Module
+                    Quick Access
                   </h3>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-100 shadow-sm text-emerald-500">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-emerald-50 shadow-sm text-emerald-500">
                     <BookOpen size={14} />
                   </div>
                 </div>
@@ -94,30 +78,30 @@ const GuidelinesHeader: React.FC = () => {
                 <div className="space-y-3">
                   {[
                     {
-                      label: "Implementor Guide",
+                      label: "Implementors",
                       icon: <ChevronRight size={14} />,
                       color: "emerald",
                     },
                     {
-                      label: "Reviewer Protocols",
+                      label: "Reviewers",
                       icon: <FileSearch size={14} />,
                       color: "slate",
                     },
                     {
-                      label: "Admin Operations",
+                      label: "Admins",
                       icon: <HelpCircle size={14} />,
                       color: "slate",
                     },
                   ].map((link, i) => (
                     <button
                       key={i}
-                      className="w-full flex items-center justify-between p-5 rounded-2xl bg-white border border-slate-100 hover:border-emerald-200 hover:shadow-[0_10px_30px_-10px_rgba(16,185,129,0.1)] transition-all group active:scale-[0.98]"
+                      className="w-full flex items-center justify-between p-5 rounded-2xl bg-white border border-emerald-100/20 hover:border-emerald-500/30 hover:shadow-[0_10px_30px_-10px_rgba(16,185,129,0.1)] transition-all group active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-50/50 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
                           {link.icon}
                         </div>
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-600 group-hover:text-slate-950 transition-colors">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-emerald-700 transition-colors">
                           {link.label}
                         </span>
                       </div>
@@ -131,24 +115,6 @@ const GuidelinesHeader: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Phase Indicator Footnote */}
-        <div className="mt-24 flex items-center gap-6">
-          <div className="flex -space-x-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="w-8 h-8 rounded-full border-2 border-[#fafafa] bg-white flex items-center justify-center text-[10px] font-black text-slate-300"
-              >
-                0{i}
-              </div>
-            ))}
-          </div>
-          <div className="h-px flex-grow bg-gradient-to-r from-slate-200 to-transparent" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 animate-pulse">
-            Ready for Operation
-          </p>
         </div>
       </div>
     </section>
