@@ -163,3 +163,17 @@ class ProjectListHistoryView(APIView):
         history_serializer = ProjectProposalHistoryListSerializer(history, many=True)
         
         return Response(ProjectHistoryMapper.history_list_mapper(project_serializer.data, history_serializer.data), status=status.HTTP_200_OK)
+
+class GlobalStatsView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
+    def get(self, request):
+        # Aggregating ecosystem impact statistics
+        stats_data = {
+            "totalProposals": Proposal.objects.filter(proposal_type='Program').count(),
+            "activeImplementors": Proposal.objects.values('user').distinct().count(),
+            "assignedReviewers": ProposalReviewer.objects.values('reviewer').distinct().count(),
+            "approvedProposals": Proposal.objects.filter(proposal_type='Program', status='approved').count(),
+        }
+        return Response(stats_data, status=status.HTTP_200_OK)

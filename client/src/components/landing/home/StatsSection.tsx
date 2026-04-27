@@ -1,32 +1,46 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Layers, Users, ShieldCheck, CheckCircle } from "lucide-react";
+import { getGlobalStats, type GlobalStats } from "../../../api/admin-api";
 
 const StatsSection: React.FC = () => {
+  const [statsData, setStatsData] = useState<GlobalStats>({
+    totalProposals: 0,
+    activeImplementors: 0,
+    assignedReviewers: 0,
+    approvedProposals: 0,
+  });
+
+  useEffect(() => {
+    getGlobalStats()
+      .then(setStatsData)
+      .catch((err) => console.error("Error loading stats:", err));
+  }, []);
+
   const stats = [
     {
       label: "Total Proposals",
-      value: "1,284",
+      value: statsData.totalProposals.toLocaleString(),
       description: "Aggregated activity submitted for institutional review.",
       icon: <Layers size={20} />,
       glow: "from-blue-400/20 to-blue-200/10",
     },
     {
       label: "Active Implementors",
-      value: "450",
+      value: statsData.activeImplementors.toLocaleString(),
       description: "Registered Reviewers and Implementors drafting initiatives.",
       icon: <Users size={20} />,
       glow: "from-indigo-400/20 to-indigo-200/10",
     },
     {
       label: "Assigned Reviewers",
-      value: "82",
+      value: statsData.assignedReviewers.toLocaleString(),
       description: "Authorized evaluators maintaining system quality.",
       icon: <ShieldCheck size={20} />,
       glow: "from-emerald-400/20 to-emerald-200/10",
     },
     {
       label: "Approved Proposals",
-      value: "912",
+      value: statsData.approvedProposals.toLocaleString(),
       description: "Successfully vetted activities moved to implementation.",
       icon: <CheckCircle size={20} />,
       glow: "from-slate-400/20 to-slate-200/10",

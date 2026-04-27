@@ -131,6 +131,26 @@ const getAuthHeaders = () => {
   };
 };
 
+// Get Global Stats for Landing Page ======================================
+export interface GlobalStats {
+  totalProposals: number;
+  activeImplementors: number;
+  assignedReviewers: number;
+  approvedProposals: number;
+}
+
+export const getGlobalStats = async (): Promise<GlobalStats> => {
+  const response = await fetch(`${API_URL}/global-stats/`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch global stats");
+  };
+
+  return response.json();
+};
+
 // Get Users Overview ====================================================
 export const getUsersOverview = async (): Promise<UsersOverview> => {
   const response = await fetch(`${API_URL}/users/admin/overview-users/`, {
