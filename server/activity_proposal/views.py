@@ -18,6 +18,7 @@ from proposals_node.models import Proposal
 from proposals_node.services import YearConfigService
 from notifications.models import Notification
 from reviewer.models import ProposalReviewer
+from proposals_node.models import Proposal
 
 class ActivityProposalList(APIView):
     permission_classes = [IsAuthenticated]
@@ -62,7 +63,21 @@ class ActivityProposalDetail(APIView):
             context={"request": request}
         )
         if serializer.is_valid():
-            serializer.save()
+            activity = serializer.save()
+            # update the status of proposal node 
+            root_proposal = (
+                activity
+                .project_proposal
+                .program_proposal
+                .proposal
+            )
+
+            # Update status safely
+            if root_proposal.status in ["draft", "for_revision"]:
+                root_proposal.status = "for_review"
+                root_proposal.save()
+            
+            
             NotificationService.admin_notifications(
                 f"New Activity proposal submitted by{request.user.profile.name} with title '{serializer.data.get('activity_title')}'."
             )
